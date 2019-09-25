@@ -11,7 +11,8 @@ setup(name='brainspy-tasks',
       install_requires=[
       'pandas',
       'numpy',
-      'matplotlib'
+      'matplotlib',
+      'openpyxl'
       ],
       python_requires='~=3.6',
       zip_safe=False)

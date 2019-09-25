@@ -1,7 +1,7 @@
 {
     "platform": "simulation",
     "get_network": "dnpu",
-    "results_path": "tmp/NN_test/",
+    "results_path": "tmp/output/",
     "experiment_name": "TEST",
     "hyperparameters": {
         "nr_epochs": 3000,
@@ -11,6 +11,6 @@
     },
     "model_configs": {
         "input_indices": [0, 1],
-        "torch_model_path": "tmp/NN_model/checkpoint3000_02-07-23h47m.pt"
+        "torch_model_path": "tmp/input/test_model/checkpoint3000_02-07-23h47m.pt"
     }
 }
