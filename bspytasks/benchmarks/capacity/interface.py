@@ -1,0 +1,114 @@
+import numpy as np
+import bspyinstr.utils.waveform as waveform
+from bspyproc.utils.pytorch import TorchUtils
+
+
+class VCDimDataManager():
+
+    def __init__(self, configs):
+        self.amplitude_lengths = configs['encoder']['waveform']['amplitude_lengths']
+        self.slope_lengths = configs['encoder']['waveform']['slope_lengths']
+        self.use_waveform = True
+        if configs['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['algorithm_configs']['processor']['platform'] == 'simulation':
+            self.use_torch = True
+        else:
+            self.use_torch = False
+
+    def get_inputs(self, vc_dimension):
+        readable_inputs = self.generate_test_inputs(vc_dimension)
+        if self.use_waveform:
+            transformed_inputs = self.generate_inputs_waveform(readable_inputs)
+        else:
+            transformed_inputs = readable_inputs
+        if self.use_torch:
+            transformed_inputs = TorchUtils.get_tensor_from_numpy(transformed_inputs)
+
+        return readable_inputs, transformed_inputs
+
+    def get_targets(self, vc_dimension):
+        readable_targets = self.generate_test_targets(vc_dimension)
+        if self.use_waveform:
+            transformed_targets = self.generate_targets_waveform(readable_targets)
+        else:
+            transformed_targets = readable_targets
+        if self.use_torch:
+            transformed_targets = TorchUtils.get_tensor_from_numpy(transformed_targets)
+
+        return readable_targets, transformed_targets
+
+    def generate_test_inputs(self, vc_dimension):
+        # @todo create a function that automatically generates non-linear inputs
+        try:
+            if vc_dimension == 4:
+                return [[-0.7, -0.7, 0.7, 0.7], [0.7, -0.7, 0.7, -0.7]]
+            elif vc_dimension == 5:
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35],
+                        [0.7, -0.7, 0.7, -0.7, 0.0]]
+            elif vc_dimension == 6:
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0]]
+            elif vc_dimension == 7:
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0]]
+            elif vc_dimension == 8:
+                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0, 0.0],
+                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0, -1.0]]
+            else:
+                raise VCDimensionException()
+        except VCDimensionException:
+            print(
+                'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
+
+    def generate_inputs_waveform(self, inputs):
+        inputs_waveform = np.array([])
+        for inp in inputs:
+            input_waveform = waveform.generate_waveform(inp, self.amplitude_lengths, slope_lengths=self.slope_lengths)
+            if inputs_waveform.shape == (0,):
+                inputs_waveform = np.concatenate((inputs_waveform, input_waveform))
+            else:
+                inputs_waveform = np.vstack((inputs_waveform, input_waveform))
+        # if len(inputs_waveform.shape) == 1:
+        #    inputs_waveform = inputs_waveform[:, np.newaxis]
+        return inputs_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
+
+    def generate_test_targets(self, vc_dimension):
+        # length of list, i.e. number of binary targets
+        binary_target_no = 2**vc_dimension
+        assignments = []
+        list_buf = []
+
+        # construct assignments per element i
+        print('===' * vc_dimension)
+        print('ALL BINARY LABELS:')
+        level = int((binary_target_no / 2))
+        while level >= 1:
+            list_buf = []
+            buf0 = [0] * level
+            buf1 = [1] * level
+            while len(list_buf) < binary_target_no:
+                list_buf += (buf0 + buf1)
+            assignments.append(list_buf)
+            level = int(level / 2)
+
+        binary_targets = np.array(assignments).T
+        print(binary_targets)
+        print('===' * vc_dimension)
+        return binary_targets
+
+    def generate_targets_waveform(self, targets):
+        targets_waveform = np.array([])[:, np.newaxis]
+        for target in targets:
+            target_waveform = waveform.generate_waveform(target, self.amplitude_lengths, slope_lengths=self.slope_lengths)
+            waveform_length = len(target_waveform)
+            target_waveform = target_waveform[:, np.newaxis]
+            # targets_waveform.append(targets_waveform)
+            if targets_waveform.shape == (0, 1):
+                targets_waveform = np.concatenate((targets_waveform, target_waveform))
+            else:
+                targets_waveform = np.vstack((targets_waveform, target_waveform))
+        return targets_waveform.reshape(len(targets), waveform_length, 1)
+
+
+class VCDimensionException(Exception):
+    """Exception: It does not exist an implementation of such VC Dimension."""
+    pass
