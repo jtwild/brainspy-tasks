@@ -1,5 +1,5 @@
 {
-    "results_base_dir": "tmp/output/",
+    "results_base_dir": "tmp/output/capacity_test_ga/",
     "from_dimension": 4,
     "to_dimension": 5,
     "max_opportunities": 3,
@@ -13,7 +13,7 @@
     },
     "algorithm_configs": {
             "algorithm": "genetic",
-            "results_path": "tmp/output/genetic_algorithm/",
+            "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
             "experiment_name": "TEST",
             "stop_threshold": 0.9,
             "processor": {
