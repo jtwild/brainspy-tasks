@@ -9,11 +9,12 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 """
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.utils.pytorch import TorchUtils
 import bspyinstr.utils.waveform as waveform
-from bspytasks.utils.accuracy import perceptron
+from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspytasks.benchmarks.capacity.interface import VCDimDataManager
 
 
@@ -30,72 +31,95 @@ class VCDimensionTest():
         self.amplitude_lengths = configs['encoder']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['encoder']['waveform']['slope_lengths']
         if self.algorithm_configs['algorithm'] == 'gradient_descent' and self.algorithm_configs['processor']['platform'] == 'simulation':
-            self.accuracy = self.get_accuracy_for_torch
+            self.find_label_core = self.find_label_with_torch
+            self.ignore_label = self.ignore_label_with_torch
         else:
-            self.accuracy = self.get_accuracy
+            self.find_label_core = self.find_label_with_numpy
+            self.ignore_label = self.ignore_label_with_numpy
         self.data_manager = VCDimDataManager(configs)
 
     def init_test(self, vc_dimension):
         self.vc_dimension = vc_dimension
         self.threshold = self.calculate_threshold()
-        self.readable_inputs, self.transformed_inputs = self.data_manager.get_inputs(vc_dimension)
-        self.readable_targets, self.transformed_targets = self.data_manager.get_targets(vc_dimension)
-        if self.algorithm_configs['algorithm'] == 'gradient_descent' and self.algorithm_configs['processor']['platform'] == 'simulation':
-            self.mask = None
-        else:
-            self.mask = waveform.generate_mask(self.readable_targets[1], self.amplitude_lengths, slope_lengths=self.slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
+        self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension)
+        # if self.algorithm_configs['algorithm'] == 'gradient_descent' and self.algorithm_configs['processor']['platform'] == 'simulation':
+        #    self.mask = None
+        # else:
+        #    self.mask = mask
 
-        self.init_excel_file()
+        self.init_excel_file(readable_targets)
+        self.excel_file.insert_column('label', readable_targets)
+        self.excel_file.insert_column('encoded_label', transformed_targets)
+        self.excel_file.insert_column('found', found)
 
-    def init_excel_file(self):
-        column_names = ['gate', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance']
-        self.excel_file.init_data(self.readable_targets, column_names)
+    def init_excel_file(self, readable_targets):
+        column_names = ['label', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'encoded_label']
+        self.excel_file.init_data(readable_targets, column_names)
 
     def calculate_threshold(self):
         return 1 - (self.threshold_parameter / self.vc_dimension)
 
-    def run_test(self, binary_labels=np.array([])):
-        if binary_labels.size == 0:
-            binary_labels = self.readable_targets
-        for i in range(len(binary_labels)):
-            self.find_label(i)
+    def run_test(self):
+
+        data = self.excel_file.data.loc[self.excel_file.data['found'] == False]  # noqa: E712
+        print('---------------------------------------------')
+        for _, row in data.iterrows():
+            print(" Finding Label: " + str(row['label']))
+            if self.find_label(row['label'], row['encoded_label']):
+                print(' Label found.')
+            else:
+                print(' Label NOT found.')
+            print('---------------------------------------------')
 
     def get_not_found_gates(self):
-        return self.excel_file.data['gate'].loc[self.excel_file.data['found'] == False]  # noqa: E712
+        return self.excel_file.data['label'].loc[self.excel_file.data['found'] == False].size  # noqa: E712
 
-    def find_label(self, index):
-        label = self.readable_targets[index]
+    def find_label(self, label, encoded_label):
         if len(np.unique(label)) == 1:
             print('Label ', label, ' ignored')
-            excel_results = self.ignore_label({})
+            excel_results = self.ignore_label(encoded_label)
         else:
-            print('Finding classifier ', label)
 
-            algorithm_data = self.algorithm.optimize(self.transformed_inputs, self.transformed_targets[index], mask=self.mask)
-
-            algorithm_data.judge()
-            excel_results = algorithm_data.results
-            excel_results['accuracy'], _, _ = self.accuracy(algorithm_data.results['best_output'][algorithm_data.results['mask']], self.transformed_targets[index][algorithm_data.results['mask']])
+            excel_results = self.find_label_core(encoded_label)
             excel_results['found'] = excel_results['accuracy'] >= self.threshold
-
-        excel_results['gate'] = label
+        excel_results['label'] = label
         self.excel_file.add_result(label, excel_results)
-        # column_names = ['gate', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance']
-        # GA tiene un stopping criteria
-        # Se define a traves de la correlacion
-        # La correlacion tiene que ser super alta debe ser 95
+        return excel_results['found']
 
-        # row = {'gate': label, 'found': found}
+    def optimize(self, encoded_label):
+        algorithm_data = self.algorithm.optimize(self.transformed_inputs, encoded_label, mask=self.mask)
+        algorithm_data.judge()
+        excel_results = algorithm_data.results
 
-    def get_accuracy(self, best_output, target):
-        return perceptron(best_output, target)
+        return excel_results
 
-    def get_accuracy_for_torch(self, best_output, target):
-        # best_output = TorchUtils.get_numpy_from_tensor(best_output)
-        target = TorchUtils.get_numpy_from_tensor(target)
-        return perceptron(best_output, target)
+    def find_label_with_numpy(self, encoded_label):
+        excel_results = self.optimize(encoded_label)
+        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
+        excel_results['encoded_label'] = encoded_label
+        return excel_results
 
-    def ignore_label(self, excel_results):
+    def find_label_with_torch(self, encoded_label):
+        encoded_label = TorchUtils.format_tensor(encoded_label)
+        excel_results = self.optimize(encoded_label)
+        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
+        excel_results['encoded_label'] = encoded_label.cpu()
+        # excel_results['targets'] = excel_results
+        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
+        return excel_results
+
+    def ignore_label_with_torch(self, encoded_label):
+        excel_results = self.ignore_label_core()
+        excel_results['encoded_label'] = encoded_label.cpu()
+        return excel_results
+
+    def ignore_label_with_numpy(self, encoded_label):
+        excel_results = self.ignore_label_core()
+        excel_results['encoded_label'] = encoded_label
+        return excel_results
+
+    def ignore_label_core(self):
+        excel_results = {}
         excel_results['control_voltages'] = np.nan
         excel_results['best_output'] = np.nan
         excel_results['best_performance'] = np.nan
