@@ -8,12 +8,14 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 @author: hruiz and ualegre
 """
 
+import os
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.utils.pytorch import TorchUtils
 import bspyinstr.utils.waveform as waveform
+from bspyalgo.utils.io import create_directory
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspytasks.benchmarks.capacity.interface import VCDimDataManager
 
@@ -81,6 +83,7 @@ class VCDimensionTest():
         else:
             excel_results = self.find_label_core(encoded_label)
             excel_results['found'] = excel_results['accuracy'] >= self.threshold
+
         excel_results['label'] = label
         self.excel_file.add_result(label, excel_results)
         return excel_results['found']
@@ -132,10 +135,16 @@ class VCDimensionTest():
         aux.index = range(len(aux.index))
         tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(self.threshold)
         self.excel_file.save_tab(tab_name, data=aux)
-        self.save_plot()
+        self.save_plots()
         return self.oracle()
 
-    def save_plot(self):  # pylint: disable=E0202
+    def save_plots(self):  # pylint: disable=E0202
+        self.plot_results()
+        for _, row in self.excel_file.data.iterrows():
+            if len(np.unique(row['label'])) != 1:
+                self.plot_output(row)
+
+    def plot_results(self):
         plt.figure()
         fitness_classifier = self.excel_file.data['best_performance'].to_numpy()
         plt.plot(fitness_classifier, self.excel_file.data['accuracy'].to_numpy(), 'o')
@@ -144,9 +153,29 @@ class VCDimensionTest():
                  self.threshold * np.ones_like(np.linspace(0, 1)), '-k')
         plt.xlabel('Fitness / Performance')
         plt.ylabel('Accuracy')
-        plt.savefig(self.output_dir + 'dimension_' + str(self.vc_dimension) + self.test_data_plot_name)
+        path = self.output_dir + 'dimension_' + str(self.vc_dimension)
+        create_directory(path)
+        plt.savefig(os.path.join(path, self.test_data_plot_name))
         if self.show_plots:
             plt.show()
+
+    def plot_output(self, row):
+        plt.figure()
+        plt.plot(row['best_output'][self.mask])
+        plt.plot(row['encoded_label'][self.mask])
+        plt.xlabel('Current (nA)')
+        plt.ylabel('Time')
+        path = os.path.join(self.output_dir + 'dimension_' + str(self.vc_dimension), self.is_found(row['found']))
+        create_directory(path)
+        plt.savefig(os.path.join(path, str(row['label']) + '_' + self.test_data_plot_name))
+        if self.show_plots:
+            plt.show()
+
+    def is_found(self, found):
+        if found:
+            return 'FOUND'
+        else:
+            return 'NOT_FOUND'
 
     def oracle(self):
         return self.excel_file.data.loc[self.excel_file.data['found'] == False].size == 0  # noqa: E712
