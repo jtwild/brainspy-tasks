@@ -30,10 +30,10 @@ class CapacityTest():
             opportunity = 0
             not_found = np.array([])
             while True:
-                self.vcdimension_test.run_test(binary_labels=not_found)
+                self.vcdimension_test.run_test()
                 not_found = self.vcdimension_test.get_not_found_gates()
                 opportunity += 1
-                if (not_found.size == 0) or (opportunity >= self.configs['max_opportunities']):
+                if (not_found < 1) or (opportunity >= self.configs['max_opportunities']):
                     break
             results[str(self.current_dimension)] = self.vcdimension_test.close_test()
             if not results[str(self.current_dimension)] or not self.next_vcdimension():
