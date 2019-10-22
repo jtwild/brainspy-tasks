@@ -2,8 +2,10 @@ name: bspytasks
 dependencies:
    - python=3.6
    - pip
+   - git
    - pip:
      - git+https://github.com/BraiNEdarwin/brainspy-instruments.git
+     - git+https://github.com/BraiNEdarwin/brainspy-processors.git
      - git+https://github.com/BraiNEdarwin/brainspy-algorithms.git
      - numpy
      - pandas
