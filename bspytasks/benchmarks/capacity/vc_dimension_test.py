@@ -79,7 +79,6 @@ class VCDimensionTest():
             print('Label ', label, ' ignored')
             excel_results = self.ignore_label(encoded_label)
         else:
-
             excel_results = self.find_label_core(encoded_label)
             excel_results['found'] = excel_results['accuracy'] >= self.threshold
         excel_results['label'] = label
