@@ -14,6 +14,13 @@ class VCDimDataManager():
         else:
             self.use_torch = False
 
+    def get_data(self, vc_dimension):
+        readable_inputs, transformed_inputs = self.get_inputs(vc_dimension)
+        readable_targets, transformed_targets = self.get_targets(vc_dimension)
+        mask = waveform.generate_mask(readable_targets[1], self.amplitude_lengths, slope_lengths=self.slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
+        readable_targets, transformed_targets, found = self.get_dictionaries(readable_inputs, transformed_inputs, readable_targets, transformed_targets)
+        return readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask
+
     def get_inputs(self, vc_dimension):
         readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:
@@ -24,6 +31,21 @@ class VCDimDataManager():
             transformed_inputs = TorchUtils.get_tensor_from_numpy(transformed_inputs)
 
         return readable_inputs, transformed_inputs
+
+    def get_dictionaries(self, readable_inputs, transformed_inputs, readable_targets, transformed_targets):
+        readable_targets_dict = {}
+        transformed_targets_dict = {}
+        found_dict = {}
+
+        for i in range(len(readable_targets)):
+            key = str(readable_targets[i])
+            readable_targets_dict[key] = readable_targets[i]
+            transformed_targets_dict[key] = transformed_targets[i]
+            found_dict[key] = False
+            # readable_inputs_dict[key] = readable_inputs[i]
+            # transformed_inputs_dict[key] = transformed_inputs[i]
+
+        return readable_targets_dict, transformed_targets_dict, found_dict
 
     def get_targets(self, vc_dimension):
         readable_targets = self.generate_test_targets(vc_dimension)
