@@ -1,5 +1,5 @@
 import numpy as np
-import bspyinstr.utils.waveform as waveform
+import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
 
 

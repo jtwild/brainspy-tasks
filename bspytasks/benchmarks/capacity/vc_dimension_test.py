@@ -10,11 +10,9 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 
 import os
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.utils.pytorch import TorchUtils
-import bspyinstr.utils.waveform as waveform
 from bspyalgo.utils.io import create_directory
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspytasks.benchmarks.capacity.interface import VCDimDataManager
