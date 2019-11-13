@@ -6,8 +6,8 @@ from bspyproc.utils.pytorch import TorchUtils
 class VCDimDataManager():
 
     def __init__(self, configs):
-        self.amplitude_lengths = configs['encoder']['waveform']['amplitude_lengths']
-        self.slope_lengths = configs['encoder']['waveform']['slope_lengths']
+        self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
+        self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
         self.use_waveform = True
         if configs['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
