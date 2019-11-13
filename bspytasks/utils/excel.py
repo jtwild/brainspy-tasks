@@ -1,9 +1,15 @@
+import os
 import pandas as pd
+from openpyxl import load_workbook
 
 
 class ExcelFile():
     def __init__(self, file_path):
-        self.writer = pd.ExcelWriter(file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            os.remove(file_path)
+        self.file_path = file_path
+        self.writer = None
+        # self.writer = pd.ExcelWriter(file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
 
     def init_data(self, index, column_names):
         self.data = pd.DataFrame(index=pd.Series(map(str, index)), columns=column_names)
@@ -17,8 +23,24 @@ class ExcelFile():
         else:
             aux = data
         aux.to_excel(self.writer, sheet_name=tab_name)
+        self.writer.save()
 
-    def save_file(self):
+    def reset(self):
+        if self.writer is not None:
+            self.close_file()
+        self.open_file()
+
+    def open_file(self):
+        book = None
+        if os.path.exists(self.file_path) and os.path.isfile(self.file_path):
+            book = load_workbook(self.file_path)
+        self.writer = pd.ExcelWriter(self.file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
+        if book is not None:
+            self.writer.book = book
+            self.writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+
+    def close_file(self):
+        self.writer.save()
         self.writer.close()
 
     def add_result(self, label, results):
