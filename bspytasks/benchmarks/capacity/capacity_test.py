@@ -23,7 +23,7 @@ class CapacityTest():
 
     def run_test(self):
         results = {}
-
+        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', data=self.configs)
         while True:
             print('==== VC Dimension %d ====' % self.current_dimension)
             self.vcdimension_test.init_test(self.current_dimension)
@@ -36,12 +36,11 @@ class CapacityTest():
                 if (not_found < 1) or (opportunity >= self.configs['max_opportunities']):
                     break
             results[str(self.current_dimension)] = self.vcdimension_test.close_test()
-            if not results[str(self.current_dimension)] or not self.next_vcdimension():
+            if not self.next_vcdimension():  # not results[str(self.current_dimension)] or
                 return self.close_test(results)
 
     def close_test(self, results):
-        self.excel_file.save_file()
-        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', data=self.configs)
+        self.excel_file.close_file()
         self.results = results
         return results
 
@@ -54,7 +53,7 @@ class CapacityTest():
 
 
 if __name__ == '__main__':
-    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/capacity_test_template_ga.json')
+    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/capacity_test_template_ga_device.json')
 
     test = CapacityTest(capacity_test_configs)
     test.run_test()
