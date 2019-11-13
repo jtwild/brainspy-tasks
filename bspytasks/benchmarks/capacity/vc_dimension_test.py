@@ -22,14 +22,14 @@ class VCDimensionTest():
 
     def __init__(self, configs, excel_file):
         self.algorithm_configs = configs['algorithm_configs']
-        self.algorithm = get_algorithm(configs['algorithm_configs'])
+        # self.algorithm = get_algorithm(configs['algorithm_configs'])
         self.output_dir = configs['results_base_dir']
         self.test_data_plot_name = '_plot.png'
         self.excel_file = excel_file
         self.threshold_parameter = configs['threshold_parameter']
         self.show_plots = configs['show_plots']
-        self.amplitude_lengths = configs['encoder']['waveform']['amplitude_lengths']
-        self.slope_lengths = configs['encoder']['waveform']['slope_lengths']
+        self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
+        self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
         if self.algorithm_configs['algorithm'] == 'gradient_descent' and self.algorithm_configs['processor']['platform'] == 'simulation':
             self.find_label_core = self.find_label_with_torch
             self.ignore_label = self.ignore_label_with_torch
@@ -46,7 +46,8 @@ class VCDimensionTest():
         #    self.mask = None
         # else:
         #    self.mask = mask
-
+        self.algorithm_configs['processor']['shape'] = self.transformed_inputs.shape[0]
+        self.algorithm = get_algorithm(self.algorithm_configs)
         self.init_excel_file(readable_targets)
         self.excel_file.insert_column('label', readable_targets)
         self.excel_file.insert_column('encoded_label', transformed_targets)
@@ -55,6 +56,7 @@ class VCDimensionTest():
     def init_excel_file(self, readable_targets):
         column_names = ['label', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'encoded_label']
         self.excel_file.init_data(readable_targets, column_names)
+        self.excel_file.reset()
 
     def calculate_threshold(self):
         return 1 - (self.threshold_parameter / self.vc_dimension)
@@ -134,7 +136,14 @@ class VCDimensionTest():
         tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(self.threshold)
         self.excel_file.save_tab(tab_name, data=aux)
         self.save_plots()
+        self.close_algorithm()
         return self.oracle()
+
+    def close_algorithm(self):
+        try:
+            self.algorithm.close()
+        except AttributeError:
+            print('There is no closing function for the current algorithm configuration. Skipping.')
 
     def save_plots(self):  # pylint: disable=E0202
         self.plot_results()
