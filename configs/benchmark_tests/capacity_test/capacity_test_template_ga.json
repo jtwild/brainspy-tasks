@@ -5,12 +5,6 @@
     "max_opportunities": 100,
     "threshold_parameter": 0.5,
     "show_plots": false,
-    "encoder":{
-        "waveform":{
-            "amplitude_lengths": 30,
-            "slope_lengths": 100
-        }
-    },
     "algorithm_configs": {
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
@@ -24,7 +18,11 @@
                       "torch_model_path": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
-                      "amplification": 10.0
+                      "amplification": 10.0,
+                      "waveform":{
+                        "amplitude_lengths": 30,
+                        "slope_lengths": 100
+                      }
             },
             "hyperparameters": {
                               "mutationrate": 0.1,
