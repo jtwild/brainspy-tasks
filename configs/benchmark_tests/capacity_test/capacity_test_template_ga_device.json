@@ -23,6 +23,10 @@
                       "waveform":{
                         "amplitude_lengths": 100,
                         "slope_lengths": 50
+                      },
+                      "driver": {
+                        "driver_type" : "remote",
+                        "uri": "PYRO:obj_bee07f156f5e4ea2ae3e5e18d0d7ebbf@192.168.1.5:8081"
                       }
             },
             "hyperparameters": {
