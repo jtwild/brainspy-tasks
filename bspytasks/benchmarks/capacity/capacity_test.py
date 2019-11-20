@@ -5,7 +5,7 @@ Created on Thu Nov 15 16:32:25 2018
 This script generates all binary assignments of N elements.
 @author: hruiz and ualegre
 """
-from bspytasks.benchmarks.capacity.vc_dimension_test import VCDimensionTest
+from bspytasks.tasks.vcdim.vc_dimension_test import VCDimensionTest
 from bspytasks.utils.excel import ExcelFile
 from bspyalgo.utils.io import save, load_configs
 
@@ -23,7 +23,7 @@ class CapacityTest():
 
     def run_test(self):
         results = {}
-        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', data=self.configs)
+        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', overwrite=False, data=self.configs)
         while True:
             print('==== VC Dimension %d ====' % self.current_dimension)
             self.vcdimension_test.init_test(self.current_dimension)
@@ -53,7 +53,7 @@ class CapacityTest():
 
 
 if __name__ == '__main__':
-    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/capacity_test_template_ga_device.json')
+    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/capacity_test_template_gd.json')
 
     test = CapacityTest(capacity_test_configs)
     test.run_test()
