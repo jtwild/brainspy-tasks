@@ -15,7 +15,7 @@
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "dnpu",
-                      "torch_model_path": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
+                      "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
                       "amplification": 10.0,
@@ -25,7 +25,7 @@
                     }
             },
             "hyperparameters": {
-                "nr_epochs": 10000,
+                "nr_epochs": 1500,
                 "batch_size": 128,
                 "learning_rate": 0.007,
                 "save_interval": 100
