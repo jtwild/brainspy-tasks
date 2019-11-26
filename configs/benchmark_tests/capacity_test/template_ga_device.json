@@ -2,31 +2,36 @@
     "results_base_dir": "tmp/output/capacity_test_ga/",
     "from_dimension": 4,
     "to_dimension": 6,
-    "max_opportunities": 100,
+    "max_opportunities": 3,
     "threshold_parameter": 0.5,
     "show_plots": false,
     "algorithm_configs": {
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
             "experiment_name": "TEST",
-            "stop_threshold": 0.9,
+            "stop_threshold": 0.93,
             "checkpoints": false,
             "processor": {
-                      "platform": "simulation",
-                      "simulation_type": "neural_network",
-                      "network_type": "device_model",
-                      "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
-                      "input_indices": [0, 1],
+                      "platform": "hardware",
+                      "setup_type": "cdaq_to_nidaq",
+                      "input_channels" : [0,1,2,3,4,5,6],
+                      "output_channels" : [0],
+                      "sampling_frequency": 5000,
+                      "input_indices": [1, 5],
                       "input_electrode_no": 7,
-                      "amplification": 10.0,
+                      "amplification": 100.0,
                       "waveform":{
-                        "amplitude_lengths": 30,
-                        "slope_lengths": 100
+                        "amplitude_lengths": 100,
+                        "slope_lengths": 10
+                      },
+                      "driver": {
+                        "driver_type" : "remote",
+                        "uri": "PYRO:obj_bee07f156f5e4ea2ae3e5e18d0d7ebbf@192.168.1.5:8081"
                       }
             },
             "hyperparameters": {
                               "mutationrate": 0.1,
-                              "epochs": 1000,
+                              "epochs": 80,
                               "fitness_function_type": "corrsig_fit",
                               "seed": null,
                               "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],
