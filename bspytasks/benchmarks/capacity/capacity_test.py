@@ -23,7 +23,7 @@ class CapacityTest():
 
     def run_test(self):
         results = {}
-        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', overwrite=False, data=self.configs)
+        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
         while True:
             print('==== VC Dimension %d ====' % self.current_dimension)
             self.vcdimension_test.init_test(self.current_dimension)
@@ -53,7 +53,7 @@ class CapacityTest():
 
 
 if __name__ == '__main__':
-    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/capacity_test_template_gd.json')
+    capacity_test_configs = load_configs('configs/benchmark_tests/capacity_test/template_gd.json')
 
     test = CapacityTest(capacity_test_configs)
     test.run_test()

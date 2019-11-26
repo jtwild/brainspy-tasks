@@ -5,6 +5,7 @@
     "max_opportunities": 100,
     "threshold_parameter": 0.5,
     "show_plots": false,
+    "overwrite_results": true, 
     "algorithm_configs": {
             "algorithm": "gradient_descent",
             "results_path": "tmp/output/capacity_test_gd/gradient_algorithm/",
