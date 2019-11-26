@@ -4,9 +4,12 @@
 # Temporal input/output files of the application
 tmp/*
 
-# Configuration templates
-./configs/ga/ga_configs_template.json
-./configs/gd/gd_configs_template.json
+# Default configuration templates
+configs/benchmark_tests/capacity_test/capacity_test_template_ga.json
+configs/benchmark_tests/capacity_test/capacity_test_template_ga_device.json
+configs/benchmark_tests/capacity_test/capacity_test_template_gd.json
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
