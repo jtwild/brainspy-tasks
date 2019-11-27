@@ -40,7 +40,7 @@ class VCDimDataManager():
         for i in range(len(readable_targets)):
             key = str(readable_targets[i])
             readable_targets_dict[key] = readable_targets[i]
-            transformed_targets_dict[key] = transformed_targets[i]
+            transformed_targets_dict[key] = transformed_targets[i]  # , :]  # transformed_targets[i]
             found_dict[key] = False
             # readable_inputs_dict[key] = readable_inputs[i]
             # transformed_inputs_dict[key] = transformed_inputs[i]

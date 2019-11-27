@@ -11,11 +11,9 @@ If successful (measured by a threshold on the correlation and by the perceptron 
 import os
 import numpy as np
 from matplotlib import pyplot as plt
-from bspyalgo.algorithm_manager import get_algorithm
-from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.io import create_directory
-from bspyalgo.utils.performance import perceptron, corr_coeff
-from bspytasks.benchmarks.capacity.interface import VCDimDataManager
+from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
+from bspytasks.tasks.boolean.gate_finder import BooleanGateTask
 
 
 class VCDimensionTest():
@@ -30,12 +28,7 @@ class VCDimensionTest():
         self.show_plots = configs['show_plots']
         self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
-        if self.algorithm_configs['algorithm'] == 'gradient_descent' and self.algorithm_configs['processor']['platform'] == 'simulation':
-            self.find_label_core = self.find_label_with_torch
-            self.ignore_label = self.ignore_label_with_torch
-        else:
-            self.find_label_core = self.find_label_with_numpy
-            self.ignore_label = self.ignore_label_with_numpy
+
         self.data_manager = VCDimDataManager(configs)
 
     def init_test(self, vc_dimension):
@@ -47,7 +40,7 @@ class VCDimensionTest():
         # else:
         #    self.mask = mask
         self.algorithm_configs['processor']['shape'] = self.transformed_inputs.shape[0]
-        self.algorithm = get_algorithm(self.algorithm_configs)
+        self.boolean_gate_task = BooleanGateTask(self.algorithm_configs)
         self.init_excel_file(readable_targets)
         self.excel_file.insert_column('label', readable_targets)
         self.excel_file.insert_column('encoded_label', transformed_targets)
@@ -73,62 +66,13 @@ class VCDimensionTest():
                 print(' Label NOT found.')
             print('---------------------------------------------')
 
-    def get_not_found_gates(self):
-        return self.excel_file.data['label'].loc[self.excel_file.data['found'] == False].size  # noqa: E712
-
     def find_label(self, label, encoded_label):
-        if len(np.unique(label)) == 1:
-            print('Label ', label, ' ignored')
-            excel_results = self.ignore_label(encoded_label)
-        else:
-            excel_results = self.find_label_core(encoded_label)
-            excel_results['found'] = excel_results['accuracy'] >= self.threshold
-
-        excel_results['label'] = label
+        excel_results = self.boolean_gate_task.find_label(self.transformed_inputs, label, encoded_label, self.mask, self.threshold)
         self.excel_file.add_result(label, excel_results)
         return excel_results['found']
 
-    def optimize(self, encoded_label):
-        algorithm_data = self.algorithm.optimize(self.transformed_inputs, encoded_label, mask=self.mask)
-        algorithm_data.judge()
-        excel_results = algorithm_data.results
-
-        return excel_results
-
-    def find_label_with_numpy(self, encoded_label):
-        excel_results = self.optimize(encoded_label)
-        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
-        excel_results['encoded_label'] = encoded_label
-        return excel_results
-
-    def find_label_with_torch(self, encoded_label):
-        encoded_label = TorchUtils.format_tensor(encoded_label)
-        excel_results = self.optimize(encoded_label)
-        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
-        excel_results['encoded_label'] = encoded_label.cpu()
-        # excel_results['targets'] = excel_results
-        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
-        return excel_results
-
-    def ignore_label_with_torch(self, encoded_label):
-        excel_results = self.ignore_label_core()
-        excel_results['encoded_label'] = encoded_label.cpu()
-        return excel_results
-
-    def ignore_label_with_numpy(self, encoded_label):
-        excel_results = self.ignore_label_core()
-        excel_results['encoded_label'] = encoded_label
-        return excel_results
-
-    def ignore_label_core(self):
-        excel_results = {}
-        excel_results['control_voltages'] = np.nan
-        excel_results['best_output'] = np.nan
-        excel_results['best_performance'] = np.nan
-        excel_results['accuracy'] = np.nan
-        excel_results['correlation'] = np.nan
-        excel_results['found'] = True
-        return excel_results
+    def get_not_found_gates(self):
+        return self.excel_file.data['label'].loc[self.excel_file.data['found'] == False].size  # noqa: E712
 
     def close_test(self):
         aux = self.excel_file.data.copy()
@@ -166,18 +110,6 @@ class VCDimensionTest():
         if self.show_plots:
             plt.show()
 
-    def plot_output(self, row):
-        plt.figure()
-        plt.plot(row['best_output'][self.mask])
-        plt.plot(row['encoded_label'][self.mask])
-        plt.xlabel('Current (nA)')
-        plt.ylabel('Time')
-        path = os.path.join(self.output_dir + 'dimension_' + str(self.vc_dimension), self.is_found(row['found']))
-        create_directory(path)
-        plt.savefig(os.path.join(path, str(row['label']) + '_' + self.test_data_plot_name))
-        if self.show_plots:
-            plt.show()
-
     def is_found(self, found):
         if found:
             return 'FOUND'
@@ -186,6 +118,11 @@ class VCDimensionTest():
 
     def oracle(self):
         return self.excel_file.data.loc[self.excel_file.data['found'] == False].size == 0  # noqa: E712
+
+    def plot_output(self, row):
+        path = os.path.join(self.output_dir + 'dimension_' + str(self.vc_dimension), self.is_found(row['found']))
+        create_directory(path)
+        self.boolean_gate_task.plot_gate(row, self.mask, self.show_plots, os.path.join(path, str(row['label']) + '_' + self.test_data_plot_name))
 
     # def format_genes(self):
     #     for i in range(len(self.genes_classifier)):
