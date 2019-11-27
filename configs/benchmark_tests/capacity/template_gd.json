@@ -26,7 +26,7 @@
                     }
             },
             "hyperparameters": {
-                "nr_epochs": 1500,
+                "nr_epochs": 750,
                 "batch_size": 128,
                 "learning_rate": 0.1,
                 "save_interval": 100,
