@@ -48,7 +48,7 @@ class VCDimensionTest():
 
     def init_excel_file(self, readable_targets):
         column_names = ['label', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'encoded_label']
-        self.excel_file.init_data(readable_targets, column_names)
+        self.excel_file.init_data(column_names, readable_targets)
         self.excel_file.reset()
 
     def calculate_threshold(self):
@@ -68,7 +68,7 @@ class VCDimensionTest():
 
     def find_label(self, label, encoded_label):
         excel_results = self.boolean_gate_task.find_label(self.transformed_inputs, label, encoded_label, self.mask, self.threshold)
-        self.excel_file.add_result(label, excel_results)
+        self.excel_file.add_result(excel_results, label)
         return excel_results['found']
 
     def get_not_found_gates(self):
@@ -110,17 +110,11 @@ class VCDimensionTest():
         if self.show_plots:
             plt.show()
 
-    def is_found(self, found):
-        if found:
-            return 'FOUND'
-        else:
-            return 'NOT_FOUND'
-
     def oracle(self):
         return self.excel_file.data.loc[self.excel_file.data['found'] == False].size == 0  # noqa: E712
 
     def plot_output(self, row):
-        path = os.path.join(self.output_dir + 'dimension_' + str(self.vc_dimension), self.is_found(row['found']))
+        path = os.path.join(self.output_dir + 'dimension_' + str(self.vc_dimension), self.boolean_gate_task.is_found(row['found']))
         create_directory(path)
         self.boolean_gate_task.plot_gate(row, self.mask, self.show_plots, os.path.join(path, str(row['label']) + '_' + self.test_data_plot_name))
 

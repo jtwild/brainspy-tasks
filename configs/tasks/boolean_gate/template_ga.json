@@ -1,4 +1,5 @@
 {
+  "algorithm_configs": {
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
             "experiment_name": "TEST",
@@ -12,7 +13,7 @@
                       "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
-                      "amplification": 1,
+                      "amplification": 100.0,
                       "shape": 80,
                       "waveform":{
                         "amplitude_lengths": 100,
@@ -31,4 +32,5 @@
                                               "trafo_function": null
                               }
             }
+  }
 }

@@ -75,21 +75,30 @@ class BooleanGateTask():
         plt.figure()
         plt.plot(row['best_output'][mask])
         plt.plot(row['encoded_label'][mask])
-        plt.xlabel('Current (nA)')
-        plt.ylabel('Time')
+        plt.ylabel('Current (nA)')
+        plt.xlabel('Time')
         if save_dir is not None:
             plt.savefig(save_dir)
         if show_plots:
             plt.show()
 
+    def is_found(self, found):
+        if found:
+            return 'FOUND'
+        else:
+            return 'NOT_FOUND'
+
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
+    from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
+
     configs = load_configs('configs/tasks/boolean_gate/template_ga.json')
+    data_manager = VCDimDataManager(configs)
+    test = BooleanGateTask(configs['algorithm_configs'])
+    readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask = data_manager.get_data(4)
 
-    # input_range = [[0, 0], [0, 1], [1, 0], [1, 1]]
-    # input_range_in_voltage = [[-1.2, -1.2], [-1.2, 0.6], [0.6, -1.2], [0.6, 0.6]]
-    # xor_target = [0, 1, 1, 0]
-
-    test = BooleanGateTask(configs)
-    test.find_label(input_range_in_voltage)
+    gate = '[0 1 1 0]'
+    excel_results = test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, 0.875)
+    print(f'Gate {gate} : ' + test.is_found(excel_results['found']))
+    test.plot_gate(excel_results, mask, True)
