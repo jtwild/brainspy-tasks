@@ -13,6 +13,7 @@
             "stop_threshold": 0.02,
             "checkpoints": true,
             "processor": {
+                      "architecture":"single_device",
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "dnpu",
