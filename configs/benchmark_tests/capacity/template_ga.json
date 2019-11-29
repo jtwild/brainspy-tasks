@@ -8,7 +8,7 @@
     "overwrite_results": true, 
     "algorithm_configs": {
             "algorithm": "genetic",
-            "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
+            "results_path": "tmp/output/capacity_test_ga/algorithm_results/",
             "experiment_name": "TEST",
             "stop_threshold": 0.91,
             "checkpoints": false,
