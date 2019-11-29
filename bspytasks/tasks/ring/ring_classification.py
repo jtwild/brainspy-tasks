@@ -65,7 +65,7 @@ class RingClassificationTask():
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
         return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def save_plot(self, inputs, targets, show_plot=False, save_dir=False):
+    def save_plot(self, inputs, targets, show_plot=False, save_dir=None):
         plt.figure()
         plt.plot(inputs)
         plt.plot(targets, 'k')
