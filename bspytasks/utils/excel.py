@@ -11,8 +11,11 @@ class ExcelFile():
         self.writer = None
         # self.writer = pd.ExcelWriter(file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
 
-    def init_data(self, index, column_names):
-        self.data = pd.DataFrame(index=pd.Series(map(str, index)), columns=column_names)
+    def init_data(self, column_names, index=None):
+        if index is None:
+            self.data = pd.DataFrame(columns=column_names)
+        else:
+            self.data = pd.DataFrame(index=pd.Series(map(str, index)), columns=column_names)
 
     def insert_column(self, column_name, column_data):
         self.data[column_name] = pd.Series(column_data, index=self.data.index)
@@ -43,5 +46,8 @@ class ExcelFile():
         self.writer.save()
         self.writer.close()
 
-    def add_result(self, label, results):
-        self.data.loc[str(label)] = pd.Series(results)
+    def add_result(self, results, label=None):
+        if label is None:
+            self.data.append(results, ignore_index=True)
+        else:
+            self.data.loc[str(label)] = pd.Series(results)
