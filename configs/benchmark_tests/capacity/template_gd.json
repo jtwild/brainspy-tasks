@@ -20,10 +20,10 @@
                       "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
-                      "amplification": 10.0,
+                      "amplification": 100.0,
                       "waveform":{
-                        "amplitude_lengths": 50,
-                        "slope_lengths": 10
+                        "amplitude_lengths": 10,
+                        "slope_lengths": 0
                     }
             },
             "hyperparameters": {
