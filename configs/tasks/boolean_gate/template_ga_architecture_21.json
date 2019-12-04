@@ -3,11 +3,12 @@
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/algorithm_results/",
             "experiment_name": "TEST",
-            "stop_threshold": 0.999,
+            "stop_threshold": 1,
             "checkpoints": false,
             "processor": {
                       "architecture": "device_architecture",
                       "architecture_type":"21",
+                      "batch_norm":true,
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "device_model",
@@ -20,7 +21,7 @@
                       }
             },
             "hyperparameters": {
-                              "mutationrate": 0.9,
+                              "mutationrate": 0.1,
                               "epochs": 100,
                               "fitness_function_type": "corrsig_fit",
                               "seed": null,

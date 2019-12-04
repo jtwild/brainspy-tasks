@@ -3,7 +3,7 @@
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/genetic_algorithm/",
             "experiment_name": "TEST",
-            "stop_threshold": 0.999,
+            "stop_threshold": 1,
             "checkpoints": false,
             "processor": {
                       "architecture": "single_device",
@@ -14,12 +14,12 @@
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
                       "waveform":{
-                        "amplitude_lengths": 100,
-                        "slope_lengths": 10
+                        "amplitude_lengths": 5,
+                        "slope_lengths": 0
                       }
             },
             "hyperparameters": {
-                              "mutationrate": 0.9,
+                              "mutationrate": 0.1,
                               "epochs": 150,
                               "fitness_function_type": "corrsig_fit",
                               "seed": null,

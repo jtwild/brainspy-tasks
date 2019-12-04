@@ -3,11 +3,12 @@
             "algorithm": "genetic",
             "results_path": "tmp/output/capacity_test_ga/algorithm_results/",
             "experiment_name": "TEST",
-            "stop_threshold": 0.91,
+            "stop_threshold": 1,
             "checkpoints": false,
             "processor": {
                       "architecture": "device_architecture",
                       "architecture_type":"221",
+                      "batch_norm":true,
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "device_model",
