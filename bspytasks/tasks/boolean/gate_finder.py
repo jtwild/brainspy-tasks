@@ -98,7 +98,14 @@ if __name__ == '__main__':
     test = BooleanGateTask(configs['algorithm_configs'])
     readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask = data_manager.get_data(4)
 
-    gate = '[0 1 1 0]'
-    excel_results = test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, 0.875)
-    print(f'Gate {gate} : ' + test.is_found(excel_results['found']))
+    gate = '[1 0 0 1]'
+    i = 0
+    while True:
+        excel_results = test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, 0.875)
+        print(f'Gate {gate} : ' + test.is_found(excel_results['found']))
+        test.plot_gate(excel_results, mask, show_plots=False, save_dir=f'./tmp/gate{i}.png')
+        i = i + 1
+        if excel_results['found']:
+            print('Exiting at attempt {i}')
+            break
     test.plot_gate(excel_results, mask, True)
