@@ -81,6 +81,7 @@ class BooleanGateTask():
             plt.savefig(save_dir)
         if show_plots:
             plt.show()
+        plt.close()
 
     def is_found(self, found):
         if found:
@@ -98,7 +99,7 @@ if __name__ == '__main__':
     test = BooleanGateTask(configs['algorithm_configs'])
     readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask = data_manager.get_data(4)
 
-    gate = '[1 0 0 1]'
+    gate = '[0 1 1 0]'
     i = 0
     while True:
         excel_results = test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, 0.875)
