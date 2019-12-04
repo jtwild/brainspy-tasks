@@ -15,7 +15,7 @@
             "checkpoints": false,
             "processor": {
                       "architecture": "device_architecture",
-                      "architecture_type":"221",
+                      "architecture_type":"21",
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "dnpu",
@@ -38,9 +38,9 @@
                       }
             },
             "hyperparameters": {
-              "nr_epochs": 3000,
-              "batch_size": 1320,
-              "learning_rate": 0.003,
+              "nr_epochs": 1500,
+              "batch_size": 128,
+              "learning_rate": 0.0003,
               "save_interval": 100,
               "loss_function": "corrsig"
           }
