@@ -30,7 +30,7 @@
                                     "waveform":{
                                         "amplitude_lengths": 10,
                                         "slope_lengths": 0,
-                                        "clipping_value": 3.55
+                                        "output_clipping_value": 3.55
                                     }
                         },                  
                         "checkpoints": {
