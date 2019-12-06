@@ -6,17 +6,17 @@ from bspyproc.utils.pytorch import TorchUtils
 class VCDimDataManager():
 
     def __init__(self, configs):
-        self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
-        self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
+        self.amplitude_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['amplitude_lengths']
+        self.slope_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['slope_lengths']
         self.use_waveform = True
-        if configs['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['algorithm_configs']['processor']['platform'] == 'simulation':
+        if configs['boolean_gate_test']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['boolean_gate_test']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
         else:
             self.use_torch = False
 
-    def get_data(self, vc_dimension):
+    def get_data(self, vc_dimension, verbose=True):
         readable_inputs, transformed_inputs = self.get_inputs(vc_dimension)
-        readable_targets, transformed_targets = self.get_targets(vc_dimension)
+        readable_targets, transformed_targets = self.get_targets(vc_dimension, verbose)
         mask = waveform.generate_mask(readable_targets[1], self.amplitude_lengths, slope_lengths=self.slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
         readable_targets, transformed_targets, found = self.get_dictionaries(readable_inputs, transformed_inputs, readable_targets, transformed_targets)
         return readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask
@@ -47,8 +47,8 @@ class VCDimDataManager():
 
         return readable_targets_dict, transformed_targets_dict, found_dict
 
-    def get_targets(self, vc_dimension):
-        readable_targets = self.generate_test_targets(vc_dimension)
+    def get_targets(self, vc_dimension, verbose=True):
+        readable_targets = self.generate_test_targets(vc_dimension, verbose)
         if self.use_waveform:
             transformed_targets = self.generate_targets_waveform(readable_targets)
         else:
@@ -93,15 +93,16 @@ class VCDimDataManager():
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
         return inputs_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def generate_test_targets(self, vc_dimension):
+    def generate_test_targets(self, vc_dimension, verbose=True):
         # length of list, i.e. number of binary targets
         binary_target_no = 2**vc_dimension
         assignments = []
         list_buf = []
 
         # construct assignments per element i
-        print('===' * vc_dimension)
-        print('ALL BINARY LABELS:')
+        if verbose:
+            print('===' * vc_dimension)
+            print('ALL BINARY LABELS:')
         level = int((binary_target_no / 2))
         while level >= 1:
             list_buf = []
@@ -113,8 +114,9 @@ class VCDimDataManager():
             level = int(level / 2)
 
         binary_targets = np.array(assignments).T
-        print(binary_targets)
-        print('===' * vc_dimension)
+        if verbose:
+            print(binary_targets)
+            print('===' * vc_dimension)
         return binary_targets
 
     def generate_targets_waveform(self, targets):

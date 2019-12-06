@@ -1,15 +1,31 @@
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.algorithm_manager import get_algorithm
+from bspyalgo.utils.io import create_directory
 
 
 class BooleanGateTask():
 
     def __init__(self, configs):
-        self.algorithm = get_algorithm(configs)
+        configs = self.load_directory_configs(configs)
+        self.algorithm = get_algorithm(configs['algorithm_configs'])
+        self.load_methods(configs['algorithm_configs'])
+        self.load_task_configs(configs)
+
+    def load_task_configs(self, configs):
+        self.show_plots = configs['show_plots']
+        self.base_dir = configs['results_dir']
+        self.max_attempts = configs['max_attempts']
+
+    def load_directory_configs(self, configs):
+        create_directory(configs['results_dir'], overwrite=configs['overwrite'])
+        configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
+        return configs
+
+    def load_methods(self, configs):
         if configs['algorithm'] == 'gradient_descent' and configs['processor']['platform'] == 'simulation':
             self.find_label_core = self.find_label_with_torch
             self.ignore_label = self.ignore_label_with_torch
@@ -22,12 +38,34 @@ class BooleanGateTask():
             print('Label ', label, ' ignored')
             excel_results = self.ignore_label(encoded_label)
         else:
-            excel_results = self.find_label_core(encoded_inputs, encoded_label, mask)
-            excel_results['found'] = excel_results['accuracy'] >= threshold
+            attempt = 1
+            print('==========================================================================================')
+            print(f"Gate {label}: ")
+            while True:
+                excel_results = self.find_label_core(encoded_inputs, encoded_label, mask)
+                excel_results['found'] = excel_results['accuracy'] >= threshold
+
+                print(f"Attempt {str(attempt)}: " + self.is_found(excel_results['found']).upper() + ", Accuracy: " + str(excel_results['accuracy']) + ", Best performance: " + str(excel_results['best_performance']))
+
+                if excel_results['found'] or attempt >= self.max_attempts:
+                    if excel_results['found']:
+                        print(f'VEREDICT: PASS - Gate was found successfully in {str(attempt)} attempt(s)')
+                    else:
+                        print(f'VEREDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
+                    print('==========================================================================================')
+                    self.plot_gate(excel_results, mask, show_plots=self.show_plots, save_dir=self.get_plot_dir(label, excel_results['found']))
+                    break
+                else:
+                    attempt += 1
 
         excel_results['label'] = label
 
         return excel_results
+
+    def get_plot_dir(self, label, found):
+        path = os.path.join(self.base_dir, self.is_found(found))
+        create_directory(path, overwrite=False)
+        return os.path.join(path, str(label) + '.png')
 
     def find_label_with_numpy(self, encoded_inputs, encoded_label, mask):
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
@@ -85,28 +123,26 @@ class BooleanGateTask():
 
     def is_found(self, found):
         if found:
-            return 'FOUND'
+            return 'found'
         else:
-            return 'NOT_FOUND'
+            return 'not_found'
+
+
+def find_gate(configs, gate, threshold, verbose=False):
+    data_manager = VCDimDataManager(configs)
+    test = BooleanGateTask(configs['boolean_gate_test'])
+    _, transformed_inputs, readable_targets, transformed_targets, _, mask = data_manager.get_data(4, verbose)
+
+    return test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, threshold)
 
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    configs = load_configs('configs/tasks/boolean_gate/template_ga.json')
-    data_manager = VCDimDataManager(configs)
-    test = BooleanGateTask(configs['algorithm_configs'])
-    readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask = data_manager.get_data(4)
-
+    configs = load_configs('configs/benchmark_tests/capacity/template_ga.json')
+    configs = configs['capacity_test']['vc_dimension_test']
     gate = '[0 1 1 0]'
-    i = 0
-    while True:
-        excel_results = test.find_label(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, 0.875)
-        print(f'Gate {gate} : ' + test.is_found(excel_results['found']))
-        test.plot_gate(excel_results, mask, show_plots=False, save_dir=f'./tmp/gate{i}.png')
-        i = i + 1
-        if excel_results['found']:
-            print('Exiting at attempt {i}')
-            break
-    test.plot_gate(excel_results, mask, True)
+    threshold = 0.875
+
+    find_gate(configs, gate, threshold)
