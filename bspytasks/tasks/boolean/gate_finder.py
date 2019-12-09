@@ -25,7 +25,7 @@ class BooleanGateTask():
 
     def load_directory_configs(self, configs):
         create_directory(configs['results_dir'], overwrite=configs['overwrite'])
-        configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
+        # configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
         return configs
 
     def load_methods(self, configs):

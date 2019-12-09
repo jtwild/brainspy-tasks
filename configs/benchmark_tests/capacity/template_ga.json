@@ -41,7 +41,7 @@
                                     },
                                     "checkpoints": {
                                         "use_checkpoints": true,
-                                        "save_dir": "checkpoints",
+                                        "save_dir": "tmp/output/ga/checkpoints",
                                         "save_interval": 5
                                     }
                           },
