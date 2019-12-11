@@ -10,10 +10,13 @@
     "show_plots": false, 
     "algorithm_configs": {
             "algorithm": "gradient_descent",
-            "results_path": "tmp/output/ring/genetic_algorithm/",
-            "experiment_name": "TEST",
-            "stop_threshold": -99999,
-            "checkpoints": false,
+            "hyperparameters": {
+              "nr_epochs": 1500,
+              "batch_size": 128,
+              "learning_rate": 0.007,
+              "loss_function": "fisher",
+              "stop_threshold": -99999
+            },
             "processor": {
                       "architecture": "single_device",
                       "platform": "simulation",
@@ -22,18 +25,17 @@
                       "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
-                      "amplification": 100.0,
                       "waveform":{
                         "amplitude_lengths": 10,
-                        "slope_lengths": 0
+                        "slope_lengths": 0,
+                        "output_clipping_value": 3.55                        
                       }
             },
-            "hyperparameters": {
-              "nr_epochs": 1500,
-              "batch_size": 128,
-              "learning_rate": 0.02,
-              "save_interval": 100,
-              "loss_function": "corrsig"
-          }
+            "checkpoints": {
+              "use_checkpoints": true,
+              "save_dir": "tmp/output/ring/checkpoints",
+              "save_interval": 5
+            }
+
     }
 }

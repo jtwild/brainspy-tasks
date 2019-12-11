@@ -48,8 +48,9 @@ class RingClassificationTask():
         inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
         targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
 
-        inputs = TorchUtils.get_tensor_from_numpy(inputs)
-        targets = TorchUtils.get_tensor_from_numpy(targets)
+        if self.configs['algorithm_configs']['processor']["simulation_type"] == 'neural_network':
+            inputs = TorchUtils.get_tensor_from_numpy(inputs)
+            targets = TorchUtils.get_tensor_from_numpy(targets)
 
         return inputs, targets, mask
 
@@ -111,5 +112,5 @@ class RingClassificationTask():
 
 
 if __name__ == '__main__':
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd.json'))
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
     task.run_task()
