@@ -6,15 +6,15 @@
       "vc_dimension_test":{
               "threshold_parameter": 0.5,
               "boolean_gate_test":{
-                          "max_attempts":3,
+                          "max_attempts":5,
                           "results_dir": "tmp/output/ga/",
-                          "show_plots": false,
+                          "show_plots": true,
                           "overwrite": true,
                           "algorithm_configs": {
                                     "algorithm": "genetic",
                                     "hyperparameters": {
                                                           "mutationrate": 0.1,
-                                                          "epochs": 150,
+                                                          "epochs": 500,
                                                           "fitness_function_type": "corrsig_fit",
                                                           "seed": null,
                                                           "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],
@@ -30,12 +30,12 @@
                                                   "platform": "simulation",
                                                   "simulation_type": "neural_network",
                                                   "network_type": "device_model",
-                                                  "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
-                                                  "input_indices": [0, 1],
+                                                  "torch_model_dict": "tmp/input/models/nn_test/trained_network.pt",
+                                                  "input_indices": [3, 4],
                                                   "input_electrode_no": 7,
                                                   "waveform":{
-                                                    "amplitude_lengths": 5,
-                                                    "slope_lengths": 0,
+                                                    "amplitude_lengths": 80,
+                                                    "slope_lengths": 20,
                                                     "output_clipping_value": 3.55
                                                   }
                                     },
@@ -46,20 +46,25 @@
                                     }
                           },
                           "validation":{
-                                  "processor": {
-                                                "architecture": "single_device",
-                                                "platform": "simulation",
-                                                "simulation_type": "neural_network",
-                                                "network_type": "device_model",
-                                                "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
-                                                "input_indices": [0, 1],
-                                                "input_electrode_no": 7,
-                                                "waveform":{
-                                                  "amplitude_lengths": 5,
-                                                  "slope_lengths": 0,
-                                                  "output_clipping_value": 3.55
-                                                }
-                                  }
+                                    "processor": {
+                                      "architecture":"single_device",
+                                      "platform": "hardware",
+                                      "setup_type": "cdaq_to_nidaq",
+                                      "input_channels" : [0,1,2,3,4,5,6],
+                                      "output_channels" : [0],
+                                      "sampling_frequency": 1000,
+                                      "input_indices": [3, 4],
+                                      "input_electrode_no": 7,
+                                      "amplification": 100.0,
+                                      "shape":420,
+                                      "waveform":{
+                                        "amplitude_lengths": 80,
+                                        "slope_lengths": 20
+                                      },
+                                      "driver": {
+                                        "driver_type" : "local"
+                                      }
+                            }
                           }
               }
       }

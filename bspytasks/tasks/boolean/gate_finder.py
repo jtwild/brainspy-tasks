@@ -15,8 +15,9 @@ class BooleanGateTask():
         self.algorithm = get_algorithm(configs['algorithm_configs'])
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
-        self.validation_processor_configs = configs['validation']['processor']
-        self.validation_processor = get_processor(configs['validation']['processor'])
+        if 'validation' in configs:
+            self.validation_processor_configs = configs['validation']['processor']
+            self.validation_processor = get_processor(configs['validation']['processor'])
 
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
@@ -134,7 +135,7 @@ class BooleanGateTask():
         print('==========================================================================================')
         print(f"Gate {gate} validation: ")
         y_predicted = self.validation_processor.get_output_(transformed_inputs, control_voltages)
-        error = ((target - y_predicted) ** 2).mean(axis=0)[0]
+        error = ((target[mask] - y_predicted[mask]) ** 2).mean()
         print(f'ERROR: {str(error)}')
         plot_gate_validation(y_predicted[mask], target[mask], show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, 'validation'))
         print('==========================================================================================')
