@@ -8,6 +8,9 @@ from bspyalgo.utils.io import create_directory
 from bspyproc.bspyproc import get_processor
 from bspyproc.utils.waveform import generate_slopped_plato
 
+MAX_CLIPPING_VALUE = np.array([1.0])
+MIN_CLIPPING_VALUE = np.array([1.5])
+
 
 class BooleanGateTask():
 
@@ -20,6 +23,8 @@ class BooleanGateTask():
             self.slopped_plato =generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], configs['validation']['processor']['shape'])[np.newaxis, :]
             self.validation_processor_configs = configs['validation']['processor']
             self.validation_processor = get_processor(configs['validation']['processor'])
+        else:
+            self.validation_processor_configs = None
 
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
@@ -127,6 +132,11 @@ class BooleanGateTask():
             plt.show()
         plt.close()
 
+    def clip(self, x, max_value, min_value):
+        x[x > max_value] = max_value
+        x[x > min_value] = min_value
+        return x
+
     def is_found(self, found):
         if found:
             return 'found'
@@ -136,6 +146,8 @@ class BooleanGateTask():
     def validate_gate(self, gate, transformed_inputs, control_voltages, target, mask):
         print('==========================================================================================')
         print(f"Gate {gate} validation: ")
+        transformed_inputs = self.clip(transformed_inputs, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
+        control_voltages = self.clip(control_voltages, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
         y_predicted = self.validation_processor.get_output_(transformed_inputs, control_voltages)
         error = ((target[mask] - y_predicted[mask]) ** 2).mean()
         print(f'ERROR: {str(error)}')
@@ -144,15 +156,22 @@ class BooleanGateTask():
         return error
 
 
-def find_single_gate(configs, gate, threshold, verbose=False, validate=False):
+def single_gate(configs, gate, threshold, verbose=False, validate=False, control_voltages=None, best_output=None):
     data_manager = VCDimDataManager(configs)
     test = BooleanGateTask(configs['boolean_gate_test'])
+    excel_results = None
     _, transformed_inputs, readable_targets, transformed_targets, _, mask = data_manager.get_data(4, verbose)
-
-    excel_results = test.find_gate(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, threshold)
+    if control_voltages is None and best_output is None:
+        excel_results = test.find_gate(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, threshold)
+        control_voltages = excel_results['control_voltages']
+        best_output = excel_results['best_output']
     if validate:
+<<<<<<< HEAD
         control_voltages = test.slopped_plato * excel_results['control_voltages'][:,np.newaxis]
         test.validate_gate(gate, transformed_inputs, control_voltages.T, excel_results['best_output'], mask)
+=======
+        test.validate_gate(gate, transformed_inputs, control_voltages, best_output, mask)
+>>>>>>> 50ea606ff77c6398b2bffac37e97f707650b8ff3
     return excel_results
 
 
@@ -169,13 +188,37 @@ def plot_gate_validation(output, target, show_plots, save_dir=None):
     plt.close()
 
 
+def find_single_gate(configs_path, gate):
+    configs = load_configs(configs_path)
+    configs = configs['capacity_test']['vc_dimension_test']
+    # gate = '[0 1 1 0]'
+    threshold = 0.95
+
+    result = single_gate(configs, gate, threshold, validate=False)
+
+    save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
+    save('numpy', configs['boolean_gate_test']['results_dir'], 'best_output', overwrite=False, data=result['best_output'])
+
+    print(f"Control voltages: {result['control_voltages']}")
+
+
+def validate_single_gate(configs_path,):
+    import os
+    configs = load_configs(configs_path)
+    configs = configs['capacity_test']['vc_dimension_test']
+
+    cv_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'control_voltages.npz')
+    bo_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'best_output.npz')
+    cv = np.load(cv_path)
+    bo = np.load(bo_path)
+
+    single_gate(configs, None, None, validate=True, control_voltages=cv['data'], best_output=bo['data'])
+
+
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
+    from bspyalgo.utils.io import save
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    configs = load_configs('configs/benchmark_tests/capacity/template_ga.json')
-    configs = configs['capacity_test']['vc_dimension_test']
-    gate = '[0 1 1 0]'
-    threshold = 0.875
-
-    find_single_gate(configs, gate, threshold, validate=True)
+    find_single_gate('configs/benchmark_tests/capacity/template_ga.json', '[0 1 1 0]')
+    validate_single_gate('configs/benchmark_tests/capacity/template_ga.json')
