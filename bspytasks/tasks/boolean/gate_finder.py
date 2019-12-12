@@ -166,12 +166,8 @@ def single_gate(configs, gate, threshold, verbose=False, validate=False, control
         control_voltages = excel_results['control_voltages']
         best_output = excel_results['best_output']
     if validate:
-<<<<<<< HEAD
         control_voltages = test.slopped_plato * excel_results['control_voltages'][:,np.newaxis]
         test.validate_gate(gate, transformed_inputs, control_voltages.T, excel_results['best_output'], mask)
-=======
-        test.validate_gate(gate, transformed_inputs, control_voltages, best_output, mask)
->>>>>>> 50ea606ff77c6398b2bffac37e97f707650b8ff3
     return excel_results
 
 
