@@ -3,8 +3,9 @@ import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
 
 
-ZERO = -0.7
-ONE = 0.7
+ZERO = -1.2
+ONE = 0.6
+QUARTER = (abs(ZERO) + abs(ONE)) / 4
 
 
 class VCDimDataManager():
@@ -68,16 +69,16 @@ class VCDimDataManager():
             if vc_dimension == 4:
                 return [[ZERO, ZERO, ONE, ONE], [ONE, ZERO, ONE, ZERO]]
             elif vc_dimension == 5:
-                return [[ZERO, ZERO, ONE, ONE, -0.35],
+                return [[ZERO, ZERO, ONE, ONE, -QUARTER],
                         [ONE, ZERO, ONE, ZERO, 0.0]]
             elif vc_dimension == 6:
-                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35],
+                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
                         [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
             elif vc_dimension == 7:
-                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35, 0.0],
+                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
                         [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
             elif vc_dimension == 8:
-                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35, 0.0, 0.0],
+                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
                         [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
             else:
                 raise VCDimensionException()
