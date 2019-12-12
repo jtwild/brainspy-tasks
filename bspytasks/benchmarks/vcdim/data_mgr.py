@@ -3,6 +3,10 @@ import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
 
 
+ZERO = -0.7
+ONE = 0.7
+
+
 class VCDimDataManager():
 
     def __init__(self, configs):
@@ -62,19 +66,19 @@ class VCDimDataManager():
         # @todo create a function that automatically generates non-linear inputs
         try:
             if vc_dimension == 4:
-                return [[-0.7, -0.7, 0.7, 0.7], [0.7, -0.7, 0.7, -0.7]]
+                return [[ZERO, ZERO, ONE, ONE], [ONE, ZERO, ONE, ZERO]]
             elif vc_dimension == 5:
-                return [[-0.7, -0.7, 0.7, 0.7, -0.35],
-                        [0.7, -0.7, 0.7, -0.7, 0.0]]
+                return [[ZERO, ZERO, ONE, ONE, -0.35],
+                        [ONE, ZERO, ONE, ZERO, 0.0]]
             elif vc_dimension == 6:
-                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35],
-                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0]]
+                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35],
+                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
             elif vc_dimension == 7:
-                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0],
-                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0]]
+                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35, 0.0],
+                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
             elif vc_dimension == 8:
-                return [[-0.7, -0.7, 0.7, 0.7, -0.35, 0.35, 0.0, 0.0],
-                        [0.7, -0.7, 0.7, -0.7, 0.0, 0.0, 1.0, -1.0]]
+                return [[ZERO, ZERO, ONE, ONE, -0.35, 0.35, 0.0, 0.0],
+                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
             else:
                 raise VCDimensionException()
         except VCDimensionException:
