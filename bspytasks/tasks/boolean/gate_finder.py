@@ -6,6 +6,7 @@ from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyalgo.utils.io import create_directory
 from bspyproc.bspyproc import get_processor
+from bspyproc.utils.waveform import generate_slopped_plato
 
 MAX_CLIPPING_VALUE = np.array([1.0])
 MIN_CLIPPING_VALUE = np.array([1.5])
@@ -19,6 +20,7 @@ class BooleanGateTask():
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
         if 'validation' in configs:
+            self.slopped_plato =generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], configs['validation']['processor']['shape'])[np.newaxis, :]
             self.validation_processor_configs = configs['validation']['processor']
             self.validation_processor = get_processor(configs['validation']['processor'])
         else:
@@ -164,7 +166,8 @@ def single_gate(configs, gate, threshold, verbose=False, validate=False, control
         control_voltages = excel_results['control_voltages']
         best_output = excel_results['best_output']
     if validate:
-        test.validate_gate(gate, transformed_inputs, control_voltages, best_output, mask)
+        control_voltages = test.slopped_plato * excel_results['control_voltages'][:,np.newaxis]
+        test.validate_gate(gate, transformed_inputs, control_voltages.T, excel_results['best_output'], mask)
     return excel_results
 
 
