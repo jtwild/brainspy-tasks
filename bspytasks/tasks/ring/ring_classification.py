@@ -25,7 +25,7 @@ class RingClassificationTask():
         self.algorithm = get_algorithm(configs['algorithm_configs'])
 
     def init_excel_file(self, readable_targets):
-        column_names = ['accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -90,10 +90,18 @@ class RingClassificationTask():
         targets = targets[mask].cpu().numpy()
         targets = targets[:, np.newaxis]
         excel_results['accuracy'], _, _ = perceptron(best_output, targets)
-        self.excel_file.add_result(excel_results)
+        del excel_results['processor']
         self.save_plot(best_output, targets, show_plot=True)
-        self.excel_file.close_file()
+        self.close_test(excel_results)
         return excel_results
+
+    def validate_task(self, control_voltages):
+        inputs, _, mask = self.get_ring_data_from_npz()
+
+    def close_test(self, results):
+        self.excel_file.add_result(results)
+        self.excel_file.save_tab('Ring problem')
+        self.excel_file.close_file()
 
     def find_label_with_numpy(self, encoded_inputs, encoded_label, mask):
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
@@ -113,4 +121,5 @@ class RingClassificationTask():
 
 if __name__ == '__main__':
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-    task.run_task()
+    result = task.run_task()
+    print(f"Control voltages: {result['control_voltages']}")

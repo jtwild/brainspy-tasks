@@ -48,6 +48,6 @@ class ExcelFile():
 
     def add_result(self, results, label=None):
         if label is None:
-            self.data.append(results, ignore_index=True)
+            self.data = self.data.append(results, ignore_index=True)
         else:
             self.data.loc[str(label)] = pd.Series(results)
