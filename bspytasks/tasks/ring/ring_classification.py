@@ -4,13 +4,14 @@ The only difference to the measurement scripts are on lines where the device is 
 
 '''
 import numpy as np
-
+import os
 from bspyalgo.algorithm_manager import get_algorithm
+from bspyproc.bspyproc import get_processor
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from matplotlib import pyplot as plt
 from bspytasks.utils.excel import ExcelFile
-from bspyalgo.utils.performance import perceptron
-from bspyalgo.utils.io import load_configs, save
+from bspyalgo.utils.performance import perceptron, corr_coeff
+from bspyalgo.utils.io import load_configs, save, create_directory
 from bspyproc.utils.pytorch import TorchUtils
 
 
@@ -19,13 +20,15 @@ class RingClassificationTask():
     def __init__(self, configs):
         self.configs = configs
         configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
-        self.excel_file = ExcelFile(configs['results_base_dir'] + 'capacity_test_results.xlsx')
+        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'], filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
+        self.excel_file = ExcelFile(os.path.join(self.configs['results_base_dir'], 'experiment_results.xlsx'))
+        self.init_excel_file()
         self.algorithm = get_algorithm(configs['algorithm_configs'])
         if 'validation' in configs:
             self.validation_processor = get_processor(configs['validation']['processor'])
 
-    def init_excel_file(self, readable_targets):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var']
+    def init_excel_file(self):
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -66,13 +69,15 @@ class RingClassificationTask():
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
         return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def save_plots(self, results, mask, show_plot=False):
+    def save_plots(self, results, mask, save_dir=None, show_plot=False):
         plt.figure()
         plt.plot(results['best_output'][mask])
-        plt.savefig(self.configs['results_base_dir'] + '/output_ring_classifier')
+        if save_dir is not None:
+            plt.savefig(os.path.join(save_dir, 'output_ring_classifier'))
         plt.figure()
         plt.plot(results['performance_history'])
-        plt.savefig(self.configs['results_base_dir'] + '/training_profile')
+        if save_dir is not None:
+            plt.savefig(os.path.join(save_dir, 'training_profile'))
         if show_plot:
             plt.show()
         plt.close()
@@ -84,23 +89,24 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        path = self.configs['results_base_dir']
-        save(mode='configs', path=path, filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
-        inputs, targets, mask = self.get_ring_data_from_npz()
-        self.init_excel_file(targets)
+        self.algorithm.reset_processor()
+        inputs, targets, mask = self.get_ring_data_from_npz(use_torch=self.configs["algorithm_configs"]["processor"]["simulation_type"] == 'neural_network')
+        # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
         best_output = excel_results['best_output'][mask]
         targets = targets[mask].cpu().numpy()
         targets = targets[:, np.newaxis]
+        excel_results['correlation'] = corr_coeff(best_output.T, targets.T)
         if self.configs["algorithm_configs"]['hyperparameters']["loss_function"] is "fisher":
             print("Using Fisher does not allow for perceptron accuracy decision.")
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
         excel_results = self.set_bn_stats(excel_results)
-
-        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"])
-        self.close_test(excel_results)
+        path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
+        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
+        self.excel_file.add_result(excel_results)
+        # self.close_test(excel_results)
         return excel_results
 
     def set_bn_stats(self, excel_results):
@@ -121,8 +127,7 @@ class RingClassificationTask():
 
         return output
 
-    def close_test(self, results):
-        self.excel_file.add_result(results)
+    def close_test(self):
         self.excel_file.save_tab('Ring problem')
         self.excel_file.close_file()
 
@@ -144,13 +149,16 @@ class RingClassificationTask():
 
 if __name__ == '__main__':
     import pandas as pd
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-    excel = pd.read_excel('tmp/output/ring_test_results/capacity_test_results.xlsx')
+    from bspytasks.utils.excel import load_bn_values, get_numpy_from_series
 
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+
+    result = task.run_task()
+    task.close_test()
+    print(f"Control voltages: {result['control_voltages']}")
+
+    excel = pd.read_excel('tmp/output/ring_test_results/capacity_test_results.xlsx')
     bn_statistics = load_bn_values(excel)
     control_voltages = get_numpy_from_series(excel['control_voltages'])
 
     task.validate_task(control_voltages, bn_statistics=bn_statistics, use_torch=False)
-
-    result = task.run_task()
-    print(f"Control voltages: {result['control_voltages']}")

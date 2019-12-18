@@ -49,24 +49,24 @@ class ExcelFile():
 
     def add_result(self, results, label=None):
         if label is None:
-            self.data = self.data.append(results, ignore_index=True)
+            self.data = self.data.append(pd.Series(results), ignore_index=True)
         else:
             self.data.loc[str(label)] = pd.Series(results)
 
 
-def get_numpy_from_series(series):
+def get_series_with_numpy(series):
     return series.apply(lambda x:
                         np.fromstring(
                             x.replace('\n', '')
                             .replace('[', '')
                             .replace(']', '')
-                            .replace('  ', ' '), sep=' '))[0]
+                            .replace('  ', ' '), sep=' '))
 
 
 def load_bn_values(excel):
     bn_statistics = {'bn_1': {}, 'bn_2': {}}
-    bn_statistics['bn_1']['mean'] = get_numpy_from_series(excel['bn_1_mean'])
-    bn_statistics['bn_1']['var'] = get_numpy_from_series(excel['bn_1_var'])
-    bn_statistics['bn_2']['mean'] = get_numpy_from_series(excel['bn_2_mean'])
-    bn_statistics['bn_2']['var'] = get_numpy_from_series(excel['bn_2_var'])
+    bn_statistics['bn_1']['mean'] = get_series_with_numpy(excel['bn_1_mean'])
+    bn_statistics['bn_1']['var'] = get_series_with_numpy(excel['bn_1_var'])
+    bn_statistics['bn_2']['mean'] = get_series_with_numpy(excel['bn_2_mean'])
+    bn_statistics['bn_2']['var'] = get_series_with_numpy(excel['bn_2_var'])
     return bn_statistics
