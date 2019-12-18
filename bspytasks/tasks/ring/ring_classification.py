@@ -12,8 +12,6 @@ from bspytasks.utils.excel import ExcelFile
 from bspyalgo.utils.performance import perceptron
 from bspyalgo.utils.io import load_configs, save
 from bspyproc.utils.pytorch import TorchUtils
-# import ring_evolve as re
-# import config_ring as config
 
 
 class RingClassificationTask():
@@ -70,10 +68,11 @@ class RingClassificationTask():
         plt.figure()
         plt.plot(inputs)
         plt.plot(targets, 'k')
-        if show_plot:
-            plt.show()
         if save_dir is not None:
             plt.savefig(save_dir)
+        if show_plot:
+            plt.show()
+        plt.close()
 
     def optimize(self, inputs, targets, mask):
         algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask)
@@ -122,4 +121,7 @@ class RingClassificationTask():
 if __name__ == '__main__':
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
     result = task.run_task()
+    plt.figure()
+    plt.plot(result['performance_history'])
+    plt.show()
     print(f"Control voltages: {result['control_voltages']}")
