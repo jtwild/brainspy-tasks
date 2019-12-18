@@ -4,17 +4,14 @@ The only difference to the measurement scripts are on lines where the device is 
 
 '''
 import numpy as np
-import os
 
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from matplotlib import pyplot as plt
-from bspytasks.utils.excel import ExcelFile, load_bn_values, get_numpy_from_series
+from bspytasks.utils.excel import ExcelFile
 from bspyalgo.utils.performance import perceptron
 from bspyalgo.utils.io import load_configs, save
 from bspyproc.utils.pytorch import TorchUtils
-from bspyproc.bspyproc import get_processor
-from bspyproc.utils.waveform import generate_slopped_plato
 # import ring_evolve as re
 # import config_ring as config
 
