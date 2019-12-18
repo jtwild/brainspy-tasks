@@ -21,21 +21,23 @@ class RingClassificationTask():
         configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
         self.excel_file = ExcelFile(configs['results_base_dir'] + 'capacity_test_results.xlsx')
         self.algorithm = get_algorithm(configs['algorithm_configs'])
+        if 'validation' in configs:
+            self.validation_processor = get_processor(configs['validation']['processor'])
 
     def init_excel_file(self, readable_targets):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
-    def get_ring_data_from_npz(self):
+    def get_ring_data_from_npz(self, use_torch=False):
         with np.load(self.configs['ring_data_path']) as data:
             inputs = data['inp_wvfrm'][::self.configs['steps'], :]  # .T
             print('Input shape: ', inputs.shape)
             targets = data['target'][::self.configs['steps']]
             print('Target shape ', targets.shape)
-        return self.process_npz_targets(inputs, targets)
+        return self.process_npz_targets(inputs, targets, use_torch=use_torch)
 
-    def process_npz_targets(self, inputs, targets):
+    def process_npz_targets(self, inputs, targets, use_torch=False):
         mask0 = (targets == 0)
         mask1 = (targets == 1)
         targets[mask0] = 1
@@ -46,7 +48,7 @@ class RingClassificationTask():
         inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
         targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
 
-        if self.configs['algorithm_configs']['processor']["simulation_type"] == 'neural_network':
+        if use_torch:
             inputs = TorchUtils.get_tensor_from_numpy(inputs)
             targets = TorchUtils.get_tensor_from_numpy(targets)
 
@@ -94,13 +96,26 @@ class RingClassificationTask():
             print("Using Fisher does not allow for perceptron accuracy decision.")
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
-        del excel_results['processor']
+        
+	bn_statistics = self.algorithm.processor.get_bn_statistics()
+        for key in bn_statistics.keys():
+            excel_results[key + '_mean'] = bn_statistics[key]['mean']
+            excel_results[key + '_var'] = bn_statistics[key]['var']
+
         self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"])
         self.close_test(excel_results)
         return excel_results
 
-    def validate_task(self, control_voltages):
-        inputs, _, mask = self.get_ring_data_from_npz()
+    def validate_task(self, control_voltages, bn_statistics=None, use_torch=False):
+        inputs, _, mask = self.get_ring_data_from_npz(use_torch=use_torch)
+        slopped_plato = generate_slopped_plato(self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
+        control_voltages = slopped_plato * control_voltages[:, np.newaxis]
+        if bn_statistics is not None:
+            self.validation_processor.set_batch_normalistaion_values(bn_statistics)
+
+        output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
+
+        return output
 
     def close_test(self, results):
         self.excel_file.add_result(results)
@@ -124,6 +139,14 @@ class RingClassificationTask():
 
 
 if __name__ == '__main__':
+    import pandas as pd
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+    excel = pd.read_excel('tmp/output/ring_test_results/capacity_test_results.xlsx')
+
+    bn_statistics = load_bn_values(excel)
+    control_voltages = get_numpy_from_series(excel['control_voltages'])
+
+    task.validate_task(control_voltages, bn_statistics=bn_statistics, use_torch=False)
+
     result = task.run_task()
     print(f"Control voltages: {result['control_voltages']}")

@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from openpyxl import load_workbook
 
 
@@ -51,3 +52,21 @@ class ExcelFile():
             self.data = self.data.append(results, ignore_index=True)
         else:
             self.data.loc[str(label)] = pd.Series(results)
+
+
+def get_numpy_from_series(series):
+    return series.apply(lambda x:
+                        np.fromstring(
+                            x.replace('\n', '')
+                            .replace('[', '')
+                            .replace(']', '')
+                            .replace('  ', ' '), sep=' '))[0]
+
+
+def load_bn_values(excel):
+    bn_statistics = {'bn_1': {}, 'bn_2': {}}
+    bn_statistics['bn_1']['mean'] = get_numpy_from_series(excel['bn_1_mean'])
+    bn_statistics['bn_1']['var'] = get_numpy_from_series(excel['bn_1_var'])
+    bn_statistics['bn_2']['mean'] = get_numpy_from_series(excel['bn_2_mean'])
+    bn_statistics['bn_2']['var'] = get_numpy_from_series(excel['bn_2_var'])
+    return bn_statistics
