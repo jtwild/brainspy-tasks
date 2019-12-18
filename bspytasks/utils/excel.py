@@ -65,8 +65,8 @@ def get_series_with_numpy(series):
 
 def load_bn_values(excel):
     bn_statistics = {'bn_1': {}, 'bn_2': {}}
-    bn_statistics['bn_1']['mean'] = get_series_with_numpy(excel['bn_1_mean'])
-    bn_statistics['bn_1']['var'] = get_series_with_numpy(excel['bn_1_var'])
-    bn_statistics['bn_2']['mean'] = get_series_with_numpy(excel['bn_2_mean'])
-    bn_statistics['bn_2']['var'] = get_series_with_numpy(excel['bn_2_var'])
+    bn_statistics['bn_1']['mean'] = excel['bn_1_mean']
+    bn_statistics['bn_1']['var'] = excel['bn_1_var']
+    bn_statistics['bn_2']['mean'] = excel['bn_2_mean']
+    bn_statistics['bn_2']['var'] = excel['bn_2_var']
     return bn_statistics

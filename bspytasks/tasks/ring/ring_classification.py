@@ -80,7 +80,7 @@ class RingClassificationTask():
             plt.savefig(os.path.join(save_dir, 'training_profile'))
         if show_plot:
             plt.show()
-        plt.close()
+        plt.close('all')
 
     def optimize(self, inputs, targets, mask):
         algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask)
@@ -128,6 +128,7 @@ class RingClassificationTask():
         return output
 
     def close_test(self):
+        self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
         self.excel_file.save_tab('Ring problem')
         self.excel_file.close_file()
 
@@ -149,7 +150,7 @@ class RingClassificationTask():
 
 if __name__ == '__main__':
     import pandas as pd
-    from bspytasks.utils.excel import load_bn_values, get_numpy_from_series
+    from bspytasks.utils.excel import load_bn_values
 
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
 
@@ -157,8 +158,8 @@ if __name__ == '__main__':
     task.close_test()
     print(f"Control voltages: {result['control_voltages']}")
 
-    excel = pd.read_excel('tmp/output/ring_test_results/capacity_test_results.xlsx')
+    excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
     bn_statistics = load_bn_values(excel)
-    control_voltages = get_numpy_from_series(excel['control_voltages'])
+    control_voltages = excel['control_voltages']
 
-    task.validate_task(control_voltages, bn_statistics=bn_statistics, use_torch=False)
+    task.validate_task(control_voltages.to_numpy(), bn_statistics=bn_statistics, use_torch=False)
