@@ -96,14 +96,18 @@ class RingClassificationTask():
             print("Using Fisher does not allow for perceptron accuracy decision.")
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
-        
-	bn_statistics = self.algorithm.processor.get_bn_statistics()
-        for key in bn_statistics.keys():
-            excel_results[key + '_mean'] = bn_statistics[key]['mean']
-            excel_results[key + '_var'] = bn_statistics[key]['var']
+
+        excel_results = self.set_bn_stats(excel_results)
 
         self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"])
         self.close_test(excel_results)
+        return excel_results
+
+    def set_bn_stats(self, excel_results):
+        bn_statistics = self.algorithm.processor.get_bn_statistics()
+        for key in bn_statistics.keys():
+            excel_results[key + '_mean'] = bn_statistics[key]['mean']
+            excel_results[key + '_var'] = bn_statistics[key]['var']
         return excel_results
 
     def validate_task(self, control_voltages, bn_statistics=None, use_torch=False):
