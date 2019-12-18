@@ -64,12 +64,13 @@ class RingClassificationTask():
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
         return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def save_plot(self, inputs, targets, show_plot=False, save_dir=None):
+    def save_plots(self, results, mask, show_plot=False):
         plt.figure()
-        plt.plot(inputs)
-        plt.plot(targets, 'k')
-        if save_dir is not None:
-            plt.savefig(save_dir)
+        plt.plot(results['best_output'][mask])
+        plt.savefig(self.configs['results_base_dir'] + '/output_ring_classifier')
+        plt.figure()
+        plt.plot(results['performance_history'])
+        plt.savefig(self.configs['results_base_dir'] + '/training_profile')
         if show_plot:
             plt.show()
         plt.close()
@@ -80,17 +81,21 @@ class RingClassificationTask():
 
         return algorithm_data.results
 
-    def run_task(self):
-        save(mode='configs', path=self.configs['results_base_dir'], filename='test_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
+    def run_task(self, run=1):
+        path = self.configs['results_base_dir']
+        save(mode='configs', path=path, filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
         inputs, targets, mask = self.get_ring_data_from_npz()
         self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
         best_output = excel_results['best_output'][mask]
         targets = targets[mask].cpu().numpy()
         targets = targets[:, np.newaxis]
-        excel_results['accuracy'], _, _ = perceptron(best_output, targets)
+        if self.configs["algorithm_configs"]['hyperparameters']["loss_function"] is "fisher":
+            print("Using Fisher does not allow for perceptron accuracy decision.")
+        else:
+            excel_results['accuracy'], _, _ = perceptron(best_output, targets)
         del excel_results['processor']
-        self.save_plot(best_output, targets, show_plot=True)
+        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"])
         self.close_test(excel_results)
         return excel_results
 
@@ -121,7 +126,4 @@ class RingClassificationTask():
 if __name__ == '__main__':
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
     result = task.run_task()
-    plt.figure()
-    plt.plot(result['performance_history'])
-    plt.show()
     print(f"Control voltages: {result['control_voltages']}")
