@@ -91,7 +91,6 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        self.algorithm.reset_processor()
         inputs, targets, mask = self.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
@@ -104,7 +103,7 @@ class RingClassificationTask():
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
-        torch.save(self.algorithm.processor.state_dict(), 'test.pth')
+        torch.save(self.algorithm.processor.state_dict(), os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth'))
         # excel_results['scale'] = self.algorithm.processor.get_scale()
         # excel_results['offset'] = self.algorithm.processor.get_offset()
 
