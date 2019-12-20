@@ -90,7 +90,6 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        self.algorithm.reset_processor()
         inputs, targets, mask = self.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
@@ -121,32 +120,19 @@ class RingClassificationTask():
         return excel_results
 
     def validate_task(self, excel, use_torch=False):
-
-        value = excel.iloc[excel['best_performance'].astype(float).idxmin()]
-        # bn_statistics = load_bn_values(value)
-        # control_voltages = value['control_voltages'].reshape(25)
-        target = value['best_output']
-
-        inputs, _, validation_mask = self.get_ring_data_from_npz(
+        validation_inputs, _, validation_mask = self.get_ring_data_from_npz(
             processor_configs=self.configs["validation"]["processor"])
-
-        inputs_torch, _, algorithm_mask = self.get_ring_data_from_npz(
+        algorithm_inputs, _, algorithm_mask = self.get_ring_data_from_npz(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        # if bn_statistics is not None:
-        #     self.validation_processor.set_batch_normalistaion_values(bn_statistics)
         self.validation_processor.load_state_dict(torch.load('test.pth'))
-        # self.validation_processor.initialise_parameters(control_voltages, )
-        # self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
-        # self.validation_processor.set_control_voltages(control_voltages)
-        # self.validation_processor.eval()
-        target = self.algorithm.processor.forward(inputs_torch).detach().cpu().numpy()
+
+        target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
         target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
 
-        output = self.validation_processor.get_output_(inputs, validation_mask)
-        # output = self.validation_processor.forward(inputs)
-        # output = TorchUtils.get_numpy_from_tensor(output.detach())
+        output = self.validation_processor.get_output_(validation_inputs, validation_mask)
+
         error = ((target[validation_mask] - output[validation_mask]) ** 2).mean()
         self.plot_gate_validation(output[:, 0][validation_mask], target[validation_mask], self.configs['show_plots'], save_dir=os.path.join(
             self.configs['results_base_dir'], 'validation.png'))
@@ -154,7 +140,7 @@ class RingClassificationTask():
         return error
 
     def close_test(self):
-        self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
+        # self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
         self.excel_file.save_tab('Ring problem')
         self.excel_file.close_file()
 
@@ -188,21 +174,7 @@ class RingClassificationTask():
         plt.close()
 
 
-if __name__ == '__main__':
-    import pandas as pd
-    import torch
-    from bspytasks.utils.excel import load_bn_values
-    import matplotlib.pyplot as plt
-
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-    result = task.run_task()
-    task.close_test()
-
-    excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
-
-    error = task.validate_task(excel, use_torch=False)
-    print(f'Error: {error}')
-
+def plot_data():
     l1_1_np = np.load('layer_1_output_1.npy')
     l1_1_tr = torch.load('layer_1_output_1.pt').detach().cpu().numpy()
 
@@ -338,4 +310,18 @@ if __name__ == '__main__':
     plt.plot(l2_tr[:, 1])
     plt.show()
 
-    print('a')
+
+if __name__ == '__main__':
+    import pandas as pd
+    import torch
+    from bspytasks.utils.excel import load_bn_values
+    import matplotlib.pyplot as plt
+
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+    result = task.run_task()
+    task.close_test()
+
+    # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
+
+    error = task.validate_task(excel, use_torch=False)
+    print(f'Error: {error}')
