@@ -14,7 +14,6 @@ from bspytasks.utils.excel import ExcelFile
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspyalgo.utils.io import load_configs, save, create_directory
 from bspyproc.utils.pytorch import TorchUtils
-from bspyproc.utils.waveform import generate_slopped_plato, generate_waveform
 
 
 class RingClassificationTask():
@@ -141,15 +140,12 @@ class RingClassificationTask():
         # control_voltages = value['control_voltages'].reshape(25)
         target = value['best_output']
 
-        inputs, _, mask = self.get_ring_data_from_npz(
+        inputs, _, validation_mask = self.get_ring_data_from_npz(
             processor_configs=self.configs["validation"]["processor"])
 
-        inputs_torch, _, mask = self.get_ring_data_from_npz(
+        inputs_torch, _, algorithm_mask = self.get_ring_data_from_npz(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        slopped_plato = generate_slopped_plato(
-            self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
-        # control_voltages = slopped_plato * control_voltages[:, np.newaxis]
         # if bn_statistics is not None:
         #     self.validation_processor.set_batch_normalistaion_values(bn_statistics)
         self.validation_processor.load_state_dict(torch.load('test.pth'))
@@ -157,14 +153,15 @@ class RingClassificationTask():
         # self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
         # self.validation_processor.set_control_voltages(control_voltages)
         # self.validation_processor.eval()
-        target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']
+        target = self.algorithm.processor.forward(inputs_torch).detach().cpu().numpy()
+        target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-        self.algorithm.processor.forward(inputs_torch)
-        output = self.validation_processor.get_output_(inputs, mask)
+
+        output = self.validation_processor.get_output_(inputs, validation_mask)
         # output = self.validation_processor.forward(inputs)
         # output = TorchUtils.get_numpy_from_tensor(output.detach())
-        error = ((target[mask] - output[mask]) ** 2).mean()
-        self.plot_gate_validation(output[:, 0][mask], target[mask], self.configs['show_plots'], save_dir=os.path.join(
+        error = ((target[validation_mask] - output[validation_mask]) ** 2).mean()
+        self.plot_gate_validation(output[:, 0][validation_mask], target[validation_mask], self.configs['show_plots'], save_dir=os.path.join(
             self.configs['results_base_dir'], 'validation.png'))
 
         return error
