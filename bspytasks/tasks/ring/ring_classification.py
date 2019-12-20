@@ -22,15 +22,19 @@ class RingClassificationTask():
     def __init__(self, configs):
         self.configs = configs
         configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
-        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'], filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
-        self.excel_file = ExcelFile(os.path.join(self.configs['results_base_dir'], 'experiment_results.xlsx'))
+        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'],
+                                                filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
+        self.excel_file = ExcelFile(os.path.join(
+            self.configs['results_base_dir'], 'experiment_results.xlsx'))
         self.init_excel_file()
         self.algorithm = get_algorithm(configs['algorithm_configs'])
         if 'validation' in configs:
-            self.validation_processor = get_processor(configs['validation']['processor'])
+            self.validation_processor = get_processor(
+                configs['validation']['processor'])
 
     def init_excel_file(self):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation',
+                        'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -49,9 +53,12 @@ class RingClassificationTask():
         targets[mask1] = 0
         amplitude_lengths = processor_configs['waveform']['amplitude_lengths']
         slope_lengths = processor_configs['waveform']['slope_lengths']
-        mask = generate_mask(targets, amplitude_lengths, slope_lengths=slope_lengths)
-        inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
-        targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
+        mask = generate_mask(targets, amplitude_lengths,
+                             slope_lengths=slope_lengths)
+        inputs = self.generate_data_waveform(
+            inputs, amplitude_lengths, slope_lengths)
+        targets = np.asarray(generate_waveform(
+            targets, amplitude_lengths, slope_lengths)).T
 
         if processor_configs["simulation_type"] == 'neural_network' and processor_configs["network_type"] == 'dnpu':
             inputs = TorchUtils.get_tensor_from_numpy(inputs)
@@ -62,14 +69,16 @@ class RingClassificationTask():
     def generate_data_waveform(self, data, amplitude_lengths, slope_lengths):
         data_waveform = np.array([])
         for i in range(data.shape[1]):
-            d_waveform = generate_waveform(data[:, i], amplitude_lengths, slope_lengths=slope_lengths)
+            d_waveform = generate_waveform(
+                data[:, i], amplitude_lengths, slope_lengths=slope_lengths)
             if data_waveform.shape == (0,):
                 data_waveform = np.concatenate((data_waveform, d_waveform))
             else:
                 data_waveform = np.vstack((data_waveform, d_waveform))
         # if len(inputs_waveform.shape) == 1:
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
-        return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
+        # device_model --> (samples,dimension) ; device --> (dimensions,samples)
+        return data_waveform.T
 
     def save_plots(self, results, mask, save_dir=None, show_plot=False):
         plt.figure()
@@ -91,8 +100,9 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        self.algorithm.reset_processor()
-        inputs, targets, mask = self.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
+        # self.algorithm.reset_processor()
+        inputs, targets, mask = self.get_ring_data_from_npz(
+            processor_configs=self.configs["algorithm_configs"]["processor"])
         # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
         best_output = excel_results['best_output'][mask]
@@ -109,8 +119,10 @@ class RingClassificationTask():
         # excel_results['offset'] = self.algorithm.processor.get_offset()
 
         # excel_results['bn_stats'] = self.algorithm.processor.get_bn_dict()  # self.set_bn_stats(excel_results)
-        path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
-        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
+        path = create_directory(os.path.join(
+            self.configs['results_base_dir'], f"Run_{run}"))
+        self.save_plots(excel_results, mask,
+                        show_plot=self.configs["show_plots"], save_dir=path)
         self.excel_file.add_result(excel_results)
         # self.close_test(excel_results)
         return excel_results
@@ -129,8 +141,14 @@ class RingClassificationTask():
         # control_voltages = value['control_voltages'].reshape(25)
         target = value['best_output']
 
-        inputs, _, mask = self.get_ring_data_from_npz(processor_configs=self.configs["validation"]["processor"])
-        slopped_plato = generate_slopped_plato(self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
+        inputs, _, mask = self.get_ring_data_from_npz(
+            processor_configs=self.configs["validation"]["processor"])
+
+        inputs_torch, _, mask = self.get_ring_data_from_npz(
+            processor_configs=self.configs["algorithm_configs"]["processor"])
+
+        slopped_plato = generate_slopped_plato(
+            self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
         # control_voltages = slopped_plato * control_voltages[:, np.newaxis]
         # if bn_statistics is not None:
         #     self.validation_processor.set_batch_normalistaion_values(bn_statistics)
@@ -138,31 +156,37 @@ class RingClassificationTask():
         # self.validation_processor.initialise_parameters(control_voltages, )
         # self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
         # self.validation_processor.set_control_voltages(control_voltages)
-        self.validation_processor.eval()
-        target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-        # output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
-        output = self.validation_processor.forward(inputs)
-        output = TorchUtils.get_numpy_from_tensor(output.detach())
+        # self.validation_processor.eval()
+        target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
+        self.algorithm.processor.forward(inputs_torch)
+        output = self.validation_processor.get_output_(inputs, mask)
+        # output = self.validation_processor.forward(inputs)
+        # output = TorchUtils.get_numpy_from_tensor(output.detach())
         error = ((target[mask] - output[mask]) ** 2).mean()
-        self.plot_gate_validation(output[:, 0][mask], target[mask], self.configs['show_plots'], save_dir=os.path.join(self.configs['results_base_dir'], 'validation.png'))
+        self.plot_gate_validation(output[:, 0][mask], target[mask], self.configs['show_plots'], save_dir=os.path.join(
+            self.configs['results_base_dir'], 'validation.png'))
 
         return error
 
     def close_test(self):
-        self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
+        self.excel_file.data.to_pickle(os.path.join(
+            self.configs["results_base_dir"], 'results.pkl'))
         self.excel_file.save_tab('Ring problem')
         self.excel_file.close_file()
 
     def find_label_with_numpy(self, encoded_inputs, encoded_label, mask):
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
-        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
+        excel_results['accuracy'], _, _ = perceptron(
+            excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
         excel_results['encoded_label'] = encoded_label
         return excel_results
 
     def find_label_with_torch(self, encoded_inputs, encoded_label, mask):
         encoded_label = TorchUtils.format_tensor(encoded_label)
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
-        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
+        excel_results['accuracy'], _, _ = perceptron(
+            excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
         excel_results['encoded_label'] = encoded_label.cpu()
         # excel_results['targets'] = excel_results
         # excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
@@ -171,9 +195,11 @@ class RingClassificationTask():
     def plot_gate_validation(self, output, target, show_plots, save_dir=None):
         plt.figure()
         plt.plot(output)
-        plt.plot(target)
+        plt.plot(target, '.')
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
+        plt.title('Comparison between Processor and DNPU')
+        plt.legend(['Processor', 'DNPU'])
         if save_dir is not None:
             plt.savefig(save_dir)
         if show_plots:
@@ -183,13 +209,156 @@ class RingClassificationTask():
 
 if __name__ == '__main__':
     import pandas as pd
+    import torch
     from bspytasks.utils.excel import load_bn_values
+    import matplotlib.pyplot as plt
 
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+    torch.autograd.set_detect_anomaly(True)
+
+    task = RingClassificationTask(load_configs(
+        'configs/tasks/ring/template_gd_architecture.json'))
     result = task.run_task()
     task.close_test()
 
-    excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
+    excel = pd.read_pickle(os.path.join(
+        task.configs["results_base_dir"], 'results.pkl'))
 
-    error = task.validate_task(excel, use_torch=True)
+    error = task.validate_task(excel, use_torch=False)
     print(f'Error: {error}')
+
+    l1_1_np = np.load('layer_1_output_1.npy')
+    l1_1_tr = torch.load('layer_1_output_1.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l1_1_np[:, 0] - l1_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(l1_1_np[:, 0])
+    plt.plot(l1_1_tr[:, 0])
+    plt.title('layer_1_output_1')
+    plt.show()
+
+    l1_2_np = np.load('layer_1_output_2.npy')
+    l1_2_tr = torch.load('layer_1_output_2.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l1_2_np[:, 0] - l1_2_np[:, 0]) ** 2).mean())
+
+    plt.plot(l1_2_np[:, 0])
+    plt.plot(l1_2_tr[:, 0])
+    plt.title('layer_1_output_2')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_afterclip_1_1.npy')
+    bn_afterclip_1_tr = torch.load(
+        'bn_afterclip_1_1.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((bn_afterclip_1_np[:, 0] - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np[:, 0])
+    plt.plot(bn_afterclip_1_tr[:, 0])
+    plt.title('bn_afterclip_1_1')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_afterclip_1_2.npy')
+    bn_afterclip_1_tr = torch.load(
+        'bn_afterclip_1_2.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((bn_afterclip_1_np[:, 0] - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np[:, 0])
+    plt.plot(bn_afterclip_1_tr[:, 0])
+    plt.title('bn_afterclip_1_2')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_afterbatch_1.npy')
+    bn_afterclip_1_tr = torch.load('bn_afterbatch_1.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np)
+    plt.plot(bn_afterclip_1_tr[:, 0])
+    plt.title('bn_afterbatch_1')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_afterbatch_2.npy')
+
+    print('Error')
+    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 1]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np)
+    plt.plot(bn_afterclip_1_tr[:, 1])
+    plt.title('bn_afterbatch_2')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_aftercv_1.npy')
+    bn_afterclip_1_tr = torch.load('bn_aftercv_1.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np)
+    plt.plot(bn_afterclip_1_tr[:, 0])
+    plt.title('bn_aftercv_1')
+    plt.show()
+
+    bn_afterclip_1_np = np.load('bn_aftercv_2.npy')
+    print('Error')
+    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 1]) ** 2).mean())
+
+    plt.plot(bn_afterclip_1_np)
+    plt.plot(bn_afterclip_1_tr[:, 1])
+    plt.title('bn_aftercv_2')
+    plt.show()
+
+    l1_np = np.load('layer_1_output_processed.npy')
+    l1_tr = torch.load('layer_1_output_processed.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l1_np[:, 0] - l1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(l1_np[:, 14 + 3])
+    plt.plot(l1_tr[:, 0])
+    plt.show()
+
+    plt.plot(l1_np[:, 14 + 4])
+    plt.plot(l1_tr[:, 1])
+    plt.show()
+
+    l2_1_np = np.load('layer_2_output_2.npy')
+    l2_1_tr = torch.load('layer_2_output_2.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l2_1_np[:, 0] - l2_1_tr[:, 0]) ** 2).mean())
+
+    plt.plot(l2_1_np[:, 0])
+    plt.plot(l2_1_tr[:, 0])
+    plt.show()
+
+    l2_2_np = np.load('layer_2_output_2.npy')
+    l2_2_tr = torch.load('layer_2_output_2.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l2_2_np[:, 0] - l2_2_tr[:, 0]) ** 2).mean())
+
+    plt.plot(l2_2_np[:, 0])
+    plt.plot(l2_2_tr[:, 0])
+    plt.show()
+
+    l2_np = np.load('layer_2_output_processed.npy')
+    l2_tr = torch.load('layer_2_output_processed.pt').detach().cpu().numpy()
+
+    print('Error')
+    print(((l2_np[:, 0] - l2_tr[:, 0]) ** 2).mean())
+
+    plt.plot(l2_np[:, 28 + 3])
+    plt.plot(l2_tr[:, 0])
+    plt.show()
+
+    plt.plot(l2_np[:, 28 + 4])
+    plt.plot(l2_tr[:, 1])
+    plt.show()
+
+    print('a')
