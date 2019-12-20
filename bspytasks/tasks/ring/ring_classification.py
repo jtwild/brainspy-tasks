@@ -3,6 +3,7 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
+import torch
 import numpy as np
 import os
 from bspyalgo.algorithm_manager import get_algorithm
@@ -13,6 +14,7 @@ from bspytasks.utils.excel import ExcelFile
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspyalgo.utils.io import load_configs, save, create_directory
 from bspyproc.utils.pytorch import TorchUtils
+from bspyproc.utils.waveform import generate_slopped_plato, generate_waveform
 
 
 class RingClassificationTask():
@@ -28,30 +30,30 @@ class RingClassificationTask():
             self.validation_processor = get_processor(configs['validation']['processor'])
 
     def init_excel_file(self):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
-    def get_ring_data_from_npz(self, use_torch=False):
+    def get_ring_data_from_npz(self, processor_configs):
         with np.load(self.configs['ring_data_path']) as data:
             inputs = data['inp_wvfrm'][::self.configs['steps'], :]  # .T
             print('Input shape: ', inputs.shape)
             targets = data['target'][::self.configs['steps']]
             print('Target shape ', targets.shape)
-        return self.process_npz_targets(inputs, targets, use_torch=use_torch)
+        return self.process_npz_targets(inputs, targets, processor_configs=processor_configs)
 
-    def process_npz_targets(self, inputs, targets, use_torch=False):
+    def process_npz_targets(self, inputs, targets, processor_configs):
         mask0 = (targets == 0)
         mask1 = (targets == 1)
         targets[mask0] = 1
         targets[mask1] = 0
-        amplitude_lengths = self.configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
-        slope_lengths = self.configs['algorithm_configs']['processor']['waveform']['slope_lengths']
+        amplitude_lengths = processor_configs['waveform']['amplitude_lengths']
+        slope_lengths = processor_configs['waveform']['slope_lengths']
         mask = generate_mask(targets, amplitude_lengths, slope_lengths=slope_lengths)
         inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
         targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
 
-        if use_torch:
+        if processor_configs["simulation_type"] == 'neural_network' and processor_configs["network_type"] == 'dnpu':
             inputs = TorchUtils.get_tensor_from_numpy(inputs)
             targets = TorchUtils.get_tensor_from_numpy(targets)
 
@@ -90,7 +92,7 @@ class RingClassificationTask():
 
     def run_task(self, run=1):
         self.algorithm.reset_processor()
-        inputs, targets, mask = self.get_ring_data_from_npz(use_torch=self.configs["algorithm_configs"]["processor"]["simulation_type"] == 'neural_network')
+        inputs, targets, mask = self.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
         best_output = excel_results['best_output'][mask]
@@ -102,7 +104,11 @@ class RingClassificationTask():
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
-        excel_results = self.set_bn_stats(excel_results)
+        torch.save(self.algorithm.processor.state_dict(), 'test.pth')
+        # excel_results['scale'] = self.algorithm.processor.get_scale()
+        # excel_results['offset'] = self.algorithm.processor.get_offset()
+
+        # excel_results['bn_stats'] = self.algorithm.processor.get_bn_dict()  # self.set_bn_stats(excel_results)
         path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
         self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
         self.excel_file.add_result(excel_results)
@@ -116,16 +122,31 @@ class RingClassificationTask():
             excel_results[key + '_var'] = bn_statistics[key]['var']
         return excel_results
 
-    def validate_task(self, control_voltages, bn_statistics=None, use_torch=False):
-        inputs, _, mask = self.get_ring_data_from_npz(use_torch=use_torch)
+    def validate_task(self, excel, use_torch=False):
+
+        value = excel.iloc[excel['best_performance'].astype(float).idxmin()]
+        # bn_statistics = load_bn_values(value)
+        # control_voltages = value['control_voltages'].reshape(25)
+        target = value['best_output']
+
+        inputs, _, mask = self.get_ring_data_from_npz(processor_configs=self.configs["validation"]["processor"])
         slopped_plato = generate_slopped_plato(self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
-        control_voltages = slopped_plato * control_voltages[:, np.newaxis]
-        if bn_statistics is not None:
-            self.validation_processor.set_batch_normalistaion_values(bn_statistics)
+        # control_voltages = slopped_plato * control_voltages[:, np.newaxis]
+        # if bn_statistics is not None:
+        #     self.validation_processor.set_batch_normalistaion_values(bn_statistics)
+        self.validation_processor.load_state_dict(torch.load('test.pth'))
+        # self.validation_processor.initialise_parameters(control_voltages, )
+        # self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
+        # self.validation_processor.set_control_voltages(control_voltages)
+        self.validation_processor.eval()
+        target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
+        # output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
+        output = self.validation_processor.forward(inputs)
+        output = TorchUtils.get_numpy_from_tensor(output.detach())
+        error = ((target[mask] - output[mask]) ** 2).mean()
+        self.plot_gate_validation(output[:, 0][mask], target[mask], self.configs['show_plots'], save_dir=os.path.join(self.configs['results_base_dir'], 'validation.png'))
 
-        output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
-
-        return output
+        return error
 
     def close_test(self):
         self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
@@ -147,19 +168,28 @@ class RingClassificationTask():
         # excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
         return excel_results
 
+    def plot_gate_validation(self, output, target, show_plots, save_dir=None):
+        plt.figure()
+        plt.plot(output)
+        plt.plot(target)
+        plt.ylabel('Current (nA)')
+        plt.xlabel('Time')
+        if save_dir is not None:
+            plt.savefig(save_dir)
+        if show_plots:
+            plt.show()
+        plt.close()
+
 
 if __name__ == '__main__':
     import pandas as pd
     from bspytasks.utils.excel import load_bn_values
 
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-
     result = task.run_task()
     task.close_test()
-    print(f"Control voltages: {result['control_voltages']}")
 
     excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
-    bn_statistics = load_bn_values(excel)
-    control_voltages = excel['control_voltages']
 
-    task.validate_task(control_voltages.to_numpy(), bn_statistics=bn_statistics, use_torch=False)
+    error = task.validate_task(excel, use_torch=True)
+    print(f'Error: {error}')

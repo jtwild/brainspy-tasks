@@ -1,6 +1,6 @@
 {
     "results_base_dir": "tmp/output/ring/",
-    "ring_data_path": "tmp/input/ring/Class_data_0.0125.npz",
+    "ring_data_path": "tmp/input/ring/class_data_0.0125.npz",
     "overwrite_results": false,
     "steps": 1, 
     "show_plots": true, 
