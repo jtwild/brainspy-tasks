@@ -71,15 +71,15 @@ class RingClassificationTask():
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
         return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def save_plots(self, results, mask, save_dir=None, show_plot=False):
+    def save_plots(self, results, mask, run=0, show_plot=False):
         plt.figure()
         plt.plot(results['best_output'][mask])
-        if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, 'output_ring_classifier'))
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
         plt.figure()
         plt.plot(results['performance_history'])
-        if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, 'training_profile'))
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.configs['results_base_dir'], f"training_profile_Run_{run}"))
         if show_plot:
             plt.show()
         plt.close('all')
@@ -109,8 +109,7 @@ class RingClassificationTask():
         # excel_results['offset'] = self.algorithm.processor.get_offset()
 
         # excel_results['bn_stats'] = self.algorithm.processor.get_bn_dict()  # self.set_bn_stats(excel_results)
-        path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
-        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
+        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], run=run)
         self.excel_file.add_result(excel_results)
         # self.close_test(excel_results)
         return excel_results
