@@ -3,6 +3,7 @@ This is a template for evolving the NN based on the boolean_logic experiment.
 The only difference to the measurement scripts are on lines where the device is called.
 
 '''
+import torch
 import numpy as np
 import os
 from bspyalgo.algorithm_manager import get_algorithm
@@ -29,7 +30,7 @@ class RingClassificationTask():
             self.validation_processor = get_processor(configs['validation']['processor'])
 
     def init_excel_file(self):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var', 'scale', 'offset']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -103,10 +104,11 @@ class RingClassificationTask():
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
-        excel_results['scale'] = self.algorithm.processor.get_scale()
-        excel_results['offset'] = self.algorithm.processor.get_offset()
+        torch.save(self.algorithm.processor.state_dict(), 'test.pth')
+        # excel_results['scale'] = self.algorithm.processor.get_scale()
+        # excel_results['offset'] = self.algorithm.processor.get_offset()
 
-        excel_results = self.set_bn_stats(excel_results)
+        # excel_results['bn_stats'] = self.algorithm.processor.get_bn_dict()  # self.set_bn_stats(excel_results)
         path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
         self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
         self.excel_file.add_result(excel_results)
@@ -123,18 +125,19 @@ class RingClassificationTask():
     def validate_task(self, excel, use_torch=False):
 
         value = excel.iloc[excel['best_performance'].astype(float).idxmin()]
-        bn_statistics = load_bn_values(value)
-        control_voltages = value['control_voltages'].reshape(25)
+        # bn_statistics = load_bn_values(value)
+        # control_voltages = value['control_voltages'].reshape(25)
         target = value['best_output']
 
         inputs, _, mask = self.get_ring_data_from_npz(processor_configs=self.configs["validation"]["processor"])
         slopped_plato = generate_slopped_plato(self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
         # control_voltages = slopped_plato * control_voltages[:, np.newaxis]
-        if bn_statistics is not None:
-            self.validation_processor.set_batch_normalistaion_values(bn_statistics)
-
-        self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
-        self.validation_processor.set_control_voltages(control_voltages)
+        # if bn_statistics is not None:
+        #     self.validation_processor.set_batch_normalistaion_values(bn_statistics)
+        self.validation_processor.load_state_dict(torch.load('test.pth'))
+        # self.validation_processor.initialise_parameters(control_voltages, )
+        # self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
+        # self.validation_processor.set_control_voltages(control_voltages)
         self.validation_processor.eval()
         target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
         # output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
