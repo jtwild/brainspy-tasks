@@ -32,7 +32,7 @@ plt.savefig(os.path.join(task.configs["results_base_dir"], 'correlation_vs_fishe
 
 plt.figure()
 plt.plot(best_run['best_output'])
-plt.title('Best Output')
+plt.title(f'Best Output, run:{best_index}')
 plt.xlabel('Time points (a.u.)')
 plt.ylabel('Output current (nA)')
 plt.savefig(os.path.join(task.configs["results_base_dir"], 'output_best_run'))
