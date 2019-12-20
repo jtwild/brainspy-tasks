@@ -21,19 +21,15 @@ class RingClassificationTask():
     def __init__(self, configs):
         self.configs = configs
         configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
-        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'],
-                                                filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
-        self.excel_file = ExcelFile(os.path.join(
-            self.configs['results_base_dir'], 'experiment_results.xlsx'))
+        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'], filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
+        self.excel_file = ExcelFile(os.path.join(self.configs['results_base_dir'], 'experiment_results.xlsx'))
         self.init_excel_file()
         self.algorithm = get_algorithm(configs['algorithm_configs'])
         if 'validation' in configs:
-            self.validation_processor = get_processor(
-                configs['validation']['processor'])
+            self.validation_processor = get_processor(configs['validation']['processor'])
 
     def init_excel_file(self):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation',
-                        'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -52,12 +48,9 @@ class RingClassificationTask():
         targets[mask1] = 0
         amplitude_lengths = processor_configs['waveform']['amplitude_lengths']
         slope_lengths = processor_configs['waveform']['slope_lengths']
-        mask = generate_mask(targets, amplitude_lengths,
-                             slope_lengths=slope_lengths)
-        inputs = self.generate_data_waveform(
-            inputs, amplitude_lengths, slope_lengths)
-        targets = np.asarray(generate_waveform(
-            targets, amplitude_lengths, slope_lengths)).T
+        mask = generate_mask(targets, amplitude_lengths, slope_lengths=slope_lengths)
+        inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
+        targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
 
         if processor_configs["simulation_type"] == 'neural_network' and processor_configs["network_type"] == 'dnpu':
             inputs = TorchUtils.get_tensor_from_numpy(inputs)
@@ -68,26 +61,24 @@ class RingClassificationTask():
     def generate_data_waveform(self, data, amplitude_lengths, slope_lengths):
         data_waveform = np.array([])
         for i in range(data.shape[1]):
-            d_waveform = generate_waveform(
-                data[:, i], amplitude_lengths, slope_lengths=slope_lengths)
+            d_waveform = generate_waveform(data[:, i], amplitude_lengths, slope_lengths=slope_lengths)
             if data_waveform.shape == (0,):
                 data_waveform = np.concatenate((data_waveform, d_waveform))
             else:
                 data_waveform = np.vstack((data_waveform, d_waveform))
         # if len(inputs_waveform.shape) == 1:
         #    inputs_waveform = inputs_waveform[:, np.newaxis]
-        # device_model --> (samples,dimension) ; device --> (dimensions,samples)
-        return data_waveform.T
+        return data_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
-    def save_plots(self, results, mask, save_dir=None, show_plot=False):
+    def save_plots(self, results, mask, run=0, show_plot=False):
         plt.figure()
         plt.plot(results['best_output'][mask])
-        if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, 'output_ring_classifier'))
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
         plt.figure()
         plt.plot(results['performance_history'])
-        if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, 'training_profile'))
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.configs['results_base_dir'], f"training_profile_Run_{run}"))
         if show_plot:
             plt.show()
         plt.close('all')
@@ -99,9 +90,8 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        # self.algorithm.reset_processor()
-        inputs, targets, mask = self.get_ring_data_from_npz(
-            processor_configs=self.configs["algorithm_configs"]["processor"])
+        self.algorithm.reset_processor()
+        inputs, targets, mask = self.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         # self.init_excel_file(targets)
         excel_results = self.optimize(inputs, targets, mask)
         best_output = excel_results['best_output'][mask]
@@ -118,10 +108,7 @@ class RingClassificationTask():
         # excel_results['offset'] = self.algorithm.processor.get_offset()
 
         # excel_results['bn_stats'] = self.algorithm.processor.get_bn_dict()  # self.set_bn_stats(excel_results)
-        path = create_directory(os.path.join(
-            self.configs['results_base_dir'], f"Run_{run}"))
-        self.save_plots(excel_results, mask,
-                        show_plot=self.configs["show_plots"], save_dir=path)
+        self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], run=run)
         self.excel_file.add_result(excel_results)
         # self.close_test(excel_results)
         return excel_results
@@ -167,23 +154,20 @@ class RingClassificationTask():
         return error
 
     def close_test(self):
-        self.excel_file.data.to_pickle(os.path.join(
-            self.configs["results_base_dir"], 'results.pkl'))
+        self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
         self.excel_file.save_tab('Ring problem')
         self.excel_file.close_file()
 
     def find_label_with_numpy(self, encoded_inputs, encoded_label, mask):
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
-        excel_results['accuracy'], _, _ = perceptron(
-            excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
+        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], encoded_label[excel_results['mask']])
         excel_results['encoded_label'] = encoded_label
         return excel_results
 
     def find_label_with_torch(self, encoded_inputs, encoded_label, mask):
         encoded_label = TorchUtils.format_tensor(encoded_label)
         excel_results = self.optimize(encoded_inputs, encoded_label, mask)
-        excel_results['accuracy'], _, _ = perceptron(
-            excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
+        excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_label[excel_results['mask']]))
         excel_results['encoded_label'] = encoded_label.cpu()
         # excel_results['targets'] = excel_results
         # excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
@@ -210,15 +194,11 @@ if __name__ == '__main__':
     from bspytasks.utils.excel import load_bn_values
     import matplotlib.pyplot as plt
 
-    torch.autograd.set_detect_anomaly(True)
-
-    task = RingClassificationTask(load_configs(
-        'configs/tasks/ring/template_gd_architecture.json'))
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
     result = task.run_task()
     task.close_test()
 
-    excel = pd.read_pickle(os.path.join(
-        task.configs["results_base_dir"], 'results.pkl'))
+    excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
     error = task.validate_task(excel, use_torch=False)
     print(f'Error: {error}')
