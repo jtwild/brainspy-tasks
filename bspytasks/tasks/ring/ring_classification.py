@@ -29,7 +29,7 @@ class RingClassificationTask():
             self.validation_processor = get_processor(configs['validation']['processor'])
 
     def init_excel_file(self):
-        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var']
+        column_names = ['accuracy', 'best_output', 'best_performance', 'correlation', 'control_voltages', 'inputs', 'mask', 'performance_history', 'targets', 'bn_1_mean', 'bn_1_var', 'bn_2_mean', 'bn_2_var', 'scale', 'offset']
         self.excel_file.init_data(column_names)
         self.excel_file.reset()
 
@@ -103,6 +103,9 @@ class RingClassificationTask():
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
+        excel_results['scale'] = self.algorithm.processor.get_scale()
+        excel_results['offset'] = self.algorithm.processor.get_offset()
+
         excel_results = self.set_bn_stats(excel_results)
         path = create_directory(os.path.join(self.configs['results_base_dir'], f"Run_{run}"))
         self.save_plots(excel_results, mask, show_plot=self.configs["show_plots"], save_dir=path)
@@ -117,26 +120,30 @@ class RingClassificationTask():
             excel_results[key + '_var'] = bn_statistics[key]['var']
         return excel_results
 
-    def validate_task(self, target, control_voltages, bn_statistics=None, use_torch=False):
+    def validate_task(self, excel, use_torch=False):
+
+        value = excel.iloc[excel['best_performance'].astype(float).idxmin()]
+        bn_statistics = load_bn_values(value)
+        control_voltages = value['control_voltages'].reshape(25)
+        target = value['best_output']
+
         inputs, _, mask = self.get_ring_data_from_npz(processor_configs=self.configs["validation"]["processor"])
         slopped_plato = generate_slopped_plato(self.configs['validation']['processor']['waveform']['slope_lengths'], inputs.shape[0])[np.newaxis, :]
-        control_voltages = slopped_plato * control_voltages[:, np.newaxis]
+        # control_voltages = slopped_plato * control_voltages[:, np.newaxis]
         if bn_statistics is not None:
             self.validation_processor.set_batch_normalistaion_values(bn_statistics)
 
-        self.set_scale_and_offset()
-
+        self.validation_processor.set_scale_and_offset(offset=excel['offset'][0], scale=excel['scale'][0])
+        self.validation_processor.set_control_voltages(control_voltages)
+        self.validation_processor.eval()
         target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-        output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
+        # output = self.validation_processor.get_output_(inputs, control_voltages.T, mask)
+        output = self.validation_processor.forward(inputs)
+        output = TorchUtils.get_numpy_from_tensor(output.detach())
         error = ((target[mask] - output[mask]) ** 2).mean()
         self.plot_gate_validation(output[:, 0][mask], target[mask], self.configs['show_plots'], save_dir=os.path.join(self.configs['results_base_dir'], 'validation.png'))
 
         return error
-
-    def set_scale_and_offset(self):
-        offset = TorchUtils.get_numpy_from_tensor(self.algorithm.processor.state_dict().get('offset'))
-        scale = TorchUtils.get_numpy_from_tensor(self.algorithm.processor.state_dict().get('scale'))
-        self.validation_processor.set_scale_and_offset(offset=offset, scale=scale)
 
     def close_test(self):
         self.excel_file.data.to_pickle(os.path.join(self.configs["results_base_dir"], 'results.pkl'))
@@ -176,19 +183,10 @@ if __name__ == '__main__':
     from bspytasks.utils.excel import load_bn_values
 
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-
     result = task.run_task()
     task.close_test()
-    print(f"Control voltages: {result['control_voltages']}")
 
     excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
-    bn_statistics = load_bn_values(excel)
-    control_voltages = excel['control_voltages']
 
-    bn_statistics = load_bn_values(excel)
-    control_voltages = excel['control_voltages'].to_numpy()[0]
-    best_output = excel['best_output'].to_numpy()[0]
-    best_performance = excel['best_performance'].to_numpy()[0]
-
-    error = task.validate_task(best_output, control_voltages.reshape(25), bn_statistics=bn_statistics, use_torch=False)
+    error = task.validate_task(excel, use_torch=True)
     print(f'Error: {error}')
