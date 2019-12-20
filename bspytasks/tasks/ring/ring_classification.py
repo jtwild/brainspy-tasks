@@ -102,7 +102,7 @@ class RingClassificationTask():
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
 
-        torch.save(self.algorithm.processor.state_dict(), 'test.pth')
+        torch.save(self.algorithm.processor.state_dict(), os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth'))
         # excel_results['scale'] = self.algorithm.processor.get_scale()
         # excel_results['offset'] = self.algorithm.processor.get_offset()
 

@@ -10,6 +10,7 @@ RUNS = 1000
 
 task = Task(load_configs('configs/tasks/ring/template_gd_architecture.json'))
 for run in range(RUNS):
+    print(f'########### RUN {run} ################')
     result = task.run_task(run=run)
 task.close_test()
 
