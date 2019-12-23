@@ -1,18 +1,19 @@
 {
     "results_base_dir": "tmp/output/ring/",
-    "ring_data_path": "tmp/input/ring/class_data_0.40.npz",
-    "overwrite_results": true,
+    "ring_data_path": "tmp/input/ring/Class_data_0.0125.npz",
+    "overwrite_results": false,
     "steps": 1, 
-    "show_plots": false, 
+    "show_plots": false,
+    "save_plots": true, 
     "algorithm_configs": {
             "algorithm": "gradient_descent",
             "hyperparameters": {
-              "nr_epochs": 5000,
-              "batch_size": 1320,
-              "learning_rate": 0.01,
+              "nr_epochs": 1500,
+              "batch_size": 110,
+              "learning_rate": 0.0007,
               "save_interval": 100,
               "loss_function": "fisher",
-              "stop_threshold": -99999
+              "stop_threshold": -999
             },
             "processor": {
                       "architecture": "device_architecture",
@@ -21,13 +22,13 @@
                       "platform": "simulation",
                       "simulation_type": "neural_network",
                       "network_type": "dnpu",
-                      "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
-                      "input_indices": [0, 1],
+                      "torch_model_dict": "tmp/input/models/trained_network_12122019.pt",
+                      "input_indices": [3, 4],
                       "input_electrode_no": 7,
                       "waveform":{
-                        "amplitude_lengths": 10,
+                        "amplitude_lengths": 1,
                         "slope_lengths": 0,
-                        "output_clipping_value": 3.55                        
+                        "output_clipping_value": 4.0                        
                       },
                       "offset":{
                         "min": -0.35,
@@ -40,7 +41,7 @@
                       }
             },
             "checkpoints": {
-              "use_checkpoints": true,
+              "use_checkpoints": false,
               "save_dir": "tmp/output/ring/checkpoints",
               "save_interval": 5
             }

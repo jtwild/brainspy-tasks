@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from openpyxl import load_workbook
 
 
@@ -37,7 +38,7 @@ class ExcelFile():
         book = None
         if os.path.exists(self.file_path) and os.path.isfile(self.file_path):
             book = load_workbook(self.file_path)
-        self.writer = pd.ExcelWriter(self.file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
+        self.writer = pd.ExcelWriter(self.file_path, engine='xlsxwriter')  # pylint: disable=abstract-class-instantiated
         if book is not None:
             self.writer.book = book
             self.writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
@@ -48,6 +49,24 @@ class ExcelFile():
 
     def add_result(self, results, label=None):
         if label is None:
-            self.data.append(results, ignore_index=True)
+            self.data = self.data.append(pd.Series(results), ignore_index=True)
         else:
             self.data.loc[str(label)] = pd.Series(results)
+
+
+def get_series_with_numpy(series):
+    return series.apply(lambda x:
+                        np.fromstring(
+                            x.replace('\n', '')
+                            .replace('[', '')
+                            .replace(']', '')
+                            .replace('  ', ' '), sep=' '))
+
+
+def load_bn_values(excel):
+    bn_statistics = {'bn_1': {}, 'bn_2': {}}
+    bn_statistics['bn_1']['mean'] = excel['bn_1_mean']
+    bn_statistics['bn_1']['var'] = excel['bn_1_var']
+    bn_statistics['bn_2']['mean'] = excel['bn_2_mean']
+    bn_statistics['bn_2']['var'] = excel['bn_2_var']
+    return bn_statistics
