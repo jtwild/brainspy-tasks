@@ -7,12 +7,11 @@
                   "threshold_parameter": 0.5,
                   "boolean_gate_test":{
                           "max_attempts":10,
-                          "results_dir": "tmp/output/boolean_gates_test/gd/",
+                          "results_dir": "tmp/output/boolean_gates_test/ga/",
                           "show_plots": true,
                           "overwrite": true,
                           "algorithm_configs": {
                                   "algorithm": "genetic",
-                                  "stop_threshold": 0.93,
                                   "hyperparameters": {
                                                     "mutationrate": 0.1,
                                                     "epochs": 80,
