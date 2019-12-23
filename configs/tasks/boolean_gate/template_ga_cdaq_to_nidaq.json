@@ -11,14 +11,14 @@
                       "setup_type": "cdaq_to_nidaq",
                       "input_channels" : [0,1,2,3,4,5,6],
                       "output_channels" : [0],
-                      "sampling_frequency": 5000,
-                      "input_indices": [1, 5],
+                      "sampling_frequency": 1000,
+                      "input_indices": [3,4],
                       "input_electrode_no": 7,
-                      "amplification": 10.0,
-                      "shape":370,
+                      "amplification": 100.0,
+                      "shape":550,
                       "waveform":{
-                        "amplitude_lengths": 80,
-                        "slope_lengths": 10
+                        "amplitude_lengths": 100,
+                        "slope_lengths": 30
                       },
                       "driver": {
                         "driver_type" : "local"
