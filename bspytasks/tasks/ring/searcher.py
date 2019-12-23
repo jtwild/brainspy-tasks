@@ -13,7 +13,6 @@ for run in range(RUNS):
     print(f'########### RUN {run} ################')
     result = task.run_task(run=run)
 task.close_test()
->>>>>> > Stashed changes
 
 performance_per_run = np.zeros(RUNS)
 correlation_per_run = np.zeros(RUNS)
