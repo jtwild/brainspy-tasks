@@ -6,40 +6,46 @@ import numpy as np
 import matplotlib.pyplot as plt
 from bspytasks.utils.excel import get_series_with_numpy
 
-RUNS = 1000
+RUNS = 190  # 1000
 
 task = Task(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+
+performance_per_run = np.zeros(RUNS)
+correlation_per_run = np.zeros(RUNS)
+best_output_run = []
+
 for run in range(RUNS):
     print(f'########### RUN {run} ################')
-    result = task.run_task(run=run)
+    excel_results = task.run_task(run=run)
+    performance_per_run[run] = excel_results["best_performance"]
+    correlation_per_run[run] = excel_results["correlation"]
+    best_output_run.append(excel_results['best_output'])
+
 task.close_test()
 
-excel_results = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
-
-
-performance_per_run = excel_results["best_performance"]
-correlation_per_run = excel_results["correlation"]
-
-best_index = performance_per_run.astype(float).idxmin()
-best_run = excel_results.iloc[best_index]
-print(f"Best performance {best_run['best_performance']} in run {best_index} with corr. {best_run['correlation']}")
+best_index = np.argmin(performance_per_run)
+best_run = best_output_run[best_index]
+performance = performance_per_run[best_index]
+print(f"Best performance {performance} in run {best_index} with corr. {correlation_per_run[best_index]}")
+np.savez(os.path.join(task.configs["results_base_dir"], f'output_best_of_{RUNS}.npz'),
+         index=best_index, best_run=best_run, performance=performance)
 
 plt.figure()
-plt.plot(correlation_per_run.to_numpy(), performance_per_run.to_numpy(), '.')
+plt.plot(correlation_per_run, performance_per_run, 'o')
 plt.title('Correlation vs Fisher')
 plt.xlabel('Correlation')
 plt.ylabel('Fisher value')
 plt.savefig(os.path.join(task.configs["results_base_dir"], 'correlation_vs_fisher'))
 
 plt.figure()
-plt.plot(best_run['best_output'])
-plt.title(f'Best Output, run:{best_index}')
+plt.plot(best_run)
+plt.title(f'Best Output, run:{best_index}, F-val: {performance}')
 plt.xlabel('Time points (a.u.)')
 plt.ylabel('Output current (nA)')
 plt.savefig(os.path.join(task.configs["results_base_dir"], 'output_best_run'))
 
 plt.figure()
-plt.hist(performance_per_run.astype(float).to_numpy())
+plt.hist(performance_per_run, 100)
 plt.title('Histogram of Fisher values')
 plt.xlabel('Fisher values')
 plt.ylabel('Counts')
