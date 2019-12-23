@@ -6,9 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from bspytasks.utils.excel import get_series_with_numpy
 
-RUNS = 190  # 1000
+RUNS = 20
 
-task = Task(load_configs('configs/tasks/ring/template_gd_architecture.json'))
+task = Task(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+for run in range(RUNS):
+    print(f'########### RUN {run} ################')
+    result = task.run_task(run=run)
+task.close_test()
+>>>>>> > Stashed changes
 
 performance_per_run = np.zeros(RUNS)
 correlation_per_run = np.zeros(RUNS)
