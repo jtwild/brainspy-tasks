@@ -67,7 +67,7 @@ class VCDimDataManager():
         # @todo create a function that automatically generates non-linear inputs
         try:
             if vc_dimension == 4:
-                return [[ZERO, ZERO, ONE, ONE], [ONE, ZERO, ONE, ZERO]]
+                return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
             elif vc_dimension == 5:
                 return [[ZERO, ZERO, ONE, ONE, -QUARTER],
                         [ONE, ZERO, ONE, ZERO, 0.0]]

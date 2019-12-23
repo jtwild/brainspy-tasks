@@ -130,7 +130,7 @@ class VCDimensionTest():
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/benchmark_tests/capacity/template_ga.json')
+    configs = load_configs('configs/benchmark_tests/capacity/template_ga_validation.json')
     configs = configs['capacity_test']['vc_dimension_test']
     dimension = 4
     data_manager = VCDimensionTest(configs)

@@ -143,15 +143,17 @@ class BooleanGateTask():
         else:
             return 'not_found'
 
-    def validate_gate(self, gate, transformed_inputs, control_voltages, target, mask):
+    def validate_gate(self, gate, transformed_inputs, control_voltages, y_predicted, mask):
         print('==========================================================================================')
         print(f"Gate {gate} validation: ")
         transformed_inputs = self.clip(transformed_inputs, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
         control_voltages = self.clip(control_voltages, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
-        y_predicted = self.validation_processor.get_output_(transformed_inputs, control_voltages)
+        target = self.validation_processor.get_output_(transformed_inputs, control_voltages)
         error = ((target[mask] - y_predicted[mask]) ** 2).mean()
-        print(f'ERROR: {str(error)}')
-        plot_gate_validation(y_predicted[mask], target[mask], show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, 'validation'))
+        print(f'MSE: {str(error)}')
+        var_target = np.var(target[mask],ddof=1)
+        print(f'(var) NMSE: {100*error/var_target} %')
+        plot_gate_validation(target[mask], y_predicted[mask], show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, 'validation'))
         print('==========================================================================================')
         return error
 
@@ -166,17 +168,18 @@ def single_gate(configs, gate, threshold, verbose=False, validate=False, control
         control_voltages = excel_results['control_voltages']
         best_output = excel_results['best_output']
     if validate:
-        control_voltages = test.slopped_plato * excel_results['control_voltages'][:,np.newaxis]
-        test.validate_gate(gate, transformed_inputs, control_voltages.T, excel_results['best_output'], mask)
+        control_voltages = test.slopped_plato * control_voltages[:,np.newaxis]
+        test.validate_gate(gate, transformed_inputs, control_voltages.T, best_output, mask)
     return excel_results
 
 
-def plot_gate_validation(output, target, show_plots, save_dir=None):
+def plot_gate_validation(output, prediction, show_plots, save_dir=None):
     plt.figure()
     plt.plot(output)
-    plt.plot(target)
+    plt.plot(prediction)
     plt.ylabel('Current (nA)')
     plt.xlabel('Time')
+    plt.legend(['Device output','NN prediction'])
     if save_dir is not None:
         plt.savefig(save_dir)
     if show_plots:
@@ -205,10 +208,11 @@ def validate_single_gate(configs_path,):
 
     cv_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'control_voltages.npz')
     bo_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'best_output.npz')
-    cv = np.load(cv_path)
-    bo = np.load(bo_path)
+    cv = np.load(cv_path)['data']
+    bo = np.load(bo_path)['data']
 
-    single_gate(configs, None, None, validate=True, control_voltages=cv['data'], best_output=bo['data'])
+    # cv = np.array([-0.064, -0.858, -0.24, -0.41, 0.058])
+    single_gate(configs, None, None, validate=True, control_voltages=cv, best_output=bo)
 
 
 if __name__ == '__main__':
@@ -216,5 +220,5 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import save
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    find_single_gate('configs/benchmark_tests/capacity/template_ga.json', '[0 1 1 0]')
-    validate_single_gate('configs/benchmark_tests/capacity/template_ga.json')
+    find_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', '[1 1 0 1]')
+    validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json')
