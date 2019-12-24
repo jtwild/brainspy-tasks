@@ -41,6 +41,31 @@ class RingClassificationTask():
             print('Target shape ', targets.shape)
         return self.process_npz_targets(inputs, targets, processor_configs=processor_configs)
 
+    def get_ring_data_from_npz_2(self, processor_configs):
+        with np.load(self.configs['ring_data_path']) as data:
+            inputs = data['inp_wvfrm'][::self.configs['steps'], :]  # .T
+            print('Input shape: ', inputs.shape)
+            targets = data['target'][::self.configs['steps']]
+            print('Target shape ', targets.shape)
+        return self.process_npz_targets_2(inputs, targets, processor_configs=processor_configs)
+
+    def process_npz_targets_2(self, inputs, targets, processor_configs):
+        mask0 = (targets == 0)
+        mask1 = (targets == 1)
+        targets[mask0] = 1
+        targets[mask1] = 0
+        amplitude_lengths = processor_configs['waveform']['amplitude_lengths']
+        slope_lengths = processor_configs['waveform']['slope_lengths']
+        mask = generate_mask(targets, amplitude_lengths, slope_lengths=slope_lengths)
+        # inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
+        targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
+
+        if processor_configs["platform"] == 'simulation' and processor_configs["network_type"] == 'dnpu':
+            inputs = TorchUtils.get_tensor_from_numpy(inputs)
+            targets = TorchUtils.get_tensor_from_numpy(targets)
+
+        return inputs, targets, mask
+
     def process_npz_targets(self, inputs, targets, processor_configs):
         mask0 = (targets == 0)
         mask1 = (targets == 1)
@@ -52,7 +77,7 @@ class RingClassificationTask():
         inputs = self.generate_data_waveform(inputs, amplitude_lengths, slope_lengths)
         targets = np.asarray(generate_waveform(targets, amplitude_lengths, slope_lengths)).T
 
-        if processor_configs["simulation_type"] == 'neural_network' and processor_configs["network_type"] == 'dnpu':
+        if processor_configs["platform"] == 'simulation' and processor_configs["network_type"] == 'dnpu':
             inputs = TorchUtils.get_tensor_from_numpy(inputs)
             targets = TorchUtils.get_tensor_from_numpy(targets)
 
@@ -119,21 +144,24 @@ class RingClassificationTask():
             excel_results[key + '_var'] = bn_statistics[key]['var']
         return excel_results
 
-    def validate_task(self, excel, use_torch=False):
-        validation_inputs, _, validation_mask = self.get_ring_data_from_npz(
+    def validate_task(self):
+        validation_inputs, _, validation_mask = self.get_ring_data_from_npz_2(
             processor_configs=self.configs["validation"]["processor"])
         algorithm_inputs, _, algorithm_mask = self.get_ring_data_from_npz(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        self.validation_processor.load_state_dict(torch.load('test.pth'))
-
+        self.validation_processor.load_state_dict(torch.load('state_dict_Run943.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run943.pth',  map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.eval()
+        print("Reading target...")
         target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
+
         target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-
+        print("Reading validation...")
         output = self.validation_processor.get_output_(validation_inputs, validation_mask)
 
-        error = ((target[validation_mask] - output[validation_mask]) ** 2).mean()
+        error = ((target[validation_mask] - output[validation_mask][:,0]) ** 2).mean()
         self.plot_gate_validation(output[:, 0][validation_mask], target[validation_mask], self.configs['show_plots'], save_dir=os.path.join(
             self.configs['results_base_dir'], 'validation.png'))
 
@@ -162,7 +190,7 @@ class RingClassificationTask():
     def plot_gate_validation(self, output, target, show_plots, save_dir=None):
         plt.figure()
         plt.plot(output)
-        plt.plot(target, '.')
+        plt.plot(target, '-.')
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
         plt.title('Comparison between Processor and DNPU')
@@ -173,100 +201,90 @@ class RingClassificationTask():
             plt.show()
         plt.close()
 
+def read(name, configs):
 
-def plot_data():
-    l1_1_np = np.load('layer_1_output_1.npy')
-    l1_1_tr = torch.load('layer_1_output_1.pt').detach().cpu().numpy()
+    a = np.load(name + '.npy')
+    b = torch.load(name + '.pt').detach().cpu().numpy()
+    b = generate_waveform(b, configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
+    return a, b
 
-    print('Error')
-    print(((l1_1_np[:, 0] - l1_1_tr[:, 0]) ** 2).mean())
+def print_error(a,b, name):
+    print('Error '+name)
+    print(((a -b) ** 2).mean())
 
-    plt.plot(l1_1_np[:, 0])
-    plt.plot(l1_1_tr[:, 0])
-    plt.title('layer_1_output_1')
+def plot1(a, b, name):
+    plt.figure()
+    plt.plot(a, label='device')
+    plt.plot(b, label='model')
+    plt.title(name)
+    plt.legend()
     plt.show()
+    plt.close()
 
-    l1_2_np = np.load('layer_1_output_2.npy')
-    l1_2_tr = torch.load('layer_1_output_2.pt').detach().cpu().numpy()
+def plot_data(configs):
+    import bspyproc.utils.waveform as wf
 
-    print('Error')
-    print(((l1_2_np[:, 0] - l1_2_np[:, 0]) ** 2).mean())
+    # name = 'raw_input'
+    # a, b = read(name, configs)
+    # print_error(a[:,3],b[:,0], name)
+    # plot1(a[:,3],b[:,0], name)
+    # print_error(a[:,4],b[:,1], name)
+    # plot1(a[:,4],b[:,1], name)
 
-    plt.plot(l1_2_np[:, 0])
-    plt.plot(l1_2_tr[:, 0])
-    plt.title('layer_1_output_2')
-    plt.show()
+    # name = 'layer_1_output_1'
+    # a, b = read(name, configs)
+    # print_error(a[:,0],b[:,0], name)
+    # plot1(a[:,0],b[:,0], name)
 
-    bn_afterclip_1_np = np.load('bn_afterclip_1_1.npy')
-    bn_afterclip_1_tr = torch.load(
-        'bn_afterclip_1_1.pt').detach().cpu().numpy()
+    # name = 'layer_1_output_2'
+    # a, b = read(name, configs)
+    # print_error(a[:,0],b[:,0], name)
+    # plot1(a[:,0],b[:,0], name)
 
-    print('Error')
-    print(((bn_afterclip_1_np[:, 0] - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+    # name = 'bn_afterclip_1_1'
+    # a, b = read(name, configs)
+    # # print_error(a[:,0],b[:,0], name)
+    # plot1(a[:,0],b[:,0], name)
 
-    plt.plot(bn_afterclip_1_np[:, 0])
-    plt.plot(bn_afterclip_1_tr[:, 0])
-    plt.title('bn_afterclip_1_1')
-    plt.show()
 
-    bn_afterclip_1_np = np.load('bn_afterclip_1_2.npy')
-    bn_afterclip_1_tr = torch.load(
-        'bn_afterclip_1_2.pt').detach().cpu().numpy()
 
-    print('Error')
-    print(((bn_afterclip_1_np[:, 0] - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+    # name = 'bn_afterclip_1_2'
+    # a, b = read(name, configs)
+    # # print_error(a[:,0],b[:,0], name)
+    # plot1(a[:,0],b[:,0], name)
 
-    plt.plot(bn_afterclip_1_np[:, 0])
-    plt.plot(bn_afterclip_1_tr[:, 0])
-    plt.title('bn_afterclip_1_2')
-    plt.show()
 
-    bn_afterclip_1_np = np.load('bn_afterbatch_1.npy')
-    bn_afterclip_1_tr = torch.load('bn_afterbatch_1.pt').detach().cpu().numpy()
+    # name = 'bn_afterbatch_1'
+    # a = np.load('bn_afterbatch_1.npy')
+    # b = torch.load('bn_afterbatch_1.pt').detach().cpu().numpy()
+    # b = generate_waveform(b, configs['validation']['processor']['waveform']['amplitude_lengths'], 0)
+    # c = np.load('bn_afterbatch_2.npy')
+    # # print_error(a,b[:,0], name)
+    # plot1(a,b[:,0], name)
 
-    print('Error')
-    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 0]) ** 2).mean())
+    # print_error(c,b[:,1], name)
+    # plot1(c,b[:,1], name)
 
-    plt.plot(bn_afterclip_1_np)
-    plt.plot(bn_afterclip_1_tr[:, 0])
-    plt.title('bn_afterbatch_1')
-    plt.show()
+    # name = 'bn_aftercv_1'
+    # a, b = read(name, configs)
+    # # print_error(a,b[:,0], name)
+    # plot1(a,b[:,0], name)
 
-    bn_afterclip_1_np = np.load('bn_afterbatch_2.npy')
 
-    print('Error')
-    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 1]) ** 2).mean())
+    # name = 'bn_aftercv_2'
+    # a, b = read(name, configs)
+    # # print_error(a,b[:,1], name)
+    # plot1(a,b[:,1], name)
 
-    plt.plot(bn_afterclip_1_np)
-    plt.plot(bn_afterclip_1_tr[:, 1])
-    plt.title('bn_afterbatch_2')
-    plt.show()
-
-    bn_afterclip_1_np = np.load('bn_aftercv_1.npy')
-    bn_afterclip_1_tr = torch.load('bn_aftercv_1.pt').detach().cpu().numpy()
-
-    print('Error')
-    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 0]) ** 2).mean())
-
-    plt.plot(bn_afterclip_1_np)
-    plt.plot(bn_afterclip_1_tr[:, 0])
-    plt.title('bn_aftercv_1')
-    plt.show()
-
-    bn_afterclip_1_np = np.load('bn_aftercv_2.npy')
-    print('Error')
-    print(((bn_afterclip_1_np - bn_afterclip_1_tr[:, 1]) ** 2).mean())
-
-    plt.plot(bn_afterclip_1_np)
-    plt.plot(bn_afterclip_1_tr[:, 1])
-    plt.title('bn_aftercv_2')
-    plt.show()
 
     l1_np = np.load('layer_1_output_processed.npy')
     l1_tr = torch.load('layer_1_output_processed.pt').detach().cpu().numpy()
+    l1_tr = generate_waveform(l1_tr, configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], 20)
 
-    print('Error')
-    print(((l1_np[:, 0] - l1_tr[:, 0]) ** 2).mean())
+    # print('Error')
+    # print(((l1_np[:, 0] - l1_tr[:, 0]) ** 2).mean())
 
     plt.plot(l1_np[:, 14 + 3])
     plt.plot(l1_tr[:, 0])
@@ -278,9 +296,10 @@ def plot_data():
 
     l2_1_np = np.load('layer_2_output_2.npy')
     l2_1_tr = torch.load('layer_2_output_2.pt').detach().cpu().numpy()
-
-    print('Error')
-    print(((l2_1_np[:, 0] - l2_1_tr[:, 0]) ** 2).mean())
+    l2_1_tr = generate_waveform(l2_1_tr, configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], 20)
+    # print('Error')
+    # print(((l2_1_np[:, 0] - l2_1_tr[:, 0]) ** 2).mean())
 
     plt.plot(l2_1_np[:, 0])
     plt.plot(l2_1_tr[:, 0])
@@ -288,9 +307,12 @@ def plot_data():
 
     l2_2_np = np.load('layer_2_output_2.npy')
     l2_2_tr = torch.load('layer_2_output_2.pt').detach().cpu().numpy()
+    l2_2_tr = generate_waveform(l2_2_tr, configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], 20)
 
-    print('Error')
-    print(((l2_2_np[:, 0] - l2_2_tr[:, 0]) ** 2).mean())
+
+    # print('Error')
+    # print(((l2_2_np[:, 0] - l2_2_tr[:, 0]) ** 2).mean())
 
     plt.plot(l2_2_np[:, 0])
     plt.plot(l2_2_tr[:, 0])
@@ -298,6 +320,8 @@ def plot_data():
 
     l2_np = np.load('layer_2_output_processed.npy')
     l2_tr = torch.load('layer_2_output_processed.pt').detach().cpu().numpy()
+    l2_2_tr = generate_waveform(b, configs['validation']['processor']['waveform']
+                                   ['amplitude_lengths'], 0)
 
     print('Error')
     print(((l2_np[:, 0] - l2_tr[:, 0]) ** 2).mean())
@@ -317,11 +341,12 @@ if __name__ == '__main__':
     from bspytasks.utils.excel import load_bn_values
     import matplotlib.pyplot as plt
 
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture.json'))
-    result = task.run_task()
-    task.close_test()
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation.json'))
+    # result = task.run_task()
+    # task.close_test()
 
     # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
-    error = task.validate_task(excel, use_torch=False)
-    print(f'Error: {error}')
+    error = task.validate_task()
+    # print(f'Error: {error}')
+    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation.json'))
