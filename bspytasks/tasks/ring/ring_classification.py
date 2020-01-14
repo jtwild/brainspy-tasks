@@ -60,8 +60,8 @@ class RingClassificationTask():
         algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        self.validation_processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
-        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.validation_processor.load_state_dict(torch.load('state_dict_Run943.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run943.pth', map_location=TorchUtils.get_accelerator_type()))
         self.algorithm.processor.eval()
         print("Reading target...")
         target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
@@ -69,21 +69,14 @@ class RingClassificationTask():
         target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
         print("Reading validation...")
+        # output = self.validation_processor.get_output_(validation_inputs, validation_mask)
         output = self.validation_processor.get_output_(validation_inputs, validation_mask)
-
         error = ((target[validation_mask] - output[validation_mask][:, 0]) ** 2).mean()
+        print(f'Total Error: {error}')
         plot_gate_validation(output[:, 0][validation_mask], target[validation_mask], self.configs['show_plots'], save_dir=os.path.join(
             self.configs['results_base_dir'], 'validation.png'))
 
         return error
-
-
-def read(name, configs):
-    a = np.load(name + '.npy')
-    b = torch.load(name + '.pt').detach().cpu().numpy()
-    b = generate_waveform(b, configs['validation']['processor']['waveform']
-                          ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
-    return a, b
 
 
 if __name__ == '__main__':
@@ -93,12 +86,12 @@ if __name__ == '__main__':
     from bspytasks.tasks.ring.plotter import plot_data
     from bspyalgo.utils.io import load_configs
 
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation.json'))
-    result = task.run_task()
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # result = task.run_task()
     # task.close_test()
 
     # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
     error = task.validate_task()
-    # print(f'Error: {error}')
+
     plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
