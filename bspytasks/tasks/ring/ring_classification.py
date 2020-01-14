@@ -86,12 +86,13 @@ if __name__ == '__main__':
     from bspytasks.tasks.ring.plotter import plot_data
     from bspyalgo.utils.io import load_configs
 
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+
+     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation.json'))
     # result = task.run_task()
     # task.close_test()
 
     # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
-    error = task.validate_task()
-
-    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # error = task.validate_task()
+    # print(f'Error: {error}')
+    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation.json'))
