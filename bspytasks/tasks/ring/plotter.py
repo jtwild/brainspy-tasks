@@ -47,8 +47,8 @@ def plot1(a, b, name):
 def read(name, configs):
     a = np.load(os.path.join('tmp', name + '.npy'))
     b = torch.load(os.path.join('tmp', name + '.pt')).detach().cpu().numpy()
-    b = generate_waveform(b, configs['validation']['processor']['waveform']
-                          ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
+    # b = generate_waveform(b, configs['validation']['processor']['waveform']
+    #                       ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
     return a, b
 
 
@@ -75,7 +75,7 @@ def plot_raw_input(configs):
 def plot_multiple(name, configs):
     a = np.load(name + '_1.npy')
     b = torch.load(name + '.pt').detach().cpu().numpy()
-    b = generate_waveform(b, configs['validation']['processor']['waveform']['amplitude_lengths'], 0)
+    # b = generate_waveform(b, configs['validation']['processor']['waveform']['amplitude_lengths'], 0)
     c = np.load(name + '_2.npy')
     print_error(a, b[:, 0], name + '_1')
     plot1(a, b[:, 0], name + '_1')

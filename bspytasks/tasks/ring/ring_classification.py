@@ -65,14 +65,19 @@ class RingClassificationTask():
         self.algorithm.processor.eval()
         print("Reading target...")
         target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
-
-        target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
-                                   ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
         print("Reading validation...")
         # output = self.validation_processor.get_output_(validation_inputs, validation_mask)
         output = self.validation_processor.get_output_(validation_inputs, validation_mask)
+
+        # target = generate_waveform(target[algorithm_mask][:, 0], self.configs['validation']['processor']['waveform']
+        #                            ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
+
         error = ((target[validation_mask] - output[validation_mask][:, 0]) ** 2).mean()
         print(f'Total Error: {error}')
+        print('WITHOUT MASK')
+        plot_gate_validation(output[:, 0], target, self.configs['show_plots'], save_dir=os.path.join(
+            self.configs['results_base_dir'], 'validation.png'))
+        print('WITH MASK')
         plot_gate_validation(output[:, 0][validation_mask], target[validation_mask], self.configs['show_plots'], save_dir=os.path.join(
             self.configs['results_base_dir'], 'validation.png'))
 
