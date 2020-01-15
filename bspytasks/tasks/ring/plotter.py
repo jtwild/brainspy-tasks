@@ -47,8 +47,8 @@ def plot1(a, b, name):
 def read(name, configs):
     a = np.load(os.path.join('tmp', name + '.npy'))
     b = torch.load(os.path.join('tmp', name + '.pt')).detach().cpu().numpy()
-    # b = generate_waveform(b, configs['validation']['processor']['waveform']
-    #                       ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
+    b = generate_waveform(b, configs['validation']['processor']['waveform']
+                          ['amplitude_lengths'], configs['validation']['processor']['waveform']['slope_lengths'])
     return a, b
 
 
@@ -72,17 +72,6 @@ def plot_raw_input(configs):
     plot1(a[:, 4], b[:, 1], name)
 
 
-def plot_multiple(name, configs):
-    a = np.load(name + '_1.npy')
-    b = torch.load(name + '.pt').detach().cpu().numpy()
-    # b = generate_waveform(b, configs['validation']['processor']['waveform']['amplitude_lengths'], 0)
-    c = np.load(name + '_2.npy')
-    print_error(a, b[:, 0], name + '_1')
-    plot1(a, b[:, 0], name + '_1')
-    print_error(c, b[:, 1], name + '_2')
-    plot1(c, b[:, 1], name + '_2')
-
-
 def plot_data(configs):
     plot_raw_input(configs)
 
@@ -92,8 +81,8 @@ def plot_data(configs):
     default_plot('bn_afterclip_1_1', configs)
     default_plot('bn_afterclip_1_2', configs)
 
-    default_plot('bn_afterbatch_1_1', configs)
-    default_plot('bn_afterbatch_1_2', configs)
+    # default_plot('bn_afterbatch_1_1', configs)
+    # default_plot('bn_afterbatch_1_2', configs)
 
     default_plot('bn_aftercv_1_1', configs)
     default_plot('bn_aftercv_1_2', configs)
