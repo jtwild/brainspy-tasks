@@ -40,6 +40,7 @@ def plot1(a, b, name):
     plt.plot(b, label='model')
     plt.title(name)
     plt.legend()
+    plt.savefig(os.path.join('tmp', name + '.jpg'))
     plt.show()
     plt.close()
 
