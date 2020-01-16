@@ -195,19 +195,19 @@ def find_single_gate(configs_path, gate):
 
     result = single_gate(configs, gate, threshold, validate=False)
 
-    save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
-    save('numpy', configs['boolean_gate_test']['results_dir'], 'best_output', overwrite=False, data=result['best_output'])
+    results_path = save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
+    save('numpy',results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
 
     print(f"Control voltages: {result['control_voltages']}")
+    return results_path
 
-
-def validate_single_gate(configs_path,):
+def validate_single_gate(configs_path, results_path):
     import os
     configs = load_configs(configs_path)
     configs = configs['capacity_test']['vc_dimension_test']
 
-    cv_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'control_voltages.npz')
-    bo_path = os.path.join(configs['boolean_gate_test']['results_dir'], 'best_output.npz')
+    cv_path = os.path.join(results_path, 'control_voltages.npz')
+    bo_path = os.path.join(results_path, 'best_output.npz')
     cv = np.load(cv_path)['data']
     bo = np.load(bo_path)['data']
 
@@ -220,5 +220,5 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import save
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    find_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', '[1 1 0 1]')
-    validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json')
+    results_path = find_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', '[0 0 0 1]')
+    validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', results_path)
