@@ -81,8 +81,8 @@ def plot_data(configs):
     default_plot('bn_afterclip_1_1', configs)
     default_plot('bn_afterclip_1_2', configs)
 
-    # default_plot('bn_afterbatch_1_1', configs)
-    # default_plot('bn_afterbatch_1_2', configs)
+    default_plot('bn_afterbatch_1_1', configs)
+    default_plot('bn_afterbatch_1_2', configs)
 
     default_plot('bn_aftercv_1_1', configs)
     default_plot('bn_aftercv_1_2', configs)
