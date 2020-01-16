@@ -88,14 +88,27 @@ if __name__ == '__main__':
     import pandas as pd
     import torch
     import matplotlib.pyplot as plt
+
     from bspytasks.tasks.ring.plotter import plot_data
     from bspyalgo.utils.io import load_configs
 
+<<<<<<< Updated upstream
     # task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
         # result = task.run_task()
         # task.close_test()
+=======
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # result = task.run_task()
+    # task.close_test()
+>>>>>>> Stashed changes
 
         # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
+<<<<<<< Updated upstream
     # error = task.validate_task()
     plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
+=======
+    error = task.validate_task()
+    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
+>>>>>>> Stashed changes

@@ -75,26 +75,26 @@ def plot_raw_input(configs):
 def plot_data(configs):
     plot_raw_input(configs)
 
+    default_plot('device_layer_1_output_0', configs)
     default_plot('device_layer_1_output_1', configs)
-    default_plot('device_layer_1_output_2', configs)
 
+    default_plot('bn_afterclip_1_0', configs)
     default_plot('bn_afterclip_1_1', configs)
-    default_plot('bn_afterclip_1_2', configs)
 
+    default_plot('bn_afterbatch_1_0', configs)
     default_plot('bn_afterbatch_1_1', configs)
-    default_plot('bn_afterbatch_1_2', configs)
 
+    default_plot('bn_aftercv_1_0', configs)
     default_plot('bn_aftercv_1_1', configs)
-    default_plot('bn_aftercv_1_2', configs)
 
+    default_plot('device_layer_2_output_0', configs)
     default_plot('device_layer_2_output_1', configs)
-    default_plot('device_layer_2_output_2', configs)
 
+    default_plot('bn_afterclip_2_0', configs)
     default_plot('bn_afterclip_2_1', configs)
-    default_plot('bn_afterclip_2_2', configs)
 
+    default_plot('bn_afterbatch_2_0', configs)
     default_plot('bn_afterbatch_2_1', configs)
-    default_plot('bn_afterbatch_2_2', configs)
 
+    default_plot('bn_aftercv_2_0', configs)
     default_plot('bn_aftercv_2_1', configs)
-    default_plot('bn_aftercv_2_2', configs)
