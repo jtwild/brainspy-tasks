@@ -30,6 +30,9 @@
                         "slope_lengths": 20,
                         "output_clipping_value": 4.0                        
                       },
+                      "current_to_voltage":{
+                        "offset": -0.6
+                      },
                       "offset":{
                         "min": -0.35,
                         "max": 0.7,
@@ -68,7 +71,10 @@
         "conversion": -0.6,
         "driver": {
           "driver_type" : "local"
-        }
+        },
+        "current_to_voltage":{
+          "offset": -0.6
+      }
 }
     }
 }
