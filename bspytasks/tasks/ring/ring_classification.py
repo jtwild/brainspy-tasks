@@ -86,15 +86,18 @@ if __name__ == '__main__':
     import pandas as pd
     import torch
     import matplotlib.pyplot as plt
-
     from bspyalgo.utils.io import load_configs
 
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
-    # result = task.run_task()
-    # task.close_test()
+    # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
+    configs = load_configs('configs/tasks/ring/template_gd_architecture_2.json')
+    task = RingClassificationTask(configs)
+    # result, model_dir = task.run_task()
 
-    # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
+    # task.validate_task(model_dir)
+    task.validate_task('state_dict_Run4.pth')
+    plotter = ArchitecturePlotter(configs)
 
-    error = task.validate_task('state_dict_Run4.pth')
-    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
+    # # print('PLOTTING DATA WITH MASK')
+    # plotter.plot_data(use_mask=True)
+    print('PLOTTING DATA WITHOUT MASK')
+    plotter.plot_data()
