@@ -39,10 +39,14 @@ class RingClassificationTask():
         inputs, targets, mask = self.data_loader.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         excel_results = self.optimize(inputs, targets, mask)
         excel_results = self.process_output(excel_results, targets, mask)
-        torch.save(self.algorithm.processor.state_dict(), os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth'))
+        model = {}
+        model['state_dict'] = self.algorithm.processor.state_dict()
+        model['info'] = self.algorithm.processor.info
+        model_dir = os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth')
+        torch.save(model, model_dir)
         self.plotter.save_plots(excel_results, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
 
-        return excel_results
+        return excel_results, model_dir
 
     def process_output(self, excel_results, targets, mask):
         best_output = excel_results['best_output'][mask]
@@ -55,26 +59,26 @@ class RingClassificationTask():
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
         return excel_results
 
-    def validate_task(self):
-        validation_inputs, _, validation_mask = self.data_loader.get_ring_data_from_npz(
+    def validate_task(self, model_dir):
+        validation_inputs, _, validation_mask = self.data_loader.get_ring_data_from_npz_2(
             processor_configs=self.configs["validation"]["processor"])
-        algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz(
+        algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz_2(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        self.validation_processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
-        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.validation_processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type())['state_dict'])
         self.algorithm.processor.eval()
 
         print("Reading target...")
         target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
         print("Reading validation...")
-        output = self.validation_processor.get_output_(validation_inputs, validation_mask)
+        output = self.validation_processor.get_output_(validation_inputs, validation_mask)[:, 0]
 
         target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm'), target)
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm_mask'), algorithm_mask)
-        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output'), output[:, 0])
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output'), output)
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output_mask'), validation_mask)
 
 
@@ -86,24 +90,25 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
 
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    # result = task.run_task()
+    result, model_dir = task.run_task()
     # task.close_test()
 
     # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
-    task.validate_task()
-    plotter = ArchitecturePlotter(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    print('PLOTTING DATA WITH MASK')
-    plotter.plot_data(use_mask=True)
-    print('PLOTTING DATA WITHOUT MASK')
-    plotter.plot_data()
-    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
+    task.validate_task(model_dir)
+    # # task.validate_task('test.pth')
+    # plotter = ArchitecturePlotter(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # # print('PLOTTING DATA WITH MASK')
+    # # plotter.plot_data(use_mask=True)
+    # print('PLOTTING DATA WITHOUT MASK')
+    # plotter.plot_data()
+    # # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    # # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
 
-    # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
-    # rdl = RingDataLoader(configs)
-    # validation_inputs, _, validation_mask = rdl.get_ring_data_from_npz(
-    #     processor_configs=configs["validation"]["processor"])
-    # algorithm_inputs, _, algorithm_mask = rdl.get_ring_data_from_npz(
-    #     processor_configs=configs["algorithm_configs"]["processor"])
-    # plot_masked_data(configs, validation_mask, algorithm_mask)
+    # # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
+    # # rdl = RingDataLoader(configs)
+    # # validation_inputs, _, validation_mask = rdl.get_ring_data_from_npz(
+    # #     processor_configs=configs["validation"]["processor"])
+    # # algorithm_inputs, _, algorithm_mask = rdl.get_ring_data_from_npz(
+    # #     processor_configs=configs["algorithm_configs"]["processor"])
+    # # plot_masked_data(configs, validation_mask, algorithm_mask)

@@ -1,16 +1,16 @@
 {
     "results_base_dir": "tmp/output/ring/",
-    "ring_data_path": "tmp/input/ring/class_data_0.0125.npz",
+    "ring_data_path": "tmp/input/ring/class_data_0.40.npz",
     "overwrite_results": false,
     "steps": 1,
-    "show_plots": true,
+    "show_plots": false,
     "save_plots": true,
     "algorithm_configs": {
         "algorithm": "gradient_descent",
         "hyperparameters": {
-            "nr_epochs": 10,
+            "nr_epochs": 5000,
             "batch_size": 110,
-            "learning_rate": 0.00005,
+            "learning_rate": 0.000095,
             "save_interval": 100,
             "loss_function": "fisher",
             "stop_threshold": -99999
@@ -23,22 +23,20 @@
             "simulation_type": "neural_network",
             "network_type": "dnpu",
             "torch_model_dict": "tmp/input/models/trained_network_12122019.pt",
+            "debug":false,
             "input_indices": [
-                3,
+                2,
                 4
             ],
             "input_electrode_no": 7,
             "waveform": {
-                "amplitude_lengths": 50,
-                "slope_lengths": 20,
+                "amplitude_lengths": 1,
+                "slope_lengths": 0,
                 "output_clipping_value": 4.0
             },
             "offset": {
                 "min": -0.35,
                 "max": 0.7
-            },
-            "current_to_voltage":{
-                "offset": -0.6
             },
             "scale": {
                 "min": 0.1,
@@ -68,16 +66,13 @@
             ],
             "input_electrode_no": 7,
             "waveform": {
-                "amplitude_lengths": 50,
+                "amplitude_lengths": 80,
                 "slope_lengths": 20,
                 "output_clipping_value": 4.0
             },
             "offset": {
                 "min": -0.35,
                 "max": 0.7
-            },
-            "current_to_voltage":{
-                "offset": -0.6
             },
             "scale": {
                 "min": 0.1,
