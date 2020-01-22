@@ -14,7 +14,7 @@ from bspyalgo.utils.io import save
 from bspyproc.utils.pytorch import TorchUtils
 from bspytasks.tasks.ring.data_loader import RingDataLoader
 from bspyproc.utils.waveform import generate_waveform
-from bspytasks.tasks.ring.plotter import save_plots, plot_gate_validation
+from bspytasks.tasks.ring.plotter import ArchitecturePlotter
 
 
 class RingClassificationTask():
@@ -25,6 +25,7 @@ class RingClassificationTask():
         self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'], filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
         self.data_loader = RingDataLoader(configs)
         self.algorithm = get_algorithm(configs['algorithm_configs'])
+        self.plotter = ArchitecturePlotter(configs)
         if 'validation' in configs:
             self.validation_processor = get_processor(configs['validation']['processor'])
 
@@ -38,10 +39,14 @@ class RingClassificationTask():
         inputs, targets, mask = self.data_loader.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
         excel_results = self.optimize(inputs, targets, mask)
         excel_results = self.process_output(excel_results, targets, mask)
-        torch.save(self.algorithm.processor.state_dict(), os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth'))
-        save_plots(excel_results, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
+        model = {}
+        model['state_dict'] = self.algorithm.processor.state_dict()
+        model['info'] = self.algorithm.processor.info
+        model_dir = os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth')
+        torch.save(model, model_dir)
+        self.plotter.save_plots(excel_results, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
 
-        return excel_results
+        return excel_results, model_dir
 
     def process_output(self, excel_results, targets, mask):
         best_output = excel_results['best_output'][mask]
@@ -54,34 +59,27 @@ class RingClassificationTask():
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
         return excel_results
 
-    def validate_task(self):
-        validation_inputs, _, validation_mask = self.data_loader.get_ring_data_from_npz(
+    def validate_task(self, model_dir):
+        validation_inputs, _, validation_mask = self.data_loader.get_ring_data_from_npz_2(
             processor_configs=self.configs["validation"]["processor"])
-        algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz(
+        algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz_2(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        self.validation_processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
-        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.validation_processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type())['state_dict'])
         self.algorithm.processor.eval()
 
         print("Reading target...")
         target = self.algorithm.processor.forward(algorithm_inputs).detach().cpu().numpy()
         print("Reading validation...")
-        output = self.validation_processor.get_output_(validation_inputs, validation_mask)
+        output = self.validation_processor.get_output_(validation_inputs, validation_mask)[:, 0]
 
         target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-
-        error = ((target[algorithm_mask] - output[validation_mask][:, 0]) ** 2).mean()
-        print(f'Total Error: {error}')
-        print('WITHOUT MASK')
-        plot_gate_validation(output[:, 0], target, self.configs['show_plots'], save_dir=os.path.join(
-            self.configs['results_base_dir'], 'validation.png'))
-        print('WITH MASK')
-        plot_gate_validation(output[:, 0][validation_mask], target[algorithm_mask], self.configs['show_plots'], save_dir=os.path.join(
-            self.configs['results_base_dir'], 'validation.png'))
-
-        return error
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm'), target)
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm_mask'), algorithm_mask)
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output'), output)
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output_mask'), validation_mask)
 
 
 if __name__ == '__main__':
@@ -89,15 +87,14 @@ if __name__ == '__main__':
     import torch
     import matplotlib.pyplot as plt
 
-    from bspytasks.tasks.ring.plotter import plot_data
     from bspyalgo.utils.io import load_configs
 
     task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
-        # result = task.run_task()
-        # task.close_test()
+    # result = task.run_task()
+    # task.close_test()
 
-        # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
+    # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
-    error = task.validate_task()
+    error = task.validate_task('state_dict_Run4.pth')
     # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
     plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
