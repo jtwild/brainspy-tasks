@@ -60,8 +60,8 @@ class RingClassificationTask():
         algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
-        self.validation_processor.load_state_dict(torch.load('state_dict_Run943.pth', map_location=TorchUtils.get_accelerator_type()))
-        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run943.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.validation_processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
+        self.algorithm.processor.load_state_dict(torch.load('state_dict_Run33.pth', map_location=TorchUtils.get_accelerator_type()))
         self.algorithm.processor.eval()
 
         print("Reading target...")
@@ -92,23 +92,12 @@ if __name__ == '__main__':
     from bspytasks.tasks.ring.plotter import plot_data
     from bspyalgo.utils.io import load_configs
 
-<<<<<<< Updated upstream
-    # task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
+    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
         # result = task.run_task()
         # task.close_test()
-=======
-    task = RingClassificationTask(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    # result = task.run_task()
-    # task.close_test()
->>>>>>> Stashed changes
 
         # excel = pd.read_pickle(os.path.join(task.configs["results_base_dir"], 'results.pkl'))
 
-<<<<<<< Updated upstream
-    # error = task.validate_task()
-    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
-=======
     error = task.validate_task()
-    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
-    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
->>>>>>> Stashed changes
+    # plot_data(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+    plot_data(load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json'))
