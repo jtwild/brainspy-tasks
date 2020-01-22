@@ -117,13 +117,13 @@ class ArchitecturePlotter():
             error = ((self.b_output[self.b_mask] - self.a_output[self.a_mask]) ** 2).mean()
             print(f'Total Error: {error}')
 
-            self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], self.configs['show_plots'], save_dir=os.path.join(
+            self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
                 self.configs['results_base_dir'], 'validation.png'))
         else:
             error = ((self.b_output - self.a_output) ** 2).mean()
             print(f'Total Error: {error}')
 
-            self.plot_gate_validation(self.b_output, self.a_output, self.configs['show_plots'], save_dir=os.path.join(
+            self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
                 self.configs['results_base_dir'], 'validation.png'))
 
     def plot_data(self, use_mask=False):
