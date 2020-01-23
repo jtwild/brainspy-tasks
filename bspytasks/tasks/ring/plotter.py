@@ -42,7 +42,7 @@ class ArchitecturePlotter():
             plt.show()
         plt.close('all')
 
-    def plot_gate_validation(self, output, target, show_plot=False, save_dir=None):
+    def plot_gate_validation(self, target, output, show_plot=False, save_dir=None):
         plt.figure()
         plt.plot(output)
         plt.plot(target, '-.')
