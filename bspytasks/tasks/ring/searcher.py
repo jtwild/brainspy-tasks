@@ -4,9 +4,22 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-RUNS = 10
+from bspyproc.utils.pytorch import TorchUtils
 
-task = Task(load_configs('configs/tasks/ring/template_gd_architecture_2.json'))
+RUNS = 2
+
+configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
+configs = load_configs('configs/tasks/ring/experiments/ring_classification_configs.json')
+if 'seed' in configs:
+    seed = configs['seed']
+else:
+    seed = None
+
+seed = TorchUtils.init_seed(seed, deterministic=True)
+configs['seed'] = seed
+
+task = Task(configs)
+
 
 performance_per_run = np.zeros(RUNS)
 correlation_per_run = np.zeros(RUNS)
