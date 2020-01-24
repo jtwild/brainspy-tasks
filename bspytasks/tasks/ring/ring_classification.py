@@ -77,7 +77,7 @@ class RingClassificationTask():
         target = generate_waveform(target[:, 0], self.configs['validation']['processor']['waveform']
                                    ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm'), target)
-        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm_mask'), algorithm_mask)
+        np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'target_algorithm_mask'), validation_mask)
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output'), output)
         np.save(os.path.join(os.path.join('tmp', 'architecture_debug'), 'validation_output_mask'), validation_mask)
 
@@ -94,10 +94,11 @@ if __name__ == '__main__':
     # result, model_dir = task.run_task()
 
     # task.validate_task(model_dir)
-    task.validate_task('state_dict_Run4.pth')
+    task.validate_task('state_dict_Run56.pth')
     plotter = ArchitecturePlotter(configs)
 
-    # # print('PLOTTING DATA WITH MASK')
-    # plotter.plot_data(use_mask=True)
-    print('PLOTTING DATA WITHOUT MASK')
-    plotter.plot_data()
+    print('PLOTTING DATA WITH MASK')
+    plotter.plot_data(use_mask=True)
+    # print('PLOTTING DATA WITHOUT MASK')
+    # plotter.plot_final_result()
+    # plotter.plot_data()
