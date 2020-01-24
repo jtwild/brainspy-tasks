@@ -1,6 +1,6 @@
 {
     "results_base_dir": "tmp/output/ring/",
-    "ring_data_path": "tmp/input/ring/class_data_0.40.npz",
+    "ring_data_path": "tmp/input/ring/class_data_0.20.npz",
     "overwrite_results": false,
     "steps": 1,
     "show_plots": false,
@@ -18,7 +18,6 @@
         "processor": {
             "architecture": "device_architecture",
             "architecture_type": "221",
-            "batch_norm": true,
             "platform": "simulation",
             "simulation_type": "neural_network",
             "network_type": "dnpu",
@@ -54,7 +53,9 @@
         "processor": {
             "architecture": "device_architecture",
             "architecture_type": "221",
-            "batch_norm": true,
+            "batch_norm": {
+                "use_running_stats" : false
+            },
             "platform": "simulation",
             "simulation_type": "neural_network",
             "network_type": "nn_model",
