@@ -20,7 +20,9 @@ class BooleanGateTask():
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
         if 'validation' in configs:
-            self.slopped_plato =generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], configs['validation']['processor']['shape'])[np.newaxis, :]
+            shape = (configs['validation']['processor']['waveform']['slope_lengths'] * 5) + (configs['validation']['processor']['waveform']['amplitude_lengths'] * 4)
+            configs['validation']['processor']['shape'] = shape
+            self.slopped_plato = generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], )[np.newaxis, :]
             self.validation_processor_configs = configs['validation']['processor']
             self.validation_processor = get_processor(configs['validation']['processor'])
         else:
@@ -151,7 +153,7 @@ class BooleanGateTask():
         target = self.validation_processor.get_output_(transformed_inputs, control_voltages)
         error = ((target[mask] - y_predicted[mask]) ** 2).mean()
         print(f'MSE: {str(error)}')
-        var_target = np.var(target[mask],ddof=1)
+        var_target = np.var(target[mask], ddof=1)
         print(f'(var) NMSE: {100*error/var_target} %')
         plot_gate_validation(target[mask], y_predicted[mask], show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, 'validation'))
         print('==========================================================================================')
@@ -168,7 +170,7 @@ def single_gate(configs, gate, threshold, verbose=False, validate=False, control
         control_voltages = excel_results['control_voltages']
         best_output = excel_results['best_output']
     if validate:
-        control_voltages = test.slopped_plato * control_voltages[:,np.newaxis]
+        control_voltages = test.slopped_plato * control_voltages[:, np.newaxis]
         test.validate_gate(gate, transformed_inputs, control_voltages.T, best_output, mask)
     return excel_results
 
@@ -179,7 +181,7 @@ def plot_gate_validation(output, prediction, show_plots, save_dir=None):
     plt.plot(prediction)
     plt.ylabel('Current (nA)')
     plt.xlabel('Time')
-    plt.legend(['Device output','NN prediction'])
+    plt.legend(['Device output', 'NN prediction'])
     if save_dir is not None:
         plt.savefig(save_dir)
     if show_plots:
@@ -196,10 +198,11 @@ def find_single_gate(configs_path, gate):
     result = single_gate(configs, gate, threshold, validate=False)
 
     results_path = save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
-    save('numpy',results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
+    save('numpy', results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
 
     print(f"Control voltages: {result['control_voltages']}")
     return results_path
+
 
 def validate_single_gate(configs_path, results_path):
     import os
