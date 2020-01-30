@@ -10,5 +10,6 @@ dependencies:
      - numpy
      - pandas
      - matplotlib
-     - openpyxl
+     - xlsxwriter
+     - scipy
      - ipython
