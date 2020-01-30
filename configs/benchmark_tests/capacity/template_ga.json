@@ -14,7 +14,7 @@
                                     "algorithm": "genetic",
                                     "hyperparameters": {
                                                           "mutationrate": 0.1,
-                                                          "epochs": 500,
+                                                          "epochs": 100,
                                                           "fitness_function_type": "corrsig_fit",
                                                           "seed": null,
                                                           "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],
@@ -34,12 +34,11 @@
                                       "sampling_frequency": 500,
                                       "input_indices": [3, 4],
                                       "input_electrode_no": 7,
-                                      "amplification": 100.0,
-                                      "shape":650,
+                                      "use_noise":false,
                                       "waveform":{
-                                        "amplitude_lengths": 100,
-                                        "slope_lengths": 50,
-                                        "output_clipping_value": 3.35
+                                        "amplitude_lengths": 80,
+                                        "slope_lengths": 20,
+                                        "output_clipping_value": 4.0
                                       },
                                       "driver": {
                                         "driver_type" : "local"
@@ -61,11 +60,9 @@
                                       "sampling_frequency": 50,
                                       "input_indices": [3, 4],
                                       "input_electrode_no": 7,
-                                      "amplification": 100.0,
-                                      "shape":650,
                                       "waveform":{
-                                        "amplitude_lengths": 100,
-                                        "slope_lengths": 50
+                                        "amplitude_lengths": 80,
+                                        "slope_lengths": 20
                                       },
                                       "driver": {
                                         "driver_type" : "local"
