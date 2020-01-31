@@ -12,7 +12,8 @@ setup(name='brainspy-tasks',
       'pandas',
       'numpy',
       'matplotlib',
-      'openpyxl'
+      'xlsxwriter',
+      'scipy'
       ],
       python_requires='~=3.6',
       zip_safe=False)
