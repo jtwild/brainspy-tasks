@@ -21,8 +21,8 @@ class BooleanGateTask():
         self.load_task_configs(configs)
         if 'validation' in configs:
             shape = (configs['validation']['processor']['waveform']['slope_lengths'] * 5) + (configs['validation']['processor']['waveform']['amplitude_lengths'] * 4)
-            configs['validation']['processor']['shape'] = shape
-            self.slopped_plato = generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], )[np.newaxis, :]
+            # configs['validation']['processor']['shape'] = shape
+            self.slopped_plato = generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], shape)[np.newaxis, :]
             self.validation_processor_configs = configs['validation']['processor']
             self.validation_processor = get_processor(configs['validation']['processor'])
         else:
