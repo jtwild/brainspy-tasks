@@ -4,8 +4,9 @@
 Created on Thu Nov 15 16:32:25 2018
 This script generates all binary assignments of N elements.
 @author: hruiz and ualegre
+Adjusted by Jochem to be able to give more than 2 input electrodes.
 """
-from bspytasks.benchmarks.vcdim.vc_dimension_test import VCDimensionTest
+from bspytasks.benchmarks.vcdim.vc_multi_input_dimension_test import VCDimensionTest
 from bspyalgo.utils.io import save, load_configs
 
 
@@ -43,7 +44,7 @@ class CapacityTest():
 
 
 if __name__ == '__main__':
-    configs = load_configs('configs/benchmark_tests/capacity/template_ga.json')
+    configs = load_configs('configs/benchmark_tests/capacity/template_gd_multi_input.json')
 
     test = CapacityTest(configs['capacity_test'])
-    test.run_test(validate=True)
+    test.run_test(validate=False)

@@ -13,20 +13,33 @@ class VCDimDataManager():
     def __init__(self, configs):
         self.amplitude_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['slope_lengths']
-        self.use_waveform = True
+        self.use_waveform = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['use_waveform']
         if configs['boolean_gate_test']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['boolean_gate_test']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
         else:
             self.use_torch = False
+
+        #added by Jochem for multi dim input:
+        self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
+        self.output_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices'] )
+        for inp in configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']:
+            for outp in configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices']:
+                if inp == outp:
+                    raise ValueError('Input dimensions also defined as output dimension! Adjust config template to fix.')
+                    #is this the best way to raise an error?
+        if self.input_dim + self.output_dim >= configs['boolean_gate_test']['algorithm_configs']['processor']['num_elec'] -1:
+            raise ValueError('The input and output electrodes fully occupy all electrodes. No electrodes left as control elecrodes. Adjust config template to fix.')
 
     def get_data(self, vc_dimension, verbose=True):
         readable_inputs, transformed_inputs = self.get_inputs(vc_dimension)
         readable_targets, transformed_targets = self.get_targets(vc_dimension, verbose)
         mask = waveform.generate_mask(readable_targets[1], self.amplitude_lengths, slope_lengths=self.slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
         readable_targets, transformed_targets, found = self.get_dictionaries(readable_inputs, transformed_inputs, readable_targets, transformed_targets)
+        #from here, the targets are now dict instead of an array
         return readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask
 
     def get_inputs(self, vc_dimension):
+        #readable inputs do not contain the waveform. Transformed does.
         readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:
             transformed_inputs = self.generate_inputs_waveform(readable_inputs)
@@ -38,11 +51,14 @@ class VCDimDataManager():
         return readable_inputs, transformed_inputs
 
     def get_dictionaries(self, readable_inputs, transformed_inputs, readable_targets, transformed_targets):
+        #creates a dictionary which gives readable disctionary keys to the transformed inputs. For readble inputs, dictionary keys are just a string of the actual number.
+        #also creates a found dictionary, probably will be used to check progress.
         readable_targets_dict = {}
         transformed_targets_dict = {}
         found_dict = {}
 
         for i in range(len(readable_targets)):
+            #loop over all points in the input space
             key = str(readable_targets[i])
             readable_targets_dict[key] = readable_targets[i]
             transformed_targets_dict[key] = transformed_targets[i]  # , :]  # transformed_targets[i]
@@ -66,27 +82,56 @@ class VCDimDataManager():
     def generate_test_inputs(self, vc_dimension):
         # @todo create a function that automatically generates non-linear inputs
         try:
-            if vc_dimension == 4:
-                return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
-            elif vc_dimension == 5:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER],
-                        [ONE, ZERO, ONE, ZERO, 0.0]]
-            elif vc_dimension == 6:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
-            elif vc_dimension == 7:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
-            elif vc_dimension == 8:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+            if self.input_dim == 2:
+                if vc_dimension == 4:
+                    return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
+                elif vc_dimension == 5:
+                    return [[ZERO, ZERO, ONE, ONE, -QUARTER],
+                            [ONE, ZERO, ONE, ZERO, 0.0]]
+                elif vc_dimension == 6:
+                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
+                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
+                elif vc_dimension == 7:
+                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
+                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
+                elif vc_dimension == 8:
+                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
+                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+                else:
+                    raise VCDimensionException()
+            elif self.input_dim == 3:
+                if vc_dimension == 3:
+                    return [[ZERO, ZERO, ONE], [ZERO, ONE, ZERO], [ONE, ZERO, ZERO]]
+                if vc_dimension == 4:
+                    return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE], [ONE, ONE, ZERO, ZERO]]
+                # for testing, only limited number of points selected.
+                #TODO: define 'good' points for the VC dimension.
+# =============================================================================
+#                 elif vc_dimension == 5:
+#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER],
+#                             [ONE, ZERO, ONE, ZERO, 0.0]]
+#                 elif vc_dimension == 6:
+#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
+#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
+#                 elif vc_dimension == 7:
+#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
+#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
+#                 elif vc_dimension == 8:
+#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
+#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+# =============================================================================
+                else:
+                    raise VCDimensionException()
             else:
                 raise VCDimensionException()
+
         except VCDimensionException:
             print(
                 'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
 
     def generate_inputs_waveform(self, inputs):
+        Warning('Waveform not tested for multi input dimension VC dim')
+        #TODO: Test waveform generation
         inputs_waveform = np.array([])
         for inp in inputs:
             input_waveform = waveform.generate_waveform(inp, self.amplitude_lengths, slope_lengths=self.slope_lengths)

@@ -6,13 +6,14 @@ Wrapper to measure the VC dimension of a device using the measurement script mea
 This wrapper creates the binary gates for N points and for each gate it finds the control voltages.
 If successful (measured by a threshold on the correlation and by the perceptron accuracy), the entry 1 is set in a vector corresponding to all gatelings.
 @author: hruiz and ualegre
+Adjusted bu Jochem for multi dimensional input
 """
 
 import os
 import numpy as np
 from matplotlib import pyplot as plt
 from bspyalgo.utils.io import create_directory
-from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
+from bspytasks.benchmarks.vcdim.data_mgr_multi_input_dim import VCDimDataManager
 from bspytasks.tasks.boolean.gate_finder import BooleanGateTask
 from bspytasks.utils.excel import ExcelFile
 
@@ -41,10 +42,10 @@ class VCDimensionTest():
         self.vc_dimension = vc_dimension
         self.threshold = self.calculate_threshold()
         self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension)
-        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0]
-        self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension))
-        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)
-        self.init_excel_file(readable_targets, transformed_targets, found)
+        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0] #how many samples we have to input to the processor?
+        self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension)) #directory name
+        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs) #initialize instance
+        self.init_excel_file(readable_targets, transformed_targets, found) #initialize excel file
 
     def init_excel_file(self, readable_targets, transformed_targets, found):
         column_names = ['gate', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'validation_error', 'encoded_gate']
@@ -89,7 +90,7 @@ class VCDimensionTest():
     def close_test(self):
         aux = self.excel_file.data.copy()
         aux.index = range(len(aux.index))
-        tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(self.threshold)
+        tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(round(self.threshold, 4)) #rounding required for 1/3=0.333333333.... type numbers with too much decimals to place in an excel workbook tab name
         self.excel_file.save_tab(tab_name, data=aux)
         self.plot_results()
         self.close_algorithm()

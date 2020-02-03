@@ -15,8 +15,8 @@ MIN_CLIPPING_VALUE = np.array([1.5])
 class BooleanGateTask():
 
     def __init__(self, configs):
-        configs = self.load_directory_configs(configs)
-        self.algorithm = get_algorithm(configs['algorithm_configs'])
+        configs = self.load_directory_configs(configs) #create directory
+        self.algorithm = get_algorithm(configs['algorithm_configs']) #an instance of GD(..) or GA(..) class
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
         if 'validation' in configs:
