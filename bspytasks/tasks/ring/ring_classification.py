@@ -36,7 +36,7 @@ class RingClassificationTask():
         return algorithm_data.results
 
     def run_task(self, run=1):
-        inputs, targets, mask = self.data_loader.get_ring_data_from_npz(processor_configs=self.configs["algorithm_configs"]["processor"])
+        inputs, targets, mask = self.data_loader.get_data(processor_configs=self.configs["algorithm_configs"]["processor"])
         excel_results = self.optimize(inputs, targets, mask)
         excel_results = self.process_output(excel_results, targets, mask)
         model = {}
@@ -60,9 +60,9 @@ class RingClassificationTask():
         return excel_results
 
     def validate_task(self, model_dir):
-        validation_inputs, _, validation_mask = self.data_loader.get_ring_data_from_npz_2(
+        validation_inputs, _, validation_mask = self.data_loader.get_data(
             processor_configs=self.configs["validation"]["processor"])
-        algorithm_inputs, _, algorithm_mask = self.data_loader.get_ring_data_from_npz_2(
+        algorithm_inputs, _, algorithm_mask = self.data_loader.get_data(
             processor_configs=self.configs["algorithm_configs"]["processor"])
 
         self.validation_processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type()))
@@ -91,10 +91,10 @@ if __name__ == '__main__':
     # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
     configs = load_configs('configs/tasks/ring/template_gd_architecture_2.json')
     task = RingClassificationTask(configs)
-    # result, model_dir = task.run_task()
+    result, model_dir = task.run_task()
 
-    # task.validate_task(model_dir)
-    task.validate_task('state_dict_Run56.pth')
+    task.validate_task(model_dir)
+    # task.validate_task('state_dict_Run13.pth')
     plotter = ArchitecturePlotter(configs)
 
     print('PLOTTING DATA WITH MASK')
