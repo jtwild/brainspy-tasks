@@ -13,7 +13,7 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt
 from bspyalgo.utils.io import create_directory
-from bspytasks.benchmarks.vcdim.data_mgr_multi_input_dim import VCDimDataManager
+from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 from bspytasks.tasks.boolean.gate_finder import BooleanGateTask
 from bspytasks.utils.excel import ExcelFile
 
