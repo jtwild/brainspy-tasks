@@ -38,7 +38,8 @@ class ExcelFile():
         book = None
         if os.path.exists(self.file_path) and os.path.isfile(self.file_path):
             book = load_workbook(self.file_path)
-        self.writer = pd.ExcelWriter(self.file_path, engine='xlsxwriter')  # pylint: disable=abstract-class-instantiated
+        #engine changed from xlsxwriter to openpyxl to try and fix no attribute errors.
+        self.writer = pd.ExcelWriter(self.file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
         if book is not None:
             self.writer.book = book
             self.writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
