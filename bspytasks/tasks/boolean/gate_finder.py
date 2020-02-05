@@ -30,6 +30,7 @@ class BooleanGateTask():
 
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
+        self.scale_plots = configs['scale_plots']
         self.base_dir = configs['results_dir']
         self.max_attempts = configs['max_attempts']
 
@@ -62,11 +63,11 @@ class BooleanGateTask():
 
                 if excel_results['found'] or attempt >= self.max_attempts:
                     if excel_results['found']:
-                        print(f'VEREDICT: PASS - Gate was found successfully in {str(attempt)} attempt(s)')
+                        print(f'VERDICT: PASS - Gate was found successfully in {str(attempt)} attempt(s)')
                     else:
-                        print(f'VEREDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
+                        print(f'VERDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
                     print('==========================================================================================')
-                    self.plot_gate(excel_results, mask, show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, self.is_found(excel_results['found'])))
+                    self.plot_gate(excel_results, mask, show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, self.is_found(excel_results['found'])), scaled=self.scale_plots)
                     break
                 else:
                     attempt += 1
@@ -122,12 +123,20 @@ class BooleanGateTask():
 
         return excel_results
 
-    def plot_gate(self, row, mask, show_plots, save_dir=None):
+    def plot_gate(self, row, mask, show_plots, save_dir=None, scaled=False):
         plt.figure()
-        plt.plot(row['best_output'][mask])
-        plt.plot(row['encoded_gate'][mask])
+        plt.step(range(len(row['best_output'][mask])), row['best_output'][mask], where='mid' )
+        if scaled:
+            target = row['encoded_gate'] * (row['best_output'].max() - row['best_output'].min() ) + row['best_output'].min()
+            scaled_string = ' scaled'
+        else:
+            target = row['encoded_gate']
+            scaled_string = ''
+        plt.step(range(len(target[mask])), target[mask], where='mid' )
+        plt.legend(['output', 'target' + scaled_string])
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
+        plt.title(f"Best output for gate {row['encoded_gate'][:,0].int().tolist()}")
         if save_dir is not None:
             plt.savefig(save_dir)
         if show_plots:

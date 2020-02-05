@@ -8,7 +8,8 @@
         "boolean_gate_test":{
                 "max_attempts":10,
                 "results_dir": "tmp/output/boolean_gates_test/gd/",
-                "show_plots": false,
+                "show_plots": true,
+                "scale_plots": true,
                 "overwrite": true,
                 "algorithm_configs": {
                         "algorithm": "gradient_descent",
@@ -26,9 +27,8 @@
                                     "simulation_type": "neural_network",
                                     "network_type": "dnpu",
                                     "torch_model_dict": "tmp/input/models/trained_network_12122019_noise.pt",
-                                    "input_indices": [0, 1, 2],
+                                    "input_indices": [1,2],
                                     "input_electrode_no": 7,
-                                    "output_indices": [7],
                                     "num_elec": 8,
                                     "waveform":{
                                         "use_waveform": true,
@@ -40,7 +40,7 @@
                         "checkpoints": {
                             "use_checkpoints": false,
                             "save_dir": "algorithm_checkpoints",
-                            "save_interval": 5
+                            "save_interval": 100
                         }
                 }
         }
