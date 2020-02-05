@@ -44,8 +44,8 @@ class VCDimensionTest():
         self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension)
         self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0] #how many samples we have to input to the processor?
         self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension)) #directory name
-        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs) #initialize instance
-        self.init_excel_file(readable_targets, transformed_targets, found) #initialize excel file
+        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)  # initialize instance
+        self.init_excel_file(readable_targets, transformed_targets, found)  # initialize excel file
 
     def init_excel_file(self, readable_targets, transformed_targets, found):
         column_names = ['gate', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'validation_error', 'encoded_gate']
