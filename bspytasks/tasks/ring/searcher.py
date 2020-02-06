@@ -6,33 +6,35 @@ import matplotlib.pyplot as plt
 
 from bspyproc.utils.pytorch import TorchUtils
 
-RUNS = 2
+RUNS = 1000
 
 configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
-configs = load_configs('configs/tasks/ring/experiments/ring_classification_configs.json')
-if 'seed' in configs:
-    seed = configs['seed']
-else:
-    seed = None
+# configs = load_configs('configs/tasks/ring/experiments/ring_classification_configs.json')
+# if 'seed' in configs:
+#     seed = configs['seed']
+# else:
+#     seed = None
 
-seed = TorchUtils.init_seed(seed, deterministic=True)
-configs['seed'] = seed
+
+# configs['seed'] = seed
 
 task = Task(configs)
 
 
 performance_per_run = np.zeros(RUNS)
 correlation_per_run = np.zeros(RUNS)
+seeds = np.zeros(RUNS)
 best_output_run = []
 
 for run in range(RUNS):
     print(f'########### RUN {run} ################')
     excel_results, _ = task.run_task(run=run)
+    seeds[run] = TorchUtils.init_seed(None, deterministic=True)
     performance_per_run[run] = excel_results["best_performance"]
     correlation_per_run[run] = excel_results["correlation"]
     best_output_run.append(excel_results['best_output'])
 
-
+np.save(os.path.join(task.configs["results_base_dir"], 'seeds'), seeds)
 best_index = np.argmin(performance_per_run)
 best_run = best_output_run[best_index]
 performance = performance_per_run[best_index]
