@@ -4,7 +4,6 @@ dependencies:
    - pip
    - git
    - pip:
-     - git+https://github.com/BraiNEdarwin/brainspy-instruments.git
      - git+https://github.com/BraiNEdarwin/brainspy-processors.git
      - git+https://github.com/BraiNEdarwin/brainspy-algorithms.git
      - numpy
