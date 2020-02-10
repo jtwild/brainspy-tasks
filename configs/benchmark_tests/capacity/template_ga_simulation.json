@@ -2,7 +2,7 @@
 
   "capacity_test":{
       "from_dimension": 4,
-      "to_dimension":6,
+      "to_dimension":4,
       "vc_dimension_test":{
               "threshold_parameter": 0.5,
               "boolean_gate_test":{
@@ -24,7 +24,7 @@
                                                                           "trafo_function": null
                                                           },
                                                           "stop_threshold": 0.93
-                                    }, 
+                                    },
                                     "processor": {
                                       "architecture":"single_device",
                                       "platform": "simulation",
