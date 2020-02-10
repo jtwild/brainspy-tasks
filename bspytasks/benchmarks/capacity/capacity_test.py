@@ -43,7 +43,7 @@ class CapacityTest():
 
 
 if __name__ == '__main__':
-    configs = load_configs('configs/benchmark_tests/capacity/template_ga.json')
+    configs = load_configs('configs/benchmark_tests/capacity/template_ga_simulation.json')
 
     test = CapacityTest(configs['capacity_test'])
     test.run_test(validate=False)
