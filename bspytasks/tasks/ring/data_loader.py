@@ -2,16 +2,34 @@ import numpy as np
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from bspyproc.utils.pytorch import TorchUtils
 from bspyproc.utils.input import normalise, map_to_voltage
+from bspytasks.utils.datasets import sort, filter_and_reverse, subsample
 
+import sklearn.datasets as ds
 # @todo: This data should come from the model
 MAX_INPUT_VOLT = np.asarray([0.6, 0.6, 0.6, 0.6, 0.6, 0.3, 0.3])
-MIN_INPUT_VOLT = np.asarray([-1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
+MIN_INPUT_VOLT = np.asarray([-1.2, -1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
+VOLTAGE_LIMIT_REDUCTION = 0.1
 
 
 class RingDataLoader():
 
     def __init__(self, configs):
         self.configs = configs
+
+    def generate_data(self, processor_configs, ring_configs):
+        inputs, targets = ds.make_circles(n_samples=ring_configs['sample_no'], factor=0.5, noise=ring_configs['noise'])
+
+        # if inputs[targets == 0].max() > inputs[targets == 0].max():
+        #     i = 1
+        # else:
+        #     i = 0
+        # inputs[targets == i] = (inputs[targets == i] * (ring_configs['gap'] + 0.5))
+
+        inputs[targets == 0], inputs[targets == 1] = subsample(inputs[targets == 0], inputs[targets == 1])
+        inputs[targets == 0], inputs[targets == 1] = sort(inputs[targets == 0], inputs[targets == 1])
+        inputs, targets = filter_and_reverse(inputs[targets == 0], inputs[targets == 1])
+        inputs, targets, mask = self.process_data(inputs, targets, processor_configs)
+        return inputs, targets, mask
 
     def get_data(self, processor_configs):
         with np.load(self.configs['ring_data_path']) as data:

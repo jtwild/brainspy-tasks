@@ -29,15 +29,33 @@ class ArchitecturePlotter():
 
         return result
 
-    def save_plots(self, results, mask, configs, run=0, show_plot=False):
-        plt.figure()
+    def save_plots(self, results, configs, run=0, show_plot=False):
+        mask = results['mask']
+        targets = results['targets']
+        inputs = results['inputs']
+        fig = plt.figure()
         plt.plot(results['best_output'][mask])
+        fig.suptitle(f'Output (nA)', fontsize=16)
         if configs['save_plots']:
             plt.savefig(os.path.join(configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
-        plt.figure()
+        fig = plt.figure()
+        fig.suptitle(f'Learning profile', fontsize=16)
         plt.plot(results['performance_history'])
         if configs['save_plots']:
             plt.savefig(os.path.join(configs['results_base_dir'], f"training_profile_Run_{run}"))
+
+        fig = plt.figure()
+        fig.suptitle(f'Inputs (V)', fontsize=16)
+        if type(inputs) is torch.Tensor:
+            inputs = inputs.cpu().numpy()
+        if type(targets) is torch.Tensor:
+            targets = targets.cpu().numpy()
+        plt.scatter(inputs[mask][:, 0], inputs[mask][:, 1], c=targets)
+        gap = inputs[targets == 0].max() - inputs[targets == 1].max()
+        print(f"Input gap is {gap} V")
+        if configs['save_plots']:
+            plt.savefig(os.path.join(configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
+
         if show_plot:
             plt.show()
         plt.close('all')

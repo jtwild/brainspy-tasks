@@ -15,6 +15,7 @@ from bspyproc.utils.pytorch import TorchUtils
 from bspytasks.tasks.ring.data_loader import RingDataLoader
 from bspyproc.utils.waveform import generate_waveform
 from bspytasks.tasks.ring.plotter import ArchitecturePlotter
+from bspyalgo.utils.performance import perceptron
 
 
 class RingClassificationTask():
@@ -37,27 +38,56 @@ class RingClassificationTask():
 
     def run_task(self, run=1):
         inputs, targets, mask = self.data_loader.get_data(processor_configs=self.configs["algorithm_configs"]["processor"])
+        # inputs, targets, mask = self.data_loader.generate_data(processor_configs=self.configs["algorithm_configs"]["processor"], ring_configs=self.configs['ring_data'])
         excel_results = self.optimize(inputs, targets, mask)
-        excel_results = self.process_output(excel_results, targets, mask)
+        excel_results = self.add_input_data(excel_results, inputs, targets, mask)
+
+        self.excel_results = self.process_output(excel_results)
+
+        return self.excel_results
+
+    def add_input_data(self, results, inputs, targets, mask):
+        if type(inputs) is torch.Tensor:
+            results['inputs'] = TorchUtils.get_numpy_from_tensor(inputs)
+        if type(targets) is torch.Tensor:
+            results['targets'] = TorchUtils.get_numpy_from_tensor(targets)
+        results['mask'] = mask
+        return results
+
+    def close_test(self, run=1):
         model = {}
         model['state_dict'] = self.algorithm.processor.state_dict()
         model['info'] = self.algorithm.processor.info
         model_dir = os.path.join(self.configs['results_base_dir'], f'state_dict_Run{run}.pth')
         torch.save(model, model_dir)
-        self.plotter.save_plots(excel_results, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
+        self.plotter.save_plots(self.excel_results, self.configs, show_plot=self.configs["show_plots"], run=run)
+        return model_dir
 
-        return excel_results, model_dir
-
-    def process_output(self, excel_results, targets, mask):
+    def process_output(self, excel_results):
+        mask = excel_results['mask']
         best_output = excel_results['best_output'][mask]
-        targets = targets[mask].cpu().numpy()
+        targets = excel_results['targets'][mask]
         targets = targets[:, np.newaxis]
         excel_results['correlation'] = corr_coeff(best_output.T, targets.T)
         if self.configs["algorithm_configs"]['hyperparameters']["loss_function"] == "fisher":
             print("Using Fisher does not allow for perceptron accuracy decision.")
+            excel_results['accuracy'] = -1
         else:
             excel_results['accuracy'], _, _ = perceptron(best_output, targets)
+        print(f"Accuracy: {excel_results['accuracy']}")
         return excel_results
+
+    def get_accuracy_from_model_dir(self, model_dir):
+        inputs, targets, _ = self.data_loader.get_data(processor_configs=self.configs["algorithm_configs"]["processor"])
+        self.algorithm.processor.load_state_dict(torch.load(model_dir, map_location=TorchUtils.get_accelerator_type())['state_dict'])
+        self.algorithm.processor.eval()
+        predictions = self.algorithm.processor.forward(inputs).detach().cpu().numpy()
+        self.get_accuracy(predictions, targets)
+
+    def get_accuracy(self, predictions, targets):
+        if type(targets) == torch.Tensor:
+            targets = targets.cpu().numpy()
+        return perceptron(predictions, targets[:, np.newaxis])[0]
 
     def validate_task(self, model_dir):
         validation_inputs, _, validation_mask = self.data_loader.get_data(
@@ -89,16 +119,18 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
 
     # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
-    configs = load_configs('configs/tasks/ring/template_gd_architecture_2.json')
+    configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
     task = RingClassificationTask(configs)
-    result, model_dir = task.run_task()
+    result = task.run_task()
+    task.close_test()
+    # task.validate_task(model_dir)
+    # accuracy = task.get_accuracy_from_model_dir('state_dict_Run382.pth')
+    # print(f'Accuracy: {accuracy}')
+    # task.validate_task('state_dict_Run382.pth')
+    # plotter = ArchitecturePlotter(configs)
 
-    task.validate_task(model_dir)
-    # task.validate_task('state_dict_Run13.pth')
-    plotter = ArchitecturePlotter(configs)
-
-    print('PLOTTING DATA WITH MASK')
-    plotter.plot_data(use_mask=True)
+    # print('PLOTTING DATA WITH MASK')
+    # plotter.plot_data(use_mask=True)
     # print('PLOTTING DATA WITHOUT MASK')
     # plotter.plot_final_result()
     # plotter.plot_data()
