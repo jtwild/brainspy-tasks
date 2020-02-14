@@ -1,25 +1,25 @@
 {
     "capacity_test":{
-        "from_dimension": 3,
-        "to_dimension":4,
+        "from_dimension":7,
+        "to_dimension":9,
         "vc_dimension_test":{
         "dimension": 4,
-        "threshold_parameter": 0.5,
+        "threshold_parameter": 0,
         "boolean_gate_test":{
-                "max_attempts":10,
+                "max_attempts":30,
                 "results_dir": "tmp/output/boolean_gates_test/gd/",
                 "show_plots": true,
                 "scale_plots": true,
                 "overwrite": true,
                 "algorithm_configs": {
                         "algorithm": "gradient_descent",
-                        "experiment_name": "experiment_gd_multi_dim_input",
+                        "experiment_name": "inputdim3_newpoints",
                         "hyperparameters": {
-                                    "nr_epochs": 10,
-                                    "batch_size": 128,
-                                    "learning_rate": 0.1,
+                                    "nr_epochs": 1000,
+                                    "batch_size": 100,
+                                    "learning_rate": 0.01,
                                     "loss_function": "corrsig",
-                                    "stop_threshold": 0.001
+                                    "stop_threshold": 0.8
                         },
                         "processor": {
                                     "architecture":"single_device",
@@ -27,7 +27,8 @@
                                     "simulation_type": "neural_network",
                                     "network_type": "dnpu",
                                     "torch_model_dict": "tmp/input/models/trained_network_12122019_noise.pt",
-                                    "input_indices": [1,2],
+                                    "auto_generate_inputs": true,
+                                    "input_indices": [3, 4],
                                     "input_electrode_no": 7,
                                     "num_elec": 8,
                                     "waveform":{

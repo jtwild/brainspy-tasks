@@ -1,6 +1,7 @@
 import numpy as np
 import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
+from bspytasks.benchmarks.vcdim.vc_dimension_sorted_point_generator import generate_sorted_points
 
 
 ZERO = -1.2
@@ -21,14 +22,16 @@ class VCDimDataManager():
 
         #added by Jochem for multi dim input:
         self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
-        self.output_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices'] )
-        for inp in configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']:
-            for outp in configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices']:
-                if inp == outp:
-                    raise ValueError('Input dimensions also defined as output dimension! Adjust config template to fix.')
+        self.auto_generate_inputs = configs['boolean_gate_test']['algorithm_configs']['processor']['auto_generate_inputs']
+        # Perhaps the error checking below is already in the lower level code?
+        #self.output_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices'] )
+        #for inp in configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']:
+        #    for outp in configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices']:
+        #        if inp == outp:
+        #            raise ValueError('Input dimensions also defined as output dimension! Adjust config template to fix.')
                     #is this the best way to raise an error?
-        if self.input_dim + self.output_dim >= configs['boolean_gate_test']['algorithm_configs']['processor']['num_elec'] -1:
-            raise ValueError('The input and output electrodes fully occupy all electrodes. No electrodes left as control elecrodes. Adjust config template to fix.')
+        #if self.input_dim + self.output_dim >= configs['boolean_gate_test']['algorithm_configs']['processor']['num_elec'] -1:
+        #    raise ValueError('The input and output electrodes fully occupy all electrodes. No electrodes left as control elecrodes. Adjust config template to fix.')
 
     def get_data(self, vc_dimension, verbose=True):
         readable_inputs, transformed_inputs = self.get_inputs(vc_dimension)
@@ -39,8 +42,11 @@ class VCDimDataManager():
         return readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask
 
     def get_inputs(self, vc_dimension):
-        #readable inputs do not contain the waveform. Transformed does.
-        readable_inputs = self.generate_test_inputs(vc_dimension)
+        # readable inputs do not contain the waveform. Transformed does.
+        if self.auto_generate_inputs:
+            readable_inputs = generate_sorted_points(vc_dimension, self.input_dim)
+        else:
+            readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:
             transformed_inputs = self.generate_inputs_waveform(readable_inputs)
         else:
@@ -83,8 +89,11 @@ class VCDimDataManager():
         # @todo create a function that automatically generates non-linear inputs
         try:
             if self.input_dim == 2:
+                # testing colinear points
                 if vc_dimension == 4:
-                    return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
+                    return [[ZERO, ZERO, ZERO, ZERO], [ONE, 0.0, -QUARTER, ZERO]]
+                # if vc_dimension == 4:
+                #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
                 elif vc_dimension == 5:
                     return [[ZERO, ZERO, ONE, ONE, -QUARTER],
                             [ONE, ZERO, ONE, ZERO, 0.0]]
@@ -100,34 +109,18 @@ class VCDimDataManager():
                 else:
                     raise VCDimensionException()
             elif self.input_dim == 3:
-                if vc_dimension == 3:
-                    return [[ZERO, ZERO, ONE], [ZERO, ONE, ZERO], [ONE, ZERO, ZERO]]
-                if vc_dimension == 4:
-                    return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE], [ONE, ONE, ZERO, ZERO]]
-                # for testing, only limited number of points selected.
-                #TODO: define 'good' points for the VC dimension.
-# =============================================================================
-#                 elif vc_dimension == 5:
-#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER],
-#                             [ONE, ZERO, ONE, ZERO, 0.0]]
-#                 elif vc_dimension == 6:
-#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
-#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
-#                 elif vc_dimension == 7:
-#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
-#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
-#                 elif vc_dimension == 8:
-#                     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
-#                             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
-# =============================================================================
+                dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
+                dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
+                dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
+                if vc_dimension <= len(dim1):
+                    return [dim1[0:vc_dimension], dim2[0:vc_dimension], dim3[0:vc_dimension]]
                 else:
                     raise VCDimensionException()
             else:
                 raise VCDimensionException()
 
         except VCDimensionException:
-            print(
-                'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
+            print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
 
     def generate_inputs_waveform(self, inputs):
         Warning('Waveform not tested for multi input dimension VC dim')
@@ -181,7 +174,6 @@ class VCDimDataManager():
             else:
                 targets_waveform = np.vstack((targets_waveform, target_waveform))
         return targets_waveform.reshape(len(targets), waveform_length, 1)
-
 
 class VCDimensionException(Exception):
     """Exception: It does not exist an implementation of such VC Dimension."""
