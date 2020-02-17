@@ -22,27 +22,6 @@ def ring(sample_no, outer_radius=0.1, inner_radius=0.1, gap=0.2):
     return samples[labels == 0], samples[labels == 1]
 
 
-def luna(sample_no, a1=1, b1=0, a2=1.5, b2=0.3):
-    samples = -1 + 2 * np.random.rand(sample_no, 2)
-    def f1(x): return a1 * np.sqrt(x)
-    def f2(x): return a2 * np.sqrt(x)
-    buff = samples[samples[:, 0] > b1]
-    buff = buff[np.abs(buff[:, 1]) < f1(buff[:, 0])]
-
-    mask = (buff[:, 0] > b2) * (np.abs(buff[:, 1]) < f2(buff[:, 0] - b2))
-    buff = buff[~mask]
-    return buff
-
-
-def cross(sample_no, width=0.25, length=0.8):
-    samples = (-1 + 2 * np.random.rand(sample_no, 2)) * length / 2
-    buff1 = samples[np.abs(samples[:, 0]) < width / 2]
-    buff2 = samples[(np.abs(samples[:, 1]) < width / 2) *
-                    (np.abs(samples[:, 0]) > width / 2)]
-    buff = buff1.tolist() + buff2.tolist()
-    return np.array(buff)
-
-
 def subsample(class0, class1):
     # Subsample the largest class
     nr_samples = min(len(class0), len(class1))
@@ -83,3 +62,8 @@ def process_dataset(class0, class1):
     class0, class1 = subsample(class0, class1)
     class0, class1 = sort(class0, class1)
     return filter_and_reverse(class0, class1)
+
+
+def generate_data(configs):
+    class0, class1 = ring(sample_no=configs['sample_no'], gap=configs['gap'])
+    return process_dataset(class0, class1)

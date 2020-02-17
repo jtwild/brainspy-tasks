@@ -1,14 +1,13 @@
+import os
 import numpy as np
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from bspyproc.utils.pytorch import TorchUtils
 from bspyproc.utils.input import normalise, map_to_voltage
-from bspytasks.utils.datasets import sort, filter_and_reverse, subsample
+from bspytasks.utils.datasets import generate_data
 
-import sklearn.datasets as ds
 # @todo: This data should come from the model
 MAX_INPUT_VOLT = np.asarray([0.6, 0.6, 0.6, 0.6, 0.6, 0.3, 0.3])
 MIN_INPUT_VOLT = np.asarray([-1.2, -1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
-VOLTAGE_LIMIT_REDUCTION = 0.1
 
 
 class RingDataLoader():
@@ -16,23 +15,27 @@ class RingDataLoader():
     def __init__(self, configs):
         self.configs = configs
 
-    def generate_data(self, processor_configs, ring_configs):
-        inputs, targets = ds.make_circles(n_samples=ring_configs['sample_no'], factor=0.5, noise=ring_configs['noise'])
+    def get_data(self, processor_configs, gap, istest=False):
+        if self.configs['ring_data']['generate_data']:
+            return self.generate_new_data(processor_configs, gap)
+        else:
+            return self.read_data(processor_configs, gap, istest=istest)
 
-        # if inputs[targets == 0].max() > inputs[targets == 0].max():
-        #     i = 1
-        # else:
-        #     i = 0
-        # inputs[targets == i] = (inputs[targets == i] * (ring_configs['gap'] + 0.5))
-
-        inputs[targets == 0], inputs[targets == 1] = subsample(inputs[targets == 0], inputs[targets == 1])
-        inputs[targets == 0], inputs[targets == 1] = sort(inputs[targets == 0], inputs[targets == 1])
-        inputs, targets = filter_and_reverse(inputs[targets == 0], inputs[targets == 1])
+    def generate_new_data(self, processor_configs, gap):
+        inputs, targets = generate_data(self.configs['ring_data'])
         inputs, targets, mask = self.process_data(inputs, targets, processor_configs)
         return inputs, targets, mask
 
-    def get_data(self, processor_configs):
-        with np.load(self.configs['ring_data_path']) as data:
+    def get_data_filename(self, gap, istest=False):
+        if istest:
+            testname = 'testset'
+        else:
+            testname = ''
+        return os.path.join(self.configs['results_dir'], f'class_data_{gap}' + testname + '.npz')
+
+    def read_data(self, processor_configs, gap, istest=False):
+
+        with np.load(self.get_data_filename(gap, istest=istest)) as data:
             inputs = data['inp_wvfrm'][::self.configs['steps'], :]  # .T
             print('Input shape: ', inputs.shape)
             targets = data['target'][::self.configs['steps']]
@@ -54,7 +57,8 @@ class RingDataLoader():
             inputs[:, i] = map_to_voltage(inputs[:, i],
                                           MIN_INPUT_VOLT[processor_configs['input_indices'][i]],
                                           MAX_INPUT_VOLT[processor_configs['input_indices'][i]])
-        inputs = self.generate_data_waveform(inputs, processor_configs['waveform']['amplitude_lengths'], processor_configs['waveform']['slope_lengths'])
+            # inputs[:, i] = generate_waveform(inputs[:, i], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
+        # inputs = self.generate_data_waveform(inputs, processor_configs['waveform']['amplitude_lengths'], processor_configs['waveform']['slope_lengths'])
         if processor_configs["platform"] == 'simulation' and processor_configs["network_type"] == 'dnpu':
             return TorchUtils.get_tensor_from_numpy(inputs)
         return inputs
