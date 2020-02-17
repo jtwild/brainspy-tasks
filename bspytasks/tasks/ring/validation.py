@@ -2,6 +2,8 @@ from bspyproc.bspyproc import get_processor
 from bspytasks.tasks.ring.classifier import RingClassificationTask
 from bspytasks.tasks.ring.data_loader import RingDataLoader
 from bspyproc.utils.waveform import generate_waveform, generate_mask
+from bspyproc.utils.pytorch import TorchUtils
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +23,11 @@ class RingClassifierValidator():
     def get_model_output(self):
         self.processor.load_state_dict(model.copy())
         self.processor.eval()
-        model_output = self.processor.forward(results['inputs']).detach().cpu().numpy()
+        if self.configs['algorithm_configs']['processor']['platform'] == 'simulation':
+            inputs = TorchUtils.get_tensor_from_numpy(results['inputs'])
+        else:
+            inputs = results['inputs']
+        model_output = self.processor.forward(inputs).detach().cpu().numpy()
         return generate_waveform(model_output[:, 0], self.configs['validation']['processor']['waveform']
                                  ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
 
@@ -36,12 +42,12 @@ class RingClassifierValidator():
         self.plot_validation_results(model_output[mask], real_output[mask])
 
     def get_validation_inputs(self, results):
-        inputs = results['inputs'].cpu().numpy()
+        inputs = results['inputs']
         processor_configs = self.configs['validation']['processor']
         inputs_1 = generate_waveform(inputs[:, 0], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
         inputs_2 = generate_waveform(inputs[:, 1], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
         inputs = np.asarray([inputs_1, inputs_2]).T
-        mask = generate_mask(results['targets'].cpu().numpy(), processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
+        mask = generate_mask(results['targets'], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
         return inputs, mask
 
     def plot_validation_results(self, model_output, real_output):
