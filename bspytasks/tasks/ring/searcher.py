@@ -31,27 +31,33 @@ class RingSearcher():
 
     def search_solution(self, gap):
         self.reset()
-        self.configs['ring_data']['gap'] = gap
+        self.task.configs['ring_data']['gap'] = gap
         inputs, targets, mask = self.data_loader.generate_new_data(self.configs['algorithm_configs']['processor'], gap=gap)
         for run in range(self.configs['runs']):
             print(f'########### RUN {run} ################')
             seed = TorchUtils.init_seed(None, deterministic=True)
             results = self.task.run_task(inputs, targets, mask)
             results['seed'] = seed
-            self.accuracy_per_run[run] = results['accuracy']
-            self.performance_per_run[run] = results["best_performance"]
-            self.correlation_per_run[run] = results["correlation"]
+            self.update_search_stats(results, run)
             if self.best_run == None or results['best_performance'] < self.best_run['best_performance']:
-                results['index'] = run
-                self.best_run = results
-                self.task.close_test()
-                self.plotter.save_plots(results, inputs, targets, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
+                self.update_best_run(results, run)
+                self.plotter.save_plots(self.best_run, inputs, targets, mask, self.configs, show_plot=self.configs["show_plots"], run=run)
                 pickle.dump(self.best_run, open(os.path.join(os.path.join(self.configs["results_base_dir"], 'reproducibility'), f"best_output_results.pkl"), "wb"))
 
         self.close_search()
 
-    def close_search(self):
+    def update_search_stats(self, results, run):
+        self.accuracy_per_run[run] = results['accuracy']
+        self.performance_per_run[run] = results["best_performance"]
+        self.correlation_per_run[run] = results["correlation"]
+
+    def update_best_run(self, results, run):
+        results['index'] = run
+        del results['processor']
+        self.best_run = results
         self.task.close_test()
+
+    def close_search(self):
         np.savez(os.path.join(os.path.join(self.configs["results_base_dir"], 'search_stats'), f"search_data_{self.configs['runs']}_runs.npz"), performance=self.performance_per_run, correlation=self.correlation_per_run, accuracy=self.accuracy_per_run)
         self.plot_search_results()
 
@@ -102,4 +108,4 @@ if __name__ == '__main__':
     # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
     configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
     searcher = RingSearcher(configs)
-    searcher.search_solution(0.0125)
+    searcher.search_solution(0.39)
