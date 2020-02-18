@@ -7,6 +7,7 @@ from bspyproc.utils.pytorch import TorchUtils
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
 class RingClassifierValidator():
@@ -19,6 +20,9 @@ class RingClassifierValidator():
             self.processor = get_processor(configs['algorithm_configs']['processor'])
         else:
             self.processor = processor
+        self.main_dir = os.path.join(self.configs['results_base_dir'], 'validation')
+        if not os.path.exists(self.main_dir):
+            os.makedirs(self.main_dir)
 
     def get_model_output(self):
         self.processor.load_state_dict(model.copy())
@@ -39,7 +43,8 @@ class RingClassifierValidator():
     def validate(self, results, model):
         model_output = self.get_model_output()
         real_output, mask = self.get_real_output()
-        self.plot_validation_results(model_output[mask], real_output[mask])
+        self.plot_validation_results(model_output[mask], real_output[mask], self.main_dir, self.configs['show_plots'])
+        np.savez(os.path.join(self.main_dir, 'validation_plot_data'), model_output=model_output, real_output=real_output, mask=mask)
 
     def get_validation_inputs(self, results):
         inputs = results['inputs']
@@ -50,7 +55,7 @@ class RingClassifierValidator():
         mask = generate_mask(results['targets'], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
         return inputs, mask
 
-    def plot_validation_results(self, model_output, real_output):
+    def plot_validation_results(self, model_output, real_output, save_dir=None, show_plot=False):
         error = ((model_output - real_output) ** 2).mean()
         print(f'Total Error: {error}')
 
@@ -63,11 +68,11 @@ class RingClassifierValidator():
         plt.xlabel('Time')
 
         plt.legend(['Simulation', 'Validation'])
-        # if save_dir is not None:
-        #     plt.savefig(save_dir)
-        # if show_plot:
-        plt.show()
-        plt.close()
+        if save_dir is not None:
+            plt.savefig(os.path.join(save_dir, 'validation_plot.eps'))
+        if show_plot:
+            plt.show()
+            plt.close()
 
 
 if __name__ == '__main__':
