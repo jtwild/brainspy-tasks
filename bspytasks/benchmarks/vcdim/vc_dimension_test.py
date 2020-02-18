@@ -11,6 +11,7 @@ Adjusted bu Jochem for multi dimensional input
 
 import os
 import numpy as np
+import time
 from matplotlib import pyplot as plt
 from bspyalgo.utils.io import create_directory
 from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
@@ -31,8 +32,9 @@ class VCDimensionTest():
         self.output_dir = configs['results_dir']
         self.show_plots = configs['show_plots']
         self.load_algorithm_configs(configs)
-
-        self.excel_file = ExcelFile(self.output_dir + 'capacity_test_results.xlsx')
+        datetime = time.strftime("%Y_%m_%d_%H%M%S")
+        file = datetime+ '_capacity_test_results.xlsx'
+        self.excel_file = ExcelFile(self.output_dir + file)
 
     def load_algorithm_configs(self, configs):
         self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
@@ -42,10 +44,10 @@ class VCDimensionTest():
         self.vc_dimension = vc_dimension
         self.threshold = self.calculate_threshold()
         self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension)
-        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0] #how many samples we have to input to the processor?
-        self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension)) #directory name
-        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)  # initialize instance
-        self.init_excel_file(readable_targets, transformed_targets, found)  # initialize excel file
+        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0]
+        self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension))
+        self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)
+        self.init_excel_file(readable_targets, transformed_targets, found)
 
     def init_excel_file(self, readable_targets, transformed_targets, found):
         column_names = ['gate', 'found', 'accuracy', 'best_output', 'control_voltages', 'correlation', 'best_performance', 'validation_error', 'encoded_gate']
@@ -90,7 +92,8 @@ class VCDimensionTest():
     def close_test(self):
         aux = self.excel_file.data.copy()
         aux.index = range(len(aux.index))
-        tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(round(self.threshold, 4)) #rounding required for 1/3=0.333333333.... type numbers with too much decimals to place in an excel workbook tab name
+        tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(round(self.threshold, 4))
+        # rounding required for 1/3=0.3333.... type numbers with too much decimals to place in an excel workbook tab name
         self.excel_file.save_tab(tab_name, data=aux)
         self.plot_results()
         self.close_algorithm()

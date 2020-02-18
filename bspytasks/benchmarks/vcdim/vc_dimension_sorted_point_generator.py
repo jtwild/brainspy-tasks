@@ -6,12 +6,13 @@ Created on Thu Feb  6 15:19:29 2020
 
 @author: Jochem
 """
+#TODO: Add diamond generation for larger seperation
 import numpy as np
 
 
 # %% Generation itself
 def generate_unsorted_points(input_dim):
-    sets = [[-1.2, 0.6], [-0.45, 0.0]]  # must be X by 2
+    sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2. Old point:
     # check inputs
     num_points = 2**input_dim * len(sets)  # get maximum number of points possible with the given sets
     for i in sets:
