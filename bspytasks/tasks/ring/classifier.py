@@ -10,7 +10,7 @@ from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.bspyproc import get_processor
 from matplotlib import pyplot as plt
 from bspyalgo.utils.performance import perceptron, corr_coeff
-from bspyalgo.utils.io import save
+from bspyalgo.utils.io import create_directory_timestamp, save
 from bspyproc.utils.pytorch import TorchUtils
 
 from bspyalgo.utils.performance import perceptron
@@ -21,7 +21,7 @@ class RingClassificationTask():
     def __init__(self, configs):
         self.configs = configs
         configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
-        self.configs['results_base_dir'] = save(mode='configs', path=self.configs['results_base_dir'], filename='ring_classification_configs.json', overwrite=self.configs['overwrite_results'], data=self.configs)
+        self.configs['results_base_dir'] = create_directory_timestamp(self.configs['results_base_dir'], 'ring_classification')
         self.algorithm = get_algorithm(configs['algorithm_configs'])
 
     def reset(self):
@@ -36,6 +36,7 @@ class RingClassificationTask():
         model['state_dict'] = self.algorithm.processor.state_dict()
         model['info'] = self.algorithm.processor.info
         model_dir = os.path.join(os.path.join(self.configs["results_base_dir"], 'reproducibility'), f"model.pth")
+        save(mode='configs', path=os.path.join(self.configs['results_base_dir'], 'reproducibility'), filename='ring_classification_configs.json', overwrite=False, data=self.configs, timestamp=False)
         torch.save(model, model_dir)
         return model_dir
 
