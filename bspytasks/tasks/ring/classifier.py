@@ -45,11 +45,11 @@ class RingClassificationTask():
         results = algorithm_data.results
 
         mask = results['mask']
-        if type(results['best_output']) is torch.Tensor:
+        if isinstance(results['best_output'], torch.tensor):
             best_output = results['best_output'][mask].detach().cpu().numpy()
         else:
             best_output = results['best_output'][mask]
-        if type(results['targets']) is torch.Tensor:
+        if isinstance(results['targets'], torch.tensor):
             targets = results['targets'][mask][:, np.newaxis].detach().cpu().numpy()
         else:
             targets = results['targets'][mask][:, np.newaxis]
