@@ -27,7 +27,7 @@ class VCDimensionTest():
 
     def load_boolean_gate_configs(self, configs):
         self.boolean_gate_test_configs = configs
-        self.output_dir = configs['results_dir']
+        self.output_dir = configs['results_base_dir']
         self.show_plots = configs['show_plots']
         self.load_algorithm_configs(configs)
 
@@ -41,7 +41,7 @@ class VCDimensionTest():
         self.vc_dimension = vc_dimension
         self.threshold = self.calculate_threshold()
         self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension, validation=validation)
-        self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension))
+        self.boolean_gate_test_configs['results_base_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension))
         self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=False)
         self.boolean_gate_test_configs['validation']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=True)
         self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)

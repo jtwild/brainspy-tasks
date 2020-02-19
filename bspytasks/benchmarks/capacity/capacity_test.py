@@ -30,7 +30,7 @@ class CapacityTest():
         print('*****************************************************************************************')
 
     def save_configs(self, configs):
-        results_dir = configs['vc_dimension_test']['boolean_gate_test']['results_dir']
+        results_dir = configs['vc_dimension_test']['boolean_gate_test']['results_base_dir']
         overwrite = configs['vc_dimension_test']['boolean_gate_test']['overwrite']
         save(mode='configs', path=results_dir, filename='test_configs.json', overwrite=overwrite, data=configs)
 

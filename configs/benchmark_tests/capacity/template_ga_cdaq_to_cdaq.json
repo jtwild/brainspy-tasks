@@ -7,7 +7,7 @@
           "threshold_parameter": 0.5,
           "boolean_gate_test":{
                   "max_attempts":10,
-                  "results_dir": "tmp/output/boolean_gates_test/gd/",
+                  "results_base_dir": "tmp/output/boolean_gates_test/gd/",
                   "show_plots": false,
                   "overwrite": true,
                   "algorithm_configs": {

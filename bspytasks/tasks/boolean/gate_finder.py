@@ -16,6 +16,7 @@ class BooleanGateTask():
 
     def __init__(self, configs):
         configs = self.load_directory_configs(configs)
+        configs['checkpoints']['save_dir'] = configs['results_base_dir']
         self.algorithm = get_algorithm(configs['algorithm_configs'])
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
@@ -28,12 +29,12 @@ class BooleanGateTask():
 
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
-        self.base_dir = configs['results_dir']
+        self.base_dir = configs['results_base_dir']
         self.max_attempts = configs['max_attempts']
 
     def load_directory_configs(self, configs):
-        create_directory(configs['results_dir'], overwrite=configs['overwrite'])
-        # configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
+        create_directory(configs['results_base_dir'], overwrite=configs['overwrite'])
+        # configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_base_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
         return configs
 
     def load_methods(self, configs):
@@ -203,7 +204,7 @@ def find_single_gate(configs_path, gate):
 
     result = single_gate(configs, gate, threshold, validate=False)
 
-    results_path = save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
+    results_path = save('numpy', configs['boolean_gate_test']['results_base_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
     save('numpy', results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
 
     print(f"Control voltages: {result['control_voltages']}")
@@ -229,5 +230,5 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import save
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    results_path = find_single_gate('configs/benchmark_tests/capacity/template_ga.json', '[1 0 0 1]')
+    results_path = find_single_gate('configs/benchmark_tests/capacity/template_ga_simulation.json', '[1 0 0 1]')
     # validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', results_path)

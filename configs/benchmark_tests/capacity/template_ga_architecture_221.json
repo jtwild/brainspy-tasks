@@ -7,7 +7,7 @@
       "threshold_parameter": 0.5,
       "boolean_gate_test":{
                 "max_attempts":10,
-                "results_dir": "tmp/output/boolean_gates_test/ga/",
+                "results_base_dir": "tmp/output/boolean_gates_test/ga/",
                 "show_plots": false,
                 "overwrite": true,
                 "algorithm_configs": {
@@ -46,7 +46,6 @@
                           },
                           "checkpoints": {
                             "use_checkpoints": true,
-                            "save_dir": "genetic_algorithm_checkpoints",
                             "save_interval": 5
                         }                   
                 },
