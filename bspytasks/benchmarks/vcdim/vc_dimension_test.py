@@ -22,7 +22,7 @@ class VCDimensionTest():
     def __init__(self, configs):
         self.data_manager = VCDimDataManager(configs)
         self.threshold_parameter = configs['threshold_parameter']
-        self.test_data_plot_name = '_plot.png'
+        self.test_data_plot_name = '_plot.eps'
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
 
     def load_boolean_gate_configs(self, configs):

@@ -77,7 +77,7 @@ class ArchitecturePlotter():
         plt.plot(b, label='model')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '.eps'))
         plt.show()
         plt.close()
 
@@ -86,7 +86,7 @@ class ArchitecturePlotter():
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '_error.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '_error.eps'))
         plt.show()
         plt.close()
 
@@ -133,13 +133,13 @@ class ArchitecturePlotter():
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
         else:
             error = ((self.b_output - self.a_output) ** 2).mean()
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
 
     def plot_data(self, use_mask=False):
         self.plot_final_result(use_mask)
