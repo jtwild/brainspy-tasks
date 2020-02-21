@@ -10,6 +10,7 @@
                 "results_dir": "tmp/output/boolean_gates_test/gd/",
                 "show_plots": true,
                 "scale_plots": true,
+                "results_base_dir": "tmp/output/boolean_gates_test/gd/",
                 "overwrite": true,
                 "algorithm_configs": {
                         "algorithm": "gradient_descent",
@@ -38,7 +39,6 @@
                         },
                         "checkpoints": {
                             "use_checkpoints": false,
-                            "save_dir": "algorithm_checkpoints",
                             "save_interval": 5
                         }
                 },

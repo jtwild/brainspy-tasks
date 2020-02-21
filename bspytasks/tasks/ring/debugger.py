@@ -5,7 +5,7 @@ import torch
 from bspyproc.utils.waveform import generate_waveform
 
 
-class ArchitecturePlotter():
+class ArchitectureDebugger():
 
     def __init__(self, configs):
         self.configs = configs
@@ -28,34 +28,6 @@ class ArchitecturePlotter():
             result.append('bn_aftercv_' + str(i + 1) + '_1')
 
         return result
-
-    def save_plots(self, results, inputs, targets, mask, configs, run=0, show_plot=False):
-        fig = plt.figure()
-        plt.plot(results['best_output'][mask])
-        fig.suptitle(f'Output (nA)', fontsize=16)
-        if configs['save_plots']:
-            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"output"))
-        fig = plt.figure()
-        fig.suptitle(f'Learning profile', fontsize=16)
-        plt.plot(results['performance_history'])
-        if configs['save_plots']:
-            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"training_profile"))
-
-        fig = plt.figure()
-        fig.suptitle(f'Inputs (V)', fontsize=16)
-        if type(inputs) is torch.Tensor:
-            inputs = inputs.cpu().numpy()
-        if type(targets) is torch.Tensor:
-            targets = targets.cpu().numpy()
-        plt.scatter(inputs[mask][:, 0], inputs[mask][:, 1], c=targets)
-        # gap=inputs[targets == 0].max() - inputs[targets == 1].max()
-        # print(f"Input gap is {gap} V")
-        if configs['save_plots']:
-            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"input"))
-
-        if show_plot:
-            plt.show()
-        plt.close('all')
 
     def plot_gate_validation(self, target, output, show_plot=False, save_dir=None):
         plt.figure()

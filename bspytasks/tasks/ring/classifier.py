@@ -10,7 +10,7 @@ from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.bspyproc import get_processor
 from matplotlib import pyplot as plt
 from bspyalgo.utils.performance import perceptron, corr_coeff
-from bspyalgo.utils.io import create_directory_timestamp, save
+from bspyalgo.utils.io import create_directory, create_directory_timestamp, save
 from bspyproc.utils.pytorch import TorchUtils
 
 from bspyalgo.utils.performance import perceptron
@@ -18,27 +18,35 @@ from bspyalgo.utils.performance import perceptron
 
 class RingClassificationTask():
 
-    def __init__(self, configs):
+    def __init__(self, configs, is_main=True):
         self.configs = configs
-        configs['algorithm_configs']['results_base_dir'] = configs['results_base_dir']
-        self.configs['results_base_dir'] = create_directory_timestamp(self.configs['results_base_dir'], 'ring_classification')
-        self.algorithm = get_algorithm(configs['algorithm_configs'])
+        if is_main:
+            self.init_dirs(configs['results_base_dir'], is_main)
+
+    def init_dirs(self, base_dir, is_main=False):
+        main_dir = 'ring_classification'
+        reproducibility_dir = 'reproducibility'
+        results_dir = 'results'
+        if is_main:
+            base_dir = create_directory_timestamp(base_dir, main_dir)
+        self.reproducibility_dir = os.path.join(base_dir, reproducibility_dir)
+        create_directory(self.reproducibility_dir)
+        self.configs['algorithm_configs']['results_base_dir'] = base_dir
+        self.algorithm = get_algorithm(self.configs['algorithm_configs'])
+        self.results_dir = os.path.join(base_dir, results_dir)
+        create_directory(self.results_dir)
 
     def reset(self):
         self.algorithm.reset()
 
     def run_task(self, inputs, targets, mask):
-        algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask)
+        algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask, save_data=False)
         return self.judge(algorithm_data)
 
-    def close_test(self):
-        model = {}
-        model['state_dict'] = self.algorithm.processor.state_dict()
-        model['info'] = self.algorithm.processor.info
-        model_dir = os.path.join(os.path.join(self.configs["results_base_dir"], 'reproducibility'), f"model.pth")
-        save(mode='configs', path=os.path.join(self.configs['results_base_dir'], 'reproducibility'), filename='ring_classification_configs.json', overwrite=False, data=self.configs, timestamp=False)
-        torch.save(model, model_dir)
-        return model_dir
+    def save_reproducibility_data(self, result):
+        save(mode='configs', file_path=os.path.join(self.reproducibility_dir, 'configs.json'), data=self.configs)
+        save(mode='torch', file_path=os.path.join(self.reproducibility_dir, 'model.pth'), data=self.algorithm.processor)
+        save(mode='pickle', file_path=os.path.join(self.reproducibility_dir, 'results.pickle'), data=result)
 
     def judge(self, algorithm_data):
         algorithm_data.judge()
@@ -70,18 +78,51 @@ class RingClassificationTask():
         print(f"Accuracy: {results['accuracy']}")
         return results
 
+    def save_plots(self, results, inputs, targets, mask, run=0, show_plot=False):
+        plt.figure()
+        plt.plot(results['best_output'][mask])
+        plt.title(f"Output (nA)", fontsize=16)
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.results_dir, f"output.eps"))
+        fig = plt.figure()
+        fig.suptitle(f'Learning profile', fontsize=16)
+        plt.plot(results['performance_history'])
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.results_dir, f"training_profile.eps"))
+
+        fig = plt.figure()
+        plt.title(f"Inputs (V) with {self.configs['ring_data']['gap']}mV gap", fontsize=16)
+        if type(inputs) is torch.Tensor:
+            inputs = inputs.cpu().numpy()
+        if type(targets) is torch.Tensor:
+            targets = targets.cpu().numpy()
+        plt.scatter(inputs[mask][:, 0], inputs[mask][:, 1], c=targets)
+        # gap=inputs[targets == 0].max() - inputs[targets == 1].max()
+        # print(f"Input gap is {gap} V")
+        if self.configs['save_plots']:
+            plt.savefig(os.path.join(self.results_dir, f"input.eps"))
+
+        if show_plot:
+            plt.show()
+        plt.close('all')
+
 
 if __name__ == '__main__':
     import pandas as pd
     import torch
     import matplotlib.pyplot as plt
     from bspyalgo.utils.io import load_configs
+    from bspytasks.tasks.ring.data_loader import RingDataLoader
 
+    gap = 0.2
     # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
     configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
+    configs['ring_data']['gap'] = gap
     task = RingClassificationTask(configs)
-    result = task.run_task()
-    task.close_test()
+    data_loader = RingDataLoader(configs)
+    inputs, targets, mask = data_loader.generate_new_data(configs['algorithm_configs']['processor'], gap=gap)
+    result = task.run_task(inputs, targets, mask)
+    task.save_reproducibility_data(result)
     # task.validate_task(model_dir)
     # accuracy = task.get_accuracy_from_model_dir('state_dict_Run382.pth')
     # print(f'Accuracy: {accuracy}')
