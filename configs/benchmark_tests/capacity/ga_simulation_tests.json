@@ -1,0 +1,72 @@
+{
+
+  "capacity_test":{
+      "from_dimension": 4,
+      "to_dimension":4,
+      "vc_dimension_test":{
+              "threshold_parameter": 0,
+              "boolean_gate_test":{
+                          "max_attempts":5,
+                          "results_dir": "tmp/output/ga/",
+                          "show_plots": true,
+                          "scale_plots": true,
+                          "overwrite": false,
+                          "algorithm_configs": {
+                                    "algorithm": "genetic",
+                                    "hyperparameters": {
+                                                          "mutationrate": 0.1,
+                                                          "epochs": 100,
+                                                          "fitness_function_type": "corrsig_fit",
+                                                          "seed": null,
+                                                          "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],
+                                                          "partition": [5, 5, 5, 5, 5],
+                                                          "transformation":{
+                                                                          "gene_trafo_index": null,
+                                                                          "trafo_function": null
+                                                          },
+                                                          "stop_threshold": 0.93
+                                    },
+                                    "processor": {
+                                      "architecture":"single_device",
+                                      "platform": "simulation",
+                                      "simulation_type": "neural_network",
+                                      "network_type": "nn_model",
+                                      "torch_model_dict": "tmp/input/models/default_model_correct_keys.pt",
+                                      "input_indices": [0, 1],
+                                      "input_electrode_no": 7,
+                                      "auto_generate_inputs": false,
+                                      "use_noise":false,
+                                      "waveform":{
+                                          "use_waveform": false,
+                                          "amplitude_lengths": 1,
+                                          "slope_lengths": 0,
+                                          "output_clipping_value": 4.0
+                                      }
+                            },
+                                    "checkpoints": {
+                                        "use_checkpoints": false,
+                                        "save_dir": "tmp/output/ga/checkpoints",
+                                        "save_interval": 5
+                                    }
+                          },
+                          "validation":{
+                            "processor": {
+                              "architecture":"single_device",
+                              "platform": "simulation",
+                              "simulation_type": "neural_network",
+                              "network_type": "nn_model",
+                              "torch_model_dict": "tmp/input/models/default_model_correct_keys.pt",
+                              "input_indices": [0, 1],
+                              "input_electrode_no": 7,
+                              "use_noise":false,
+                              "waveform":{
+                                  "amplitude_lengths": 1,
+                                  "slope_lengths": 0,
+                                  "output_clipping_value": 4.0
+                              }
+                            }
+                          }
+              }
+      }
+  }
+}
