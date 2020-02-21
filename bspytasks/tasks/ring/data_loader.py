@@ -31,7 +31,7 @@ class RingDataLoader():
             testname = 'testset'
         else:
             testname = ''
-        return os.path.join(self.configs['results_dir'], f'class_data_{gap}' + testname + '.npz')
+        return os.path.join(self.configs['results_base_dir'], f'class_data_{gap}' + testname + '.npz')
 
     def read_data(self, processor_configs, gap, istest=False):
 
