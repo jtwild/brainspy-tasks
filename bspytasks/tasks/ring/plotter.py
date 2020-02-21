@@ -29,15 +29,30 @@ class ArchitecturePlotter():
 
         return result
 
-    def save_plots(self, results, mask, configs, run=0, show_plot=False):
-        plt.figure()
+    def save_plots(self, results, inputs, targets, mask, configs, run=0, show_plot=False):
+        fig = plt.figure()
         plt.plot(results['best_output'][mask])
+        fig.suptitle(f'Output (nA)', fontsize=16)
         if configs['save_plots']:
-            plt.savefig(os.path.join(configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
-        plt.figure()
+            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"output"))
+        fig = plt.figure()
+        fig.suptitle(f'Learning profile', fontsize=16)
         plt.plot(results['performance_history'])
         if configs['save_plots']:
-            plt.savefig(os.path.join(configs['results_base_dir'], f"training_profile_Run_{run}"))
+            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"training_profile"))
+
+        fig = plt.figure()
+        fig.suptitle(f'Inputs (V)', fontsize=16)
+        if type(inputs) is torch.Tensor:
+            inputs = inputs.cpu().numpy()
+        if type(targets) is torch.Tensor:
+            targets = targets.cpu().numpy()
+        plt.scatter(inputs[mask][:, 0], inputs[mask][:, 1], c=targets)
+        # gap=inputs[targets == 0].max() - inputs[targets == 1].max()
+        # print(f"Input gap is {gap} V")
+        if configs['save_plots']:
+            plt.savefig(os.path.join(os.path.join(self.configs["results_base_dir"], 'results'), f"input"))
+
         if show_plot:
             plt.show()
         plt.close('all')
@@ -62,7 +77,7 @@ class ArchitecturePlotter():
         plt.plot(b, label='model')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '.eps'))
         plt.show()
         plt.close()
 
@@ -71,7 +86,7 @@ class ArchitecturePlotter():
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '_error.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '_error.eps'))
         plt.show()
         plt.close()
 
@@ -118,13 +133,13 @@ class ArchitecturePlotter():
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
         else:
             error = ((self.b_output - self.a_output) ** 2).mean()
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
 
     def plot_data(self, use_mask=False):
         self.plot_final_result(use_mask)

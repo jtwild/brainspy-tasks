@@ -24,7 +24,7 @@ class VCDimensionTest():
     def __init__(self, configs):
         self.data_manager = VCDimDataManager(configs)
         self.threshold_parameter = configs['threshold_parameter']
-        self.test_data_plot_name = '_plot.png'
+        self.test_data_plot_name = '_plot.eps'
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
 
     def load_boolean_gate_configs(self, configs):
@@ -40,12 +40,13 @@ class VCDimensionTest():
         self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
 
-    def init_test(self, vc_dimension):
+    def init_test(self, vc_dimension, validation=False):
         self.vc_dimension = vc_dimension
         self.threshold = self.calculate_threshold()
-        self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension)
-        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.transformed_inputs.shape[0]
+        self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = self.data_manager.get_data(vc_dimension, validation=validation)
         self.boolean_gate_test_configs['results_dir'] = os.path.join(self.output_dir, 'dimension_' + str(vc_dimension))
+        self.boolean_gate_test_configs['algorithm_configs']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=False)
+        self.boolean_gate_test_configs['validation']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=True)
         self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs)
         self.init_excel_file(readable_targets, transformed_targets, found)
 
