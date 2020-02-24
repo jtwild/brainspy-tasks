@@ -34,7 +34,6 @@
                                     "input_electrode_no": 7,
                                     "num_elec": 8,
                                     "waveform":{
-                                        "use_waveform": false,
                                         "amplitude_lengths": 1,
                                         "slope_lengths": 0,
                                         "output_clipping_value": 3.55
