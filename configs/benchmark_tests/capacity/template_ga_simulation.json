@@ -10,7 +10,8 @@
               "boolean_gate_test":{
                           "max_attempts":5,
                           "results_base_dir": "tmp/output/ga/boolean_gate_experiments",
-                          "show_plots": false,
+                          "show_plots": true,
+                          "scaled_plots": true,
                           "overwrite": false,
                           "algorithm_configs": {
                                     "algorithm": "genetic",
