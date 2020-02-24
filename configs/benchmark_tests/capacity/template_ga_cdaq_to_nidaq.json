@@ -38,7 +38,7 @@
                                             "shape":420,
                                             "waveform":{
                                               "amplitude_lengths": 80,
-                                              "slope_lengths": 20,
+                                              "slope_lengths": 50,
                                               "output_clipping_value": 3.35
                                             },
                                             "driver": {
