@@ -31,6 +31,7 @@ class BooleanGateTask():
         self.show_plots = configs['show_plots']
         self.base_dir = configs['results_base_dir']
         self.max_attempts = configs['max_attempts']
+        self.scale_plots = configs['scale_plots']
 
     def init_dirs(self, gate):
         if self.is_main:
@@ -72,7 +73,7 @@ class BooleanGateTask():
                         print(f'VEREDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
                     print('==========================================================================================')
                     #  in get_plot_dir
-                    self.plot_gate(excel_results, mask, str(gate), show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, base_dir))
+                    self.plot_gate(excel_results, mask, str(gate), show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, base_dir), scaled=self.scale_plots)
                     break
                 else:
                     attempt += 1
@@ -98,7 +99,7 @@ class BooleanGateTask():
         excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_gate[excel_results['mask']]))
         excel_results['encoded_gate'] = encoded_gate.cpu()
         # excel_results['targets'] = excel_results
-        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
+        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'][excel_results['mask']].T)
         return excel_results
 
     def ignore_gate_with_torch(self, encoded_gate):
@@ -128,13 +129,20 @@ class BooleanGateTask():
 
         return excel_results
 
-    def plot_gate(self, row, mask, gate, show_plots, save_dir=None):
+    def plot_gate(self, row, mask, gate, show_plots, save_dir=None, scaled=False):
         plt.figure()
-        plt.title(gate + ' ' + self.is_found(row['found']))
-        plt.plot(row['best_output'][mask])
-        plt.plot(row['encoded_gate'][mask])
+        plt.step(range(len(row['best_output'][mask])), row['best_output'][mask], where='mid' )
+        if scaled:
+            target = row['encoded_gate'] * (row['best_output'].max() - row['best_output'].min() ) + row['best_output'].min()
+            scaled_string = ' scaled'
+        else:
+            target = row['encoded_gate']
+            scaled_string = ''
+        plt.step(range(len(target[mask])), target[mask], where='mid' )
+        plt.legend(['output', 'target' + scaled_string])
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
+        plt.title(f"Best output for gate " + gate + "\n" + gate + ''+ self.is_found(row['found']) )
         if save_dir is not None:
             plt.savefig(save_dir)
         if show_plots:
