@@ -16,6 +16,7 @@ class VCDimDataManager():
         self.slope_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['slope_lengths']
         self.validation_amplitude_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['amplitude_lengths']
         self.validation_slope_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['slope_lengths']
+        self.use_waveform = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['use_waveform']
         if configs['boolean_gate_test']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['boolean_gate_test']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
         else:
@@ -70,7 +71,10 @@ class VCDimDataManager():
             readable_inputs = generate_sorted_points(vc_dimension, self.input_dim)
         else:
             readable_inputs = self.generate_test_inputs(vc_dimension)
-        transformed_inputs = self.generate_inputs_waveform(readable_inputs, validation)
+        if self.use_waveform:
+            transformed_inputs = self.generate_inputs_waveform(readable_inputs, validation)
+        else:
+            transformed_inputs = readable_inputs
         if self.use_torch:
             transformed_inputs = TorchUtils.get_tensor_from_numpy(transformed_inputs)
 
@@ -96,7 +100,10 @@ class VCDimDataManager():
 
     def get_targets(self, vc_dimension, verbose=True, validation=False):
         readable_targets = self.generate_test_targets(vc_dimension, verbose)
-        transformed_targets = self.generate_targets_waveform(readable_targets, validation)
+        if self.use_waveform:
+            transformed_targets = self.generate_targets_waveform(readable_targets, validation)
+        else:
+            transformed_targets = readable_targets
         if self.use_torch:
             transformed_targets = TorchUtils.get_tensor_from_numpy(transformed_targets)
 
