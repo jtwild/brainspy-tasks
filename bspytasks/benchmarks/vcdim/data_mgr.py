@@ -16,7 +16,7 @@ class VCDimDataManager():
         self.slope_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['slope_lengths']
         self.validation_amplitude_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['amplitude_lengths']
         self.validation_slope_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['slope_lengths']
-        self.use_waveform = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['use_waveform']
+        self.use_waveform = True
         if configs['boolean_gate_test']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['boolean_gate_test']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
         else:
@@ -146,9 +146,8 @@ class VCDimDataManager():
         except VCDimensionException:
             print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
 
-    def generate_inputs_waveform(self, inputs):
+    def generate_inputs_waveform(self, inputs, validation=False):
         Warning('Waveform not tested for multi input dimension VC dim')
-        #TODO: Test waveform generation
         inputs_waveform = np.array([])
         amplitude_lengths = self.get_amplitudes(validation)
         slope_lengths = self.get_slopes(validation)
