@@ -15,12 +15,11 @@
                           "algorithm_configs": {
                                     "algorithm": "genetic",
                                     "hyperparameters": {
-                                                          "mutationrate": 0.1,
                                                           "epochs": 100,
                                                           "fitness_function_type": "corrsig_fit",
                                                           "seed": null,
                                                           "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],
-                                                          "partition": [5, 5, 5, 5, 5],
+                                                          "partition": [4,22],
                                                           "transformation":{
                                                                           "gene_trafo_index": null,
                                                                           "trafo_function": null
