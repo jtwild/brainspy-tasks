@@ -1,5 +1,4 @@
 {
-"something":0,
 "filter_finder":{
         "max_attempts":1,
         "results_dir": "tmp/output/boolean_gates_test/gd/",

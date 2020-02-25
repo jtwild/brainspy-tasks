@@ -19,10 +19,19 @@ class FilterFinder():
 # Trainable parameters are defined via the config file, as the control electrodes.
     def __init__(self, configs):
         self.configs = configs
-        if configs['filter_finder']['algorithm_configs']['hyperparameters']['loss_function'] != 'sigmoid_distance':
-            raise ValueError('For now, only implemented with sigmoidal distance loss function.')
+        # Check if correct loss/fitness function is defined
+        if configs['filter_finder']['algorithm_configs']['algorithm'] == 'gradient_descent':
+            key = 'loss_function'
+        elif configs['filter_finder']['algorithm_configs']['algorithm'] == 'genetic':
+            key = 'fitness_function_type'
+        else:
+            raise ValueError('Selected algorithm not tested/implemented.')
+        if configs['filter_finder']['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
+            raise ValueError('For now, only implemented with sigmoidal distance loss/fitness function.')
         else:
             self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
+
+        # And load other relevant parts
         self.load_methods(configs)
         self.load_task_configs(configs)
         self.max_attempts = configs['filter_finder']['max_attempts']
@@ -34,7 +43,7 @@ class FilterFinder():
         self.input_dim = len( configs['filter_finder']['algorithm_configs']['processor']['input_indices'] )
 
     def load_methods(self, configs):
-        if configs['filter_finder']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['filter_finder']['algorithm_configs']['processor']['platform'] == 'simulation':
+        if configs['filter_finder']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.find_filter_core = self.optimize
         else:
             raise ValueError('Algorithm or processor not yet implemented')
@@ -95,7 +104,7 @@ class FilterFinder():
 #%% Testing
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/tasks/filter_finder/template_ff.json')
+    configs = load_configs('configs/tasks/filter_finder/template_ff_ga.json')
     task = FilterFinder(configs) #initialize class
     excel_results = task.find_filter()
     #TODO: Adjust gd.py to have the targets as a possible keyword argument.
