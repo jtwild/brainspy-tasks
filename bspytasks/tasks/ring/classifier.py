@@ -39,8 +39,8 @@ class RingClassificationTask():
     def reset(self):
         self.algorithm.reset()
 
-    def run_task(self, inputs, targets, mask):
-        algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask, save_data=False)
+    def run_task(self, inputs, targets, mask, save_data=False):
+        algorithm_data = self.algorithm.optimize(inputs, targets, mask=mask, save_data=save_data)
         return self.judge(algorithm_data)
 
     def save_reproducibility_data(self, result):
@@ -78,25 +78,25 @@ class RingClassificationTask():
         print(f"Accuracy: {results['accuracy']}")
         return results
 
-    def save_plots(self, results, inputs, targets, mask, run=0, show_plot=False):
+    def plot_results(self, results, show_plot=False):
         plt.figure()
         plt.plot(results['best_output'][mask])
-        plt.title(f"Output (nA)", fontsize=16)
+        plt.title(f"Output (nA)")
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"output.eps"))
-        fig = plt.figure()
-        fig.suptitle(f'Learning profile', fontsize=16)
+        plt.figure()
+        plt.title(f'Learning profile')
         plt.plot(results['performance_history'])
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"training_profile.eps"))
 
-        fig = plt.figure()
+        plt.figure()
         plt.title(f"Inputs (V) with {self.configs['ring_data']['gap']}mV gap", fontsize=16)
-        if type(inputs) is torch.Tensor:
-            inputs = inputs.cpu().numpy()
-        if type(targets) is torch.Tensor:
-            targets = targets.cpu().numpy()
-        plt.scatter(inputs[mask][:, 0], inputs[mask][:, 1], c=targets)
+        # if type(results['inputs']) is torch.Tensor:
+        #     inputs = inputs.cpu().numpy()
+        # if type(targets) is torch.Tensor:
+        #     targets = targets.cpu().numpy()
+        plt.scatter(results['inputs'][results['mask']][:, 0], results['inputs'][results['mask']][:, 1], c=results['targets'][results['mask']])
         # gap=inputs[targets == 0].max() - inputs[targets == 1].max()
         # print(f"Input gap is {gap} V")
         if self.configs['save_plots']:
@@ -123,14 +123,4 @@ if __name__ == '__main__':
     inputs, targets, mask = data_loader.generate_new_data(configs['algorithm_configs']['processor'], gap=gap)
     result = task.run_task(inputs, targets, mask)
     task.save_reproducibility_data(result)
-    # task.validate_task(model_dir)
-    # accuracy = task.get_accuracy_from_model_dir('state_dict_Run382.pth')
-    # print(f'Accuracy: {accuracy}')
-    # task.validate_task('state_dict_Run382.pth')
-    # plotter = ArchitecturePlotter(configs)
-
-    # print('PLOTTING DATA WITH MASK')
-    # plotter.plot_data(use_mask=True)
-    # print('PLOTTING DATA WITHOUT MASK')
-    # plotter.plot_final_result()
-    # plotter.plot_data()
+    task.plot_results(result, show_plot=True)
