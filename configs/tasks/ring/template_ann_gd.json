@@ -1,0 +1,52 @@
+{
+    "results_base_dir": "tmp/output/ring/",
+    "steps": 1,
+    "show_plots": false,
+    "save_plots": true,
+    "runs":3,
+    "ring_data":{
+        "generate_data":true,
+        "sample_no":40000
+    },
+    "algorithm_configs": {
+        "experiment_name":"noise",
+        "algorithm": "gradient_descent",
+        "checkpoints": {
+            "use_checkpoints": false,
+            "save_interval": 5
+        },
+        "hyperparameters": {
+            "nr_epochs": 80,
+            "batch_size": 4000,
+            "learning_rate": 0.0085,
+            "save_interval": 100,
+            "optimizer":"adam",
+            "loss_function": "fisher",
+            "betas":[0.99,0.999],
+            "stop_threshold": -99999999
+        },
+        "processor": {
+            "architecture": "single_device",
+            "architecture_type": "",
+            "platform": "simulation",
+            "simulation_type": "neural_network",
+            "network_type": "nn_model",
+            "torch_model_dict": {
+                "hidden_sizes": [3],
+                "D_in": 2,
+                "D_out": 1,
+                "activation": "relu"
+                },
+            "input_indices": [0,1],
+            "debug":true,
+            "waveform": {
+                "amplitude_lengths": 1,
+                "slope_lengths": 0,
+                "output_clipping_value": 4.0
+            },
+            "batch_norm": {
+                "use_running_stats" : true
+            }
+        }
+    }
+}

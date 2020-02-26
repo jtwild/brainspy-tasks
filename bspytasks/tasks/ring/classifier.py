@@ -92,13 +92,13 @@ class RingClassificationTask():
 
         plt.figure()
         plt.title(f"Inputs (V) \n {self.configs['ring_data']['gap']}mV gap", fontsize=12)
-        # if type(results['inputs']) is torch.Tensor:
-        #     inputs = inputs.cpu().numpy()
-        # if type(targets) is torch.Tensor:
-        #     targets = targets.cpu().numpy()
-        plt.scatter(results['inputs'][results['mask']][:, 0], results['inputs'][results['mask']][:, 1], c=results['targets'][results['mask']])
-        # gap=inputs[targets == 0].max() - inputs[targets == 1].max()
-        # print(f"Input gap is {gap} V")
+        if type(results['inputs']) is torch.Tensor:
+            inputs = results['inputs'].cpu().numpy()
+            targets = results['targets'].cpu().numpy()
+        else:
+            inputs = results['inputs']
+            targets = results['targets']
+        plt.scatter(inputs[results['mask']][:, 0], inputs[results['mask']][:, 1], c=targets[results['mask']])
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"input.eps"))
 
@@ -115,12 +115,14 @@ if __name__ == '__main__':
     from bspytasks.tasks.ring.data_loader import RingDataLoader
 
     gap = 0.2
-    # configs = load_configs('configs/tasks/ring/template_gd_architecture_cdaq_to_nidaq_validation2.json')
-    configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
+    configs = load_configs('configs/tasks/ring/template_ann_gd.json')
     configs['ring_data']['gap'] = gap
     task = RingClassificationTask(configs)
     data_loader = RingDataLoader(configs)
     inputs, targets, mask = data_loader.generate_new_data(configs['algorithm_configs']['processor'], gap=gap)
+    if type(inputs) is np.ndarray:
+        inputs = TorchUtils.get_tensor_from_numpy(inputs)
+        targets = TorchUtils.get_tensor_from_numpy(targets)
     result = task.run_task(inputs, targets, mask)
     task.save_reproducibility_data(result)
-    task.plot_results(result, show_plot=True)
+    task.plot_results(result)
