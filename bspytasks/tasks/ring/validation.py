@@ -83,9 +83,8 @@ class RingClassifierValidator():
         error = ((model_output - real_output) ** 2).mean()
         print(f'Total Error: {error}')
 
-        fig = plt.figure()
-        plt.title('Comparison between Processor and DNPU')
-        fig.suptitle(f'MSE: {error}', fontsize=10)
+        plt.figure()
+        plt.title(f'Comparison between Simulation and Hardware \n (MSE: {error})', fontsize=12)
         plt.plot(model_output)
         plt.plot(real_output, '-.')
         plt.ylabel('Current (nA)')

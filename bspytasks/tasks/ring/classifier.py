@@ -81,17 +81,17 @@ class RingClassificationTask():
     def plot_results(self, results):
         plt.figure()
         plt.plot(results['best_output'][results['mask']])
-        plt.title(f"Output (nA) [Performance: {results['best_performance'][0]}, Accuracy: {results['accuracy']}]", fontsize=12)
+        plt.title(f"Output (nA) \n Performance: {results['best_performance'][0]} \n Accuracy: {results['accuracy']}", fontsize=12)
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"output.eps"))
         plt.figure()
-        plt.title(f'Learning profile')
+        plt.title(f'Learning profile', fontsize=12)
         plt.plot(results['performance_history'])
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"training_profile.eps"))
 
         plt.figure()
-        plt.title(f"Inputs (V) with {self.configs['ring_data']['gap']}mV gap", fontsize=12)
+        plt.title(f"Inputs (V) \n {self.configs['ring_data']['gap']}mV gap", fontsize=12)
         # if type(results['inputs']) is torch.Tensor:
         #     inputs = inputs.cpu().numpy()
         # if type(targets) is torch.Tensor:
