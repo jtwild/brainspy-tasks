@@ -29,10 +29,10 @@ class FilterFinder():
             key = 'fitness_function_type'
         else:
             raise ValueError('Selected algorithm not tested/implemented.')
-        if configs['filter_finder']['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
-            raise ValueError('For now, only implemented with sigmoidal distance loss/fitness function.')
-        else:
-            self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
+        #if configs['filter_finder']['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
+        #    raise ValueError('For now, only implemented with sigmoidal distance loss/fitness function.')
+        #else:
+        self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
 
         # And load other relevant parts
         self.load_methods(configs)

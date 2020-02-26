@@ -12,7 +12,9 @@ import numpy as np
 
 # %% Generation itself
 def generate_unsorted_points(input_dim):
-    sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2. Old point:
+    sets = [[-0.3, 0.7]]
+    # another set used:
+    #sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2.
     # check inputs
     num_points = 2**input_dim * len(sets)  # get maximum number of points possible with the given sets
     for i in sets:
