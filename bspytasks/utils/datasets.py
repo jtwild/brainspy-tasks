@@ -67,3 +67,14 @@ def process_dataset(class0, class1):
 def generate_data(configs):
     class0, class1 = ring(sample_no=configs['sample_no'], gap=configs['gap'])
     return process_dataset(class0, class1)
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    configs = {'sample_no': 100000, 'gap': 0.3}
+    waveforms, targets = generate_data(configs)
+
+    print(waveforms.shape)
+    plt.figure()
+    plt.plot(waveforms[:, 0], waveforms[:, 1], '.')
+    plt.show()
