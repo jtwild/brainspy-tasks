@@ -18,20 +18,20 @@ class ArchitectureDebugger():
         self.debug_path_simulation = os.path.join(debug_path, 'simulation')
         self.results_path = os.path.join(debug_path, 'plots')
         create_directory(self.results_path)
+        self.error_path = os.path.join(self.results_path, 'error')
+        create_directory(self.error_path)
 
     def generate_plot_names(self, layer_no):
         result = []
         for i in range(layer_no):
             result.append('device_layer_' + str(i + 1) + '_output_0')
-            result.append('device_layer_' + str(i + 1) + '_output_1')
-
             result.append('bn_afterclip_' + str(i + 1) + '_0')
-            result.append('bn_afterclip_' + str(i + 1) + '_1')
-
             result.append('bn_afterbatch_' + str(i + 1) + '_0')
-            result.append('bn_afterbatch_' + str(i + 1) + '_1')
-
             result.append('bn_aftercv_' + str(i + 1) + '_0')
+
+            result.append('device_layer_' + str(i + 1) + '_output_1')
+            result.append('bn_afterclip_' + str(i + 1) + '_1')
+            result.append('bn_afterbatch_' + str(i + 1) + '_1')
             result.append('bn_aftercv_' + str(i + 1) + '_1')
 
         return result
@@ -51,7 +51,7 @@ class ArchitectureDebugger():
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.results_path, name + '_error.eps'))
+        plt.savefig(os.path.join(self.error_path, name + '_error.eps'))
         plt.show()
         plt.close()
 
