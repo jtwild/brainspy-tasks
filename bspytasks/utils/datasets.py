@@ -6,19 +6,24 @@ authors: H. C. Ruiz and Unai Alegre-Ibarra
 import numpy as np
 
 
-def ring(sample_no, outer_radius=0.1, inner_radius=0.1, gap=0.2):
+def ring(sample_no, inner_radius=0.1, gap=0.2, outer_radius=None):
     '''Generates labelled data of a ring with class 1 and the center with class 0
     '''
-    outer_radius = inner_radius + gap + outer_radius
-    # inner_radius = outer_radius - gap
-    samples = -1 + 2 * np.random.rand(sample_no, 2)
+    if outer_radius:
+        outer_radius = inner_radius + gap + outer_radius
+    else:
+        gamma = gap / inner_radius
+        outer_radius = inner_radius * np.sqrt(2 * (1 + gamma) + gamma**2)
+
+    samples = -outer_radius + 2 * outer_radius * np.random.rand(sample_no, 2)
     norm = np.sqrt(np.sum(samples**2, axis=1))
     labels = np.empty(samples.shape[0])
-#    labels[norm>R_out+epsilon/2] = 0
+
     labels[norm < inner_radius] = 0
     labels[(norm < outer_radius) * (norm > inner_radius + gap)] = 1
-    # Deal with outliers
+    # Filter out samples outside the classes
     labels[norm > outer_radius] = np.nan
+    labels[(norm > inner_radius) * (norm < inner_radius + gap)] = np.nan
     return samples[labels == 0], samples[labels == 1]
 
 
@@ -65,5 +70,16 @@ def process_dataset(class0, class1):
 
 
 def generate_data(configs):
-    class0, class1 = ring(sample_no=configs['sample_no'], gap=configs['gap'])
+    class0, class1 = ring(sample_no=configs['sample_no'], gap=configs['gap'], outer_radius=0.1)
     return process_dataset(class0, class1)
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    configs = {'sample_no': 10000, 'gap': 0.4}
+    waveforms, targets = generate_data(configs)
+
+    print(f'sample efficiency: {configs["sample_no"]/len(waveforms)}')
+    plt.figure()
+    plt.plot(waveforms[:, 0], waveforms[:, 1], '.')
+    plt.show()
