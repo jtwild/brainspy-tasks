@@ -78,7 +78,7 @@ class RingClassificationTask():
         print(f"Accuracy: {results['accuracy']}")
         return results
 
-    def plot_results(self, results, show_plot=False):
+    def plot_results(self, results):
         plt.figure()
         plt.plot(results['best_output'][mask])
         plt.title(f"Output (nA) [Performance: {results['best_performance'][0]}, Accuracy: {results['accuracy']}]", fontsize=12)
