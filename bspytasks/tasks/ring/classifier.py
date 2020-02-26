@@ -80,7 +80,7 @@ class RingClassificationTask():
 
     def plot_results(self, results):
         plt.figure()
-        plt.plot(results['best_output'][mask])
+        plt.plot(results['best_output'][results['mask']])
         plt.title(f"Output (nA) [Performance: {results['best_performance'][0]}, Accuracy: {results['accuracy']}]", fontsize=12)
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"output.eps"))
@@ -102,7 +102,7 @@ class RingClassificationTask():
         if self.configs['save_plots']:
             plt.savefig(os.path.join(self.results_dir, f"input.eps"))
 
-        if show_plot:
+        if self.configs['show_plots']:
             plt.show()
         plt.close('all')
 
