@@ -18,8 +18,8 @@ class RingClassifierValidator():
         self.configs = configs
         self.init_processors()
         self.init_data()
-        self.init_dirs()
         self.debugger = ArchitectureDebugger(configs)
+        self.init_dirs()
 
     def init_data(self):
         self.data_loader = RingDataLoader(configs)
@@ -31,6 +31,7 @@ class RingClassifierValidator():
 
     def init_dirs(self):
         self.main_dir = create_directory_timestamp(os.path.join(self.configs['results_base_dir'], 'validation'), 'validation')
+        self.debugger.init_dirs(self.main_dir)
         if self.processor.configs['debug'] and self.processor.configs['architecture'] == 'device_architecture':
             self.processor.init_dirs(self.main_dir, is_main=False)
         if self.validation_processor.configs['debug'] and self.validation_processor.configs['architecture'] == 'device_architecture':
@@ -69,6 +70,7 @@ class RingClassifierValidator():
         model_output = self.get_model_output(model)
         real_output, mask = self.get_hardware_output(model)
         self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
+        self.debugger.plot_data(use_mask=False)
 
     def get_validation_inputs(self, results):
 
@@ -87,13 +89,13 @@ class RingClassifierValidator():
         print(f'Total Error: {error}')
 
         plt.figure()
-        plt.title(f'Comparison between Simulation and Hardware \n (MSE: {error})', fontsize=12)
+        plt.title(f'Comparison between Hardware and Simulation \n (MSE: {error})', fontsize=12)
         plt.plot(model_output[mask])
         plt.plot(real_output[mask], '-.')
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
 
-        plt.legend(['Simulation', 'Validation'])
+        plt.legend(['Simulation', 'Hardware'])
         if save_dir is not None:
             plt.savefig(os.path.join(save_dir, 'validation_plot.eps'))
             np.savez(os.path.join(self.main_dir, 'validation_plot_data'), model_output=model_output, real_output=real_output, mask=mask)
