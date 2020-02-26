@@ -4,7 +4,8 @@ from bspytasks.tasks.ring.data_loader import RingDataLoader
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.performance import perceptron
-from bspyalgo.utils.io import create_directory_timestamp
+from bspyalgo.utils.io import create_directory, create_directory_timestamp
+from bspytasks.tasks.ring.debugger import ArchitectureDebugger
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +19,7 @@ class RingClassifierValidator():
         self.init_processors()
         self.init_data()
         self.init_dirs()
+        self.debugger = ArchitectureDebugger(configs)
 
     def init_data(self):
         self.data_loader = RingDataLoader(configs)
@@ -33,6 +35,8 @@ class RingClassifierValidator():
             self.processor.init_dirs(self.main_dir, is_main=False)
         if self.validation_processor.configs['debug'] and self.validation_processor.configs['architecture'] == 'device_architecture':
             self.validation_processor.init_dirs(self.main_dir, is_main=False)
+        self.debug_plots = os.path.join(self.main_dir, 'debug', 'results')
+        create_directory(self.debug_plots)
 
     def get_model_output(self, model):
         self.processor.load_state_dict(model.copy())
@@ -64,8 +68,7 @@ class RingClassifierValidator():
     def validate(self, results, model):
         model_output = self.get_model_output(model)
         real_output, mask = self.get_hardware_output(model)
-        self.plot_validation_results(model_output[mask], real_output[mask], self.main_dir, self.configs['show_plots'])
-        np.savez(os.path.join(self.main_dir, 'validation_plot_data'), model_output=model_output, real_output=real_output, mask=mask)
+        self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
 
     def get_validation_inputs(self, results):
 
@@ -78,21 +81,22 @@ class RingClassifierValidator():
 
         return inputs, targets, mask
 
-    def plot_validation_results(self, model_output, real_output, save_dir=None, show_plot=False):
+    def plot_validation_results(self, model_output, real_output, mask, save_dir=None, show_plot=False):
 
-        error = ((model_output - real_output) ** 2).mean()
+        error = ((model_output[mask] - real_output[mask]) ** 2).mean()
         print(f'Total Error: {error}')
 
         plt.figure()
         plt.title(f'Comparison between Simulation and Hardware \n (MSE: {error})', fontsize=12)
-        plt.plot(model_output)
-        plt.plot(real_output, '-.')
+        plt.plot(model_output[mask])
+        plt.plot(real_output[mask], '-.')
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
 
         plt.legend(['Simulation', 'Validation'])
         if save_dir is not None:
             plt.savefig(os.path.join(save_dir, 'validation_plot.eps'))
+            np.savez(os.path.join(self.main_dir, 'validation_plot_data'), model_output=model_output, real_output=real_output, mask=mask)
         if show_plot:
             plt.show()
             plt.close()
