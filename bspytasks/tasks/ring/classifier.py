@@ -13,7 +13,7 @@ from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspyalgo.utils.io import create_directory, create_directory_timestamp, save
 from bspyproc.utils.pytorch import TorchUtils
 
-from bspyalgo.utils.performance import perceptron
+from bspyalgo.utils.performance import perceptron, decision
 
 
 class RingClassificationTask():
@@ -49,32 +49,25 @@ class RingClassificationTask():
         save(mode='pickle', file_path=os.path.join(self.reproducibility_dir, 'results.pickle'), data=result)
 
     def judge(self, algorithm_data):
+
         algorithm_data.judge()
-        results = algorithm_data.results
-
-        mask = results['mask']
-        if isinstance(results['best_output'], torch.Tensor):
-            best_output = results['best_output'][mask].detach().cpu().numpy()
-        else:
-            best_output = results['best_output'][mask]
-        if isinstance(results['targets'], torch.Tensor):
-            targets = results['targets'][mask][:, np.newaxis].detach().cpu().numpy()
-        else:
-            targets = results['targets'][mask][:, np.newaxis]
-
-        results = self.get_correlation(results, best_output, targets)
-        return self.get_accuracy(results, best_output, targets)
-
-    def get_correlation(self, results, best_output, targets):
-        results['correlation'] = corr_coeff(best_output.T, targets.T)
+        results = algorithm_data.get_results_as_numpy()
+        results = self.get_accuracy(results)
+        results = self.get_correlation(results)
         return results
 
-    def get_accuracy(self, results, best_output, targets):
+    def get_correlation(self, results):
+        mask = results['mask']
+        results['correlation'] = corr_coeff(results['best_output'][mask].T, results['targets'][mask][:, np.newaxis].T)
+        return results
+
+    def get_accuracy(self, results):
+        mask = results['mask']
         if self.configs["algorithm_configs"]['hyperparameters']["loss_function"] == "fisher":
-            print("Using Fisher does not allow for perceptron accuracy decision.")
-            results['accuracy'] = -1
+            print('Calculating Accuracy ... ')
+            results['accuracy'], _, _ = decision(results['best_output'][mask], results['targets'][mask][:, np.newaxis])
         else:
-            results['accuracy'], _, _ = perceptron(best_output, targets)
+            results['accuracy'], _, _ = perceptron(results['best_output'][mask], results['targets'][mask][:, np.newaxis], mask)
         print(f"Accuracy: {results['accuracy']}")
         return results
 
@@ -123,4 +116,4 @@ if __name__ == '__main__':
     inputs, targets, mask = data_loader.generate_new_data(configs['algorithm_configs']['processor'], gap=gap)
     result = task.run_task(inputs, targets, mask)
     task.save_reproducibility_data(result)
-    task.plot_results(result, show_plot=True)
+    task.plot_results(result)
