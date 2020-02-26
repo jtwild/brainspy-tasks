@@ -8,7 +8,6 @@ from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.io import load_configs
 from bspytasks.tasks.ring.classifier import RingClassificationTask as Task
 from bspytasks.tasks.ring.data_loader import RingDataLoader
-from bspytasks.tasks.ring.plotter import ArchitecturePlotter
 
 from bspyalgo.utils.io import create_directory, create_directory_timestamp
 
@@ -21,7 +20,6 @@ class RingSearcher():
         self.base_dir = configs['results_base_dir']
         self.task = Task(configs, is_main=False)
         self.data_loader = RingDataLoader(configs)
-        self.plotter = ArchitecturePlotter(configs)
 
     def init_dirs(self, gap):
         main_dir = f'searcher_{gap}mV'
@@ -38,21 +36,22 @@ class RingSearcher():
         self.task.init_dirs(base_dir)
         return configs
 
-    def reset(self):
+    def reset(self, output_shape):
         self.task.reset()
         self.performance_per_run = np.zeros(self.configs['runs'])
         self.correlation_per_run = np.zeros(self.configs['runs'])
         self.accuracy_per_run = np.zeros(self.configs['runs'])
+        self.outputs_per_run = np.zeros((self.configs['runs'], output_shape))
+        self.control_voltages_per_run = np.zeros((self.configs['runs'], self.task.algorithm.processor.control_voltage_no))
+        self.seeds_per_run = np.zeros(self.configs['runs'])
         self.best_run = None
-        # os.mkdir(os.path.join(self.configs["results_base_dir"], 'reproducibility'))
-        # os.mkdir(os.path.join(self.configs["results_base_dir"], 'search_stats'))
-        # os.mkdir(os.path.join(self.configs["results_base_dir"], 'results'))
 
     def search_solution(self, gap):
         self.init_dirs(gap)
-        self.reset()
+
         self.task.configs['ring_data']['gap'] = gap
         inputs, targets, mask = self.data_loader.generate_new_data(self.configs['algorithm_configs']['processor'], gap=gap)
+        self.reset(inputs.shape[0])
         for run in range(self.configs['runs']):
             print(f'########### RUN {run} ################')
             seed = TorchUtils.init_seed(None, deterministic=True)
@@ -61,14 +60,17 @@ class RingSearcher():
             self.update_search_stats(results, run)
             if self.best_run == None or results['best_performance'] < self.best_run['best_performance']:
                 self.update_best_run(results, run)
-                self.task.save_plots(self.best_run, inputs, targets, mask, show_plot=self.configs["show_plots"], run=run)
+                self.task.plot_results(results)
 
         self.close_search()
 
     def update_search_stats(self, results, run):
         self.accuracy_per_run[run] = results['accuracy']
-        self.performance_per_run[run] = results["best_performance"]
-        self.correlation_per_run[run] = results["correlation"]
+        self.performance_per_run[run] = results['best_performance']
+        self.correlation_per_run[run] = results['correlation']
+        self.outputs_per_run[run] = results['best_output'][:, 0]
+        self.control_voltages_per_run[run] = results['control_voltages']
+        self.seeds_per_run = results['seed']
 
     def update_best_run(self, results, run):
         results['index'] = run
@@ -77,21 +79,13 @@ class RingSearcher():
         self.task.save_reproducibility_data(results)
 
     def close_search(self):
-        np.savez(os.path.join(self.search_stats_dir, f"search_data_{self.configs['runs']}_runs.npz"), performance=self.performance_per_run, correlation=self.correlation_per_run, accuracy=self.accuracy_per_run)
+        np.savez(os.path.join(self.search_stats_dir, f"search_data_{self.configs['runs']}_runs.npz"), outputs=self.outputs_per_run, performance=self.performance_per_run, correlation=self.correlation_per_run, accuracy=self.accuracy_per_run, seed=self.seeds_per_run, control_voltages=self.control_voltages_per_run)
         self.plot_search_results()
 
     def plot_search_results(self):
         best_index = self.best_run['index']
-        best_run_output = self.best_run['best_output']
         performance = self.best_run["best_performance"]
         print(f"Best performance {performance} in run {best_index} with corr. {self.correlation_per_run[best_index]}")
-
-        # plt.figure()
-        # plt.plot(best_run_output)
-        # plt.title(f'Best Output, run:{best_index}, F-val: {performance}')
-        # plt.xlabel('Time points (a.u.)')
-        # plt.ylabel('Output current (nA)')
-        # plt.savefig(os.path.join(self.results_dir, f'best_output.eps'))
 
         plt.figure()
         plt.plot(self.correlation_per_run, self.performance_per_run, 'o')
@@ -99,6 +93,13 @@ class RingSearcher():
         plt.xlabel('Correlation')
         plt.ylabel('Fisher value')
         plt.savefig(os.path.join(self.search_stats_dir, 'correlation_vs_fisher.eps'))
+
+        plt.figure()
+        plt.plot(self.accuracy_per_run, self.performance_per_run, 'o')
+        plt.title('Accuracy vs Fisher')
+        plt.xlabel('Accuracy')
+        plt.ylabel('Fisher value')
+        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_vs_fisher.eps'))
 
         plt.figure()
         plt.hist(self.performance_per_run, 100)
@@ -112,7 +113,7 @@ class RingSearcher():
         plt.title('Histogram of Accuracy values')
         plt.xlabel('Accuracy values')
         plt.ylabel('Counts')
-        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_histogram'))
+        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_histogram.eps'))
 
         if self.configs["show_plots"]:
             plt.show()
