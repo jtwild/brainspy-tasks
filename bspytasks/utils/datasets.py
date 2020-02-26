@@ -11,7 +11,7 @@ def ring(sample_no, outer_radius=0.1, inner_radius=0.1, gap=0.2):
     '''
     outer_radius = inner_radius + gap + outer_radius
     # inner_radius = outer_radius - gap
-    samples = -1 + 2 * np.random.rand(sample_no, 2)
+    samples = -outer_radius + 2 * outer_radius * np.random.rand(sample_no, 2)
     norm = np.sqrt(np.sum(samples**2, axis=1))
     labels = np.empty(samples.shape[0])
 #    labels[norm>R_out+epsilon/2] = 0
@@ -19,6 +19,7 @@ def ring(sample_no, outer_radius=0.1, inner_radius=0.1, gap=0.2):
     labels[(norm < outer_radius) * (norm > inner_radius + gap)] = 1
     # Deal with outliers
     labels[norm > outer_radius] = np.nan
+    labels[(norm > inner_radius) * (norm < inner_radius + gap)] = np.nan
     return samples[labels == 0], samples[labels == 1]
 
 
@@ -71,7 +72,7 @@ def generate_data(configs):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    configs = {'sample_no': 100000, 'gap': 0.3}
+    configs = {'sample_no': 100000, 'gap': 1.}
     waveforms, targets = generate_data(configs)
 
     print(waveforms.shape)
