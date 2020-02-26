@@ -4,6 +4,7 @@ from bspytasks.tasks.ring.data_loader import RingDataLoader
 from bspyproc.utils.waveform import generate_waveform, generate_mask
 from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.performance import perceptron
+from bspyalgo.utils.io import create_directory_timestamp
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,9 +28,11 @@ class RingClassifierValidator():
         self.processor = get_processor(self.configs['algorithm_configs']['processor'])
 
     def init_dirs(self):
-        self.main_dir = os.path.join(self.configs['results_base_dir'], 'validation')
-        if not os.path.exists(self.main_dir):
-            os.makedirs(self.main_dir)
+        self.main_dir = create_directory_timestamp(os.path.join(self.configs['results_base_dir'], 'validation'), 'validation')
+        if self.processor.configs['debug'] and self.processor.configs['architecture'] == 'device_architecture':
+            self.processor.init_dirs(self.main_dir, is_main=False)
+        if self.validation_processor.configs['debug'] and self.validation_processor.configs['architecture'] == 'device_architecture':
+            self.validation_processor.init_dirs(self.main_dir, is_main=False)
 
     def get_model_output(self, model):
         self.processor.load_state_dict(model.copy())
@@ -76,6 +79,7 @@ class RingClassifierValidator():
         return inputs, targets, mask
 
     def plot_validation_results(self, model_output, real_output, save_dir=None, show_plot=False):
+
         error = ((model_output - real_output) ** 2).mean()
         print(f'Total Error: {error}')
 
@@ -95,16 +99,25 @@ class RingClassifierValidator():
             plt.close()
 
 
+def load_data(base_dir):
+    model_dir = os.path.join(base_dir, 'reproducibility', 'model.pth')
+    results_dir = os.path.join(base_dir, 'reproducibility', 'results.pickle')
+    configs_dir = os.path.join(base_dir, 'reproducibility', 'configs.json')
+    model = torch.load(model_dir)
+    results = pickle.load(open(results_dir, "rb"))
+    configs = load_configs(configs_dir)
+    configs['results_base_dir'] = base_dir
+    return model, results, configs
+
+
 if __name__ == '__main__':
     import torch
+    import os
     import pickle
     from bspyalgo.utils.io import load_configs
 
-    validation_folder = '/tmp/output/ring/'
-
-    model = torch.load('model.pth')
-    results = pickle.load(open('results.pkl', "rb"))
-    configs = load_configs('configs.json')
-
+    folder_name = 'searcher_0.2mV_2020_02_26_112540'
+    base_dir = 'tmp/output/ring/' + folder_name
+    model, results, configs = load_data(base_dir)
     val = RingClassifierValidator(configs)
     val.validate(results, model)
