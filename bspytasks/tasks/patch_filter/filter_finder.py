@@ -3,6 +3,9 @@
 Created on Mon Feb 10 16:38:28 2020
 
 @author: Jochem
+
+    #TODO: use the new is_main idea to save data, also. In general, save data
+    #TODO: fix loss function such that there is not such a large bias for large output currents? Or punish hjigh outputs currents?
 """
 from bspyalgo.algorithm_manager import get_algorithm  # to get either the GA or the GD algo
 from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager  # To generate the binary inputs for a patch
@@ -57,9 +60,10 @@ class FilterFinder():
         excel_results = algorithm_data.results
         return excel_results
 
-    def plot_filter(self, excel_results, show_plots=True, save_dir=None):
-        for res in excel_results:
-            performance = np.nanmin( res['performance_history'] )
+    def plot_best_filter(self, excel_results, show_plots=True):
+        performance = []
+        for results in excel_results:
+            performance.append( np.nanmin( results['performance_history'] ) )
         best_attempt_index = np.argmin(performance)
 
         fig, axs = plt.subplots(1,2, sharey=False)
@@ -71,12 +75,13 @@ class FilterFinder():
             axs[0].annotate(text, [0,y[i]])
         # and a plot of the loss over time
         axs[1].plot(excel_results[best_attempt_index]['performance_history'])
+        axs[1].grid(which='both')
         axs[0].set_ylabel('Current (nA)')
         axs[0].grid(which='major')
         axs[0].set_xticks([])
 
-        fig.suptitle(f"Best output for input dimension {len(inputs)} \n"
-                     f"Average distance: {np.round( excel_results[best_attempt_index]['average_distance'], 4)} \n"
+        fig.suptitle(f"Best output for input dimension {len(inputs[0])} \n"
+                     f"Minimum nearest neighbour distance: {np.round( excel_results[best_attempt_index]['dist']['min'], 4)} \n"
                      f"Control voltages: {str(np.round(excel_results[best_attempt_index]['control_voltages'][0],3))} V")
         #TODO: add ticklabels defining the inputs
         #excel_results['inputs']int().tolist() can be used to extract the inputs in a python list.
@@ -97,14 +102,16 @@ class FilterFinder():
             distances = excel_results[attempt]['best_output'] - excel_results[attempt]['best_output'].T
             np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
             distance_nearest = np.nanmin( abs(distances) )
-            excel_results[attempt]['average_distance'] = np.mean( distance_nearest )  # average nearest neighbour distance
-        self.plot_filter(excel_results)
+            excel_results[attempt]['dist'] = dict()  # intialize new key
+            excel_results[attempt]['dist']['nn'] = distance_nearest  # all nearest neighbour distances
+            excel_results[attempt]['dist']['avg'] = np.mean( distance_nearest )  # average nearest neighbour distance
+            excel_results[attempt]['dist']['min'] = np.nanmin( distance_nearest )  # minimal nearest neighbour distanc
+        self.plot_best_filter(excel_results, self.show_plots)
         return excel_results
 
 #%% Testing
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/tasks/filter_finder/template_ff_ga.json')
+    configs = load_configs('configs/tasks/filter_finder/template_ff_gd.json')
     task = FilterFinder(configs) #initialize class
     excel_results = task.find_filter()
-    #TODO: Adjust gd.py to have the targets as a possible keyword argument.
