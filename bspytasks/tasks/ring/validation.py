@@ -66,14 +66,14 @@ class RingClassifierValidator():
 
         return self.validation_processor.get_output_(inputs, mask)[:, 0], mask
 
-    def validate(self, results, model, debugger_mask=True):
+    def validate(self, results, model, debugger_mask=True, debugger_extension='png'):
         model_output = self.get_model_output(model)
         real_output, mask = self.get_hardware_output(model)
         self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
         if debugger_mask:
-            self.debugger.plot_data(mask=mask)
+            self.debugger.plot_data(mask=mask, extension=debugger_extension)
         else:
-            self.debugger.plot_data()
+            self.debugger.plot_data(extension=debugger_extension)
 
     def get_validation_inputs(self, results):
 

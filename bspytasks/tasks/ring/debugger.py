@@ -8,10 +8,9 @@ from bspyalgo.utils.io import create_directory
 
 class ArchitectureDebugger():
 
-    def __init__(self, configs, plot_extension='eps'):
+    def __init__(self, configs):
         self.configs = configs
         self.plot_names = self.generate_plot_names(2)
-        self.extension = plot_extension
 
     def init_dirs(self, base_dir):
         debug_path = os.path.join(base_dir, 'debug')
@@ -37,23 +36,25 @@ class ArchitectureDebugger():
 
         return result
 
-    def plot_comparison(self, a, b, name):
+    def plot_comparison(self, a, b, name, show=False):
         plt.figure()
         plt.plot(a, label='device')
         plt.plot(b, label='model')
         plt.title(name)
         plt.legend()
         plt.savefig(os.path.join(self.results_path, name + '.' + self.extension))
-        plt.show()
+        if show:
+            plt.show()
         plt.close()
 
-    def plot_error(self, x, name):
+    def plot_error(self, x, name, show=False):
         plt.figure()
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
         plt.savefig(os.path.join(self.error_path, name + '_error.' + self.extension))
-        plt.show()
+        if show:
+            plt.show()
         plt.close()
 
     def read(self, name, mask=None):
@@ -75,8 +76,9 @@ class ArchitectureDebugger():
         print(f'     std error: {(error ** 2).std()}')
         return error
 
-    def default_plot(self, name, mask):
+    def default_plot(self, i, name, mask):
         a, b = self.read(name, mask)
+        name = str(i) + '_' + name
         error = self.print_error(a, b, name)
         self.plot_comparison(a, b, name)
         self.plot_error(error, name)
@@ -85,12 +87,15 @@ class ArchitectureDebugger():
         name = 'raw_input'
         a, b = self.read(name, mask)
         input_indices = self.configs['validation']['processor']['input_indices']
-        self.print_error(a[:, input_indices[0]], b[:, 0], name + '_0')
-        self.plot_comparison(a[:, input_indices[0]], b[:, 0], name + '_0')
-        self.print_error(a[:, input_indices[1]], b[:, 1], name + '_1')
-        self.plot_comparison(a[:, input_indices[1]], b[:, 1], name + '_1')
+        self.print_error(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0')
+        self.plot_comparison(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0')
+        self.print_error(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
+        self.plot_comparison(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
 
-    def plot_data(self, mask=None):
+    def plot_data(self, mask=None, extension='.png', show_plots=False):
+        self.extension = extension
         self.plot_raw_input(mask)
+        i = 2
         for name in self.plot_names:
-            self.default_plot(name, mask)
+            self.default_plot(i, name, mask)
+            i += 1
