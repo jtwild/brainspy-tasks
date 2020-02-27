@@ -87,8 +87,6 @@ def load_data(base_dir):
     results = pickle.load(open(results_dir, "rb"))
     configs = load_configs(configs_dir)
     configs['results_base_dir'] = base_dir
-    if 'torch_model_dict' in configs['algorithm_configs']['processor']:
-        configs['algorithm_configs']['processor']['torch_model_dict'] = model_dir
     return model, results, configs
 
 
