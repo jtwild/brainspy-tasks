@@ -8,9 +8,14 @@ from bspyalgo.utils.io import create_directory
 
 class ArchitectureDebugger():
 
-    def __init__(self, configs):
+    def __init__(self, configs, plot_extension='eps'):
         self.configs = configs
         self.plot_names = self.generate_plot_names(2)
+        self.extension = plot_extension
+
+    def set_masks(self, simulation_mask, validation_mask):
+        self.a_mask = validation_mask
+        self.b_mask = simulation_mask
 
     def init_dirs(self, base_dir):
         debug_path = os.path.join(base_dir, 'debug')
@@ -42,7 +47,7 @@ class ArchitectureDebugger():
         plt.plot(b, label='model')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.results_path, name + '.eps'))
+        plt.savefig(os.path.join(self.results_path, name + '.' + self.extension))
         plt.show()
         plt.close()
 
@@ -51,18 +56,18 @@ class ArchitectureDebugger():
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.error_path, name + '_error.eps'))
+        plt.savefig(os.path.join(self.error_path, name + '_error.' + self.extension))
         plt.show()
         plt.close()
 
-    def read(self, name, use_mask):
+    def read(self, name, mask=None):
         a = np.load(os.path.join(self.debug_path_hardware, name + '.npy'))
         b = torch.load(os.path.join(self.debug_path_simulation, name + '.pt')).detach().cpu().numpy()
         b = generate_waveform(b, self.configs['validation']['processor']['waveform']
                               ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
-        if use_mask:
-            a = a[self.a_mask]
-            b = b[self.b_mask]
+        if mask is not None:
+            a = a[mask]
+            b = b[mask]
 
         return a, b
 
@@ -74,42 +79,43 @@ class ArchitectureDebugger():
         print(f'     std error: {(error ** 2).std()}')
         return error
 
-    def default_plot(self, name, use_mask):
-        a, b = self.read(name, use_mask)
+    def default_plot(self, name, mask):
+        a, b = self.read(name, mask)
         error = self.print_error(a, b, name)
         self.plot_comparison(a, b, name)
         self.plot_error(error, name)
 
-    def plot_raw_input(self, use_mask):
+    def plot_raw_input(self, mask):
         name = 'raw_input'
-        a, b = self.read(name, use_mask)
-        self.print_error(a[:, 3], b[:, 0], name)
-        self.plot_comparison(a[:, 3], b[:, 0], name)
-        self.print_error(a[:, 4], b[:, 1], name)
-        self.plot_comparison(a[:, 4], b[:, 1], name)
+        a, b = self.read(name, mask)
+        input_indices = self.configs['validation']['processor']['input_indices']
+        self.print_error(a[:, input_indices[0]], b[:, 0], name + '_0')
+        self.plot_comparison(a[:, input_indices[0]], b[:, 0], name + '_0')
+        self.print_error(a[:, input_indices[1]], b[:, 1], name + '_1')
+        self.plot_comparison(a[:, input_indices[1]], b[:, 1], name + '_1')
 
-    def plot_final_result(self, use_mask=False):
-        # self.a_output = np.load(os.path.join(self.debug_path_hardware, 'validation_output.npy'))
-        self.a_mask = np.load(os.path.join(self.debug_path_simulation, 'validation_output_mask.npy'))
-        # self.b_output = np.load(os.path.join(self.debug_path_hardware, 'target_algorithm.npy'))
-        self.b_mask = np.load(os.path.join(self.debug_path_simulation, 'target_algorithm_mask.npy'))
-        # if use_mask:
-        #     error = ((elf.b_output[self.b_mask] - self.a_output[self.a_mask]) ** 2).mean()
-        #     print(f'Total Error: {error}')
+    # def plot_final_result(self, use_mask=False):
+    #     # self.a_output = np.load(os.path.join(self.debug_path_hardware, 'validation_output.npy'))
+    #     self.a_mask = np.load(os.path.join(self.debug_path_simulation, 'validation_output_mask.npy'))
+    #     # self.b_output = np.load(os.path.join(self.debug_path_hardware, 'target_algorithm.npy'))
+    #     self.b_mask = np.load(os.path.join(self.debug_path_simulation, 'target_algorithm_mask.npy'))
+    #     # if use_mask:
+    #     #     error = ((elf.b_output[self.b_mask] - self.a_output[self.a_mask]) ** 2).mean()
+    #     #     print(f'Total Error: {error}')
 
-        #     self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
-        #         self.configs['results_base_dir'], 'validation.eps'))
-        # else:
-        #     error = ((self.b_output - self.a_output) ** 2).mean()
-        #     print(f'Total Error: {error}')
+    #     #     self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
+    #     #         self.configs['results_base_dir'], 'validation.eps'))
+    #     # else:
+    #     #     error = ((self.b_output - self.a_output) ** 2).mean()
+    #     #     print(f'Total Error: {error}')
 
-        #     self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
-        #         self.configs['results_base_dir'], 'validation.eps'))
+    #     #     self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
+    #     #         self.configs['results_base_dir'], 'validation.eps'))
 
-    def plot_data(self, use_mask=False):
-        # self.plot_final_result(use_mask)
-        self.plot_raw_input(use_mask)
+    def plot_data(self, mask=None):
+        # self.plot_final_result(mask)
+        self.plot_raw_input(mask)
 
         for name in self.plot_names:
-            self.default_plot(name, use_mask)
+            self.default_plot(name, mask)
         # self.plot_final_result(use_mask)

@@ -66,11 +66,14 @@ class RingClassifierValidator():
 
         return self.validation_processor.get_output_(inputs, mask)[:, 0], mask
 
-    def validate(self, results, model):
+    def validate(self, results, model, debugger_mask=True):
         model_output = self.get_model_output(model)
         real_output, mask = self.get_hardware_output(model)
         self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
-        self.debugger.plot_data(use_mask=False)
+        if debugger_mask:
+            self.debugger.plot_data(mask=mask)
+        else:
+            self.debugger.plot_data()
 
     def get_validation_inputs(self, results):
 
@@ -121,7 +124,7 @@ if __name__ == '__main__':
     import pickle
     from bspyalgo.utils.io import load_configs
 
-    folder_name = 'searcher_0.2mV_2020_02_26_112540'
+    folder_name = 'searcher_0.2mV_2020_02_26_231845'
     base_dir = 'tmp/output/ring/' + folder_name
     model, results, configs = load_data(base_dir)
     val = RingClassifierValidator(configs)
