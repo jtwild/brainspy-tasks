@@ -74,6 +74,17 @@ def generate_data(configs):
     return process_dataset(class0, class1)
 
 
+def load_data(base_dir):
+    model_dir = os.path.join(base_dir, 'reproducibility', 'model.pth')
+    results_dir = os.path.join(base_dir, 'reproducibility', 'results.pickle')
+    configs_dir = os.path.join(base_dir, 'reproducibility', 'configs.json')
+    model = torch.load(model_dir)
+    results = pickle.load(open(results_dir, "rb"))
+    configs = load_configs(configs_dir)
+    configs['results_base_dir'] = base_dir
+    return model, results, configs
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     configs = {'sample_no': 10000, 'gap': 0.4}

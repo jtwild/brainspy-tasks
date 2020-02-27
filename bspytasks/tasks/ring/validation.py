@@ -8,6 +8,7 @@ from bspyalgo.utils.io import create_directory, create_directory_timestamp
 from bspytasks.tasks.ring.debugger import ArchitectureDebugger
 from bspyalgo.utils.performance import accuracy
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -119,22 +120,12 @@ class RingClassifierValidator():
             plt.close()
 
 
-def load_data(base_dir):
-    model_dir = os.path.join(base_dir, 'reproducibility', 'model.pth')
-    results_dir = os.path.join(base_dir, 'reproducibility', 'results.pickle')
-    configs_dir = os.path.join(base_dir, 'reproducibility', 'configs.json')
-    model = torch.load(model_dir)
-    results = pickle.load(open(results_dir, "rb"))
-    configs = load_configs(configs_dir)
-    configs['results_base_dir'] = base_dir
-    return model, results, configs
-
-
 if __name__ == '__main__':
     import torch
     import os
     import pickle
     from bspyalgo.utils.io import load_configs
+    from bspytasks.utils.datasets import load_data
 
     folder_name = 'searcher_0.2mV_2020_02_26_231845'
     base_dir = 'tmp/output/ring/' + folder_name

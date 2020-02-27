@@ -30,9 +30,10 @@ if __name__ == '__main__':
     import torch
     import matplotlib.pyplot as plt
     from bspyalgo.utils.io import load_configs
+    from bspytasks.utils.datasets import load_data
 
-    model = torch.load('model.pth')
-    results = pickle.load(open('best_output_results.pkl', "rb"))
-    configs = load_configs('ring_classification_configs.json')
+    folder_name = 'searcher_0.2mV_2020_02_26_231845'
+    base_dir = 'tmp/output/ring/' + folder_name
+    model, results, configs = load_data(base_dir)
     searcher = AdvancedRingSearcher(configs)
     searcher.improve_solution(results, model)
