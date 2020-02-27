@@ -75,7 +75,7 @@ def generate_data(configs):
 
 
 def load_data(base_dir):
-    model_dir = os.path.join(base_dir, 'reproducibility', 'model.pth')
+    model_dir = os.path.join(base_dir, 'reproducibility', 'model.pt')
     results_dir = os.path.join(base_dir, 'reproducibility', 'results.pickle')
     configs_dir = os.path.join(base_dir, 'reproducibility', 'configs.json')
     model = torch.load(model_dir)
