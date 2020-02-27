@@ -36,11 +36,11 @@ class ArchitectureDebugger():
 
         return result
 
-    def plot_comparison(self, a, b, name, show=False):
+    def plot_comparison(self, a, b, name, mse, show=False):
         plt.figure()
         plt.plot(a, label='device')
         plt.plot(b, label='model')
-        plt.title(name)
+        plt.title(name + '\n' + f'MSE: {mse}')
         plt.legend()
         plt.savefig(os.path.join(self.results_path, name + '.' + self.extension))
         if show:
@@ -71,26 +71,27 @@ class ArchitectureDebugger():
     def print_error(self, a, b, name):
         print('Error ' + name)
         error = (a - b)
+        mse = (error ** 2).mean()
         print(f'     max error: {np.max(error)}')
-        print(f'     mean error: {(error ** 2).mean()}')
+        print(f'     mean error: {mse}')
         print(f'     std error: {(error ** 2).std()}')
-        return error
+        return mse
 
     def default_plot(self, i, name, mask):
         a, b = self.read(name, mask)
         name = str(i) + '_' + name
         error = self.print_error(a, b, name)
-        self.plot_comparison(a, b, name)
+        self.plot_comparison(a, b, name, (error ** 2).mean())
         self.plot_error(error, name)
 
     def plot_raw_input(self, mask):
         name = 'raw_input'
         a, b = self.read(name, mask)
         input_indices = self.configs['validation']['processor']['input_indices']
-        self.print_error(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0')
-        self.plot_comparison(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0')
-        self.print_error(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
-        self.plot_comparison(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
+        error = self.print_error(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0')
+        self.plot_comparison(a[:, input_indices[0]], b[:, 0], '0_' + name + '_0', (error ** 2).mean())
+        error = self.print_error(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
+        self.plot_comparison(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1', (error ** 2).mean())
 
     def plot_data(self, mask=None, extension='.png', show_plots=False):
         self.extension = extension
