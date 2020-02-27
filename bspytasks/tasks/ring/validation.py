@@ -6,6 +6,7 @@ from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.performance import perceptron
 from bspyalgo.utils.io import create_directory, create_directory_timestamp
 from bspytasks.tasks.ring.debugger import ArchitectureDebugger
+from bspyalgo.utils.performance import accuracy
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +24,10 @@ class RingClassifierValidator():
 
     def init_data(self):
         self.data_loader = RingDataLoader(configs)
-        self.test_inputs, self.test_targets, self.test_mask = self.data_loader.generate_new_data(self.configs['algorithm_configs']['processor'], gap=self.configs['ring_data']['gap'])
+        test_inputs, test_targets, _ = self.data_loader.generate_new_data(self.configs['algorithm_configs']['processor'], gap=self.configs['ring_data']['gap'])
+        self.test_results = {}
+        self.test_results['inputs'] = test_inputs
+        self.test_results['targets'] = test_targets
 
     def init_processors(self):
         self.validation_processor = get_processor(self.configs['validation']['processor'])
@@ -39,7 +43,7 @@ class RingClassifierValidator():
         self.debug_plots = os.path.join(self.main_dir, 'debug', 'results')
         create_directory(self.debug_plots)
 
-    def get_model_output(self, model):
+    def get_model_output(self, model, results):
         self.processor.load_state_dict(model.copy())
         self.processor.eval()
         if self.configs['algorithm_configs']['processor']['platform'] == 'simulation':
@@ -50,30 +54,11 @@ class RingClassifierValidator():
         return generate_waveform(model_output[:, 0], self.configs['validation']['processor']['waveform']
                                  ['amplitude_lengths'], self.configs['validation']['processor']['waveform']['slope_lengths'])
 
-    def get_model_test_accuracy(self):
-        model_output_test = self.processor.forward(self.test_inputs).detach().cpu().numpy()
-        accuracy, _, _ = perceptron(model_output_test, self.test_targets)
-        return accuracy
-
-    def get_hardware_test_accuracy(self):
-        model_output_test = self.processor.forward(self.test_inputs).detach().cpu().numpy()
-        accuracy, _, _ = perceptron(model_output_test, self.test_targets)
-        return accuracy
-
-    def get_hardware_output(self, model):
+    def get_hardware_output(self, model, results):
         self.validation_processor.load_state_dict(model.copy())
         inputs, targets, mask = self.get_validation_inputs(results)
 
         return self.validation_processor.get_output_(inputs, mask)[:, 0], mask
-
-    def validate(self, results, model, debugger_mask=True, debugger_extension='png'):
-        model_output = self.get_model_output(model)
-        real_output, mask = self.get_hardware_output(model)
-        self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
-        if debugger_mask:
-            self.debugger.plot_data(mask=mask, extension=debugger_extension)
-        else:
-            self.debugger.plot_data(extension=debugger_extension)
 
     def get_validation_inputs(self, results):
 
@@ -86,7 +71,34 @@ class RingClassifierValidator():
 
         return inputs, targets, mask
 
-    def plot_validation_results(self, model_output, real_output, mask, save_dir=None, show_plot=False):
+    def validate(self, results, model, debugger_mask=True, debugger_extension='png'):
+        model_output = self.get_model_output(model, results)
+        real_output, mask = self.get_hardware_output(model, results)
+        self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'])
+        if debugger_mask:
+            self.debugger.plot_data(mask=mask, extension=debugger_extension)
+        else:
+            self.debugger.plot_data(extension=debugger_extension)
+
+    def test_accuracy(self, model, debugger_mask=True, debugger_extension='png'):
+        targets = generate_waveform(self.test_results['targets'], self.configs['validation']['processor']['waveform']['amplitude_lengths'], slope_lengths=self.configs['validation']['processor']['waveform']['slope_lengths'])
+        # mask = generate_mask(self.test_results['targets'], self.configs['validation']['processor']['waveform']['amplitude_lengths'], slope_lengths=self.configs['validation']['processor']['waveform']['slope_lengths'])
+        model_output = self.get_model_output(model, self.test_results)
+        real_output, mask = self.get_hardware_output(model, self.test_results)
+        self.plot_validation_results(model_output, real_output, mask, self.main_dir, self.configs['show_plots'], name='test_accuracy')
+
+        simulation_accuracy = accuracy(model_output[mask],
+                                       targets[mask],
+                                       plot=os.path.join(self.main_dir, f"simulation_perceptron.eps"))
+        print(f"Simulation accuracy: {simulation_accuracy}")
+
+        hardware_accuracy = accuracy(real_output[mask],
+                                     targets[mask],
+                                     plot=os.path.join(self.main_dir, f"hardware_perceptron.eps"))
+        print(f"Hardware accuracy: {hardware_accuracy}")
+        return simulation_accuracy, hardware_accuracy
+
+    def plot_validation_results(self, model_output, real_output, mask, save_dir=None, show_plot=False, name='validation_plot'):
 
         error = ((model_output[mask] - real_output[mask]) ** 2).mean()
         print(f'Total Error: {error}')
@@ -100,8 +112,8 @@ class RingClassifierValidator():
 
         plt.legend(['Simulation', 'Hardware'])
         if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, 'validation_plot.eps'))
-            np.savez(os.path.join(self.main_dir, 'validation_plot_data'), model_output=model_output, real_output=real_output, mask=mask)
+            plt.savefig(os.path.join(save_dir, name + '.eps'))
+            np.savez(os.path.join(self.main_dir, name + '_data'), model_output=model_output, real_output=real_output, mask=mask)
         if show_plot:
             plt.show()
             plt.close()
@@ -128,4 +140,5 @@ if __name__ == '__main__':
     base_dir = 'tmp/output/ring/' + folder_name
     model, results, configs = load_data(base_dir)
     val = RingClassifierValidator(configs)
-    val.validate(results, model)
+    # val.validate(results, model)
+    val.test_accuracy(model)
