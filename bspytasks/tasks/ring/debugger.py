@@ -13,10 +13,6 @@ class ArchitectureDebugger():
         self.plot_names = self.generate_plot_names(2)
         self.extension = plot_extension
 
-    def set_masks(self, simulation_mask, validation_mask):
-        self.a_mask = validation_mask
-        self.b_mask = simulation_mask
-
     def init_dirs(self, base_dir):
         debug_path = os.path.join(base_dir, 'debug')
         self.debug_path_hardware = os.path.join(debug_path, 'hardware')
@@ -94,28 +90,7 @@ class ArchitectureDebugger():
         self.print_error(a[:, input_indices[1]], b[:, 1], name + '_1')
         self.plot_comparison(a[:, input_indices[1]], b[:, 1], name + '_1')
 
-    # def plot_final_result(self, use_mask=False):
-    #     # self.a_output = np.load(os.path.join(self.debug_path_hardware, 'validation_output.npy'))
-    #     self.a_mask = np.load(os.path.join(self.debug_path_simulation, 'validation_output_mask.npy'))
-    #     # self.b_output = np.load(os.path.join(self.debug_path_hardware, 'target_algorithm.npy'))
-    #     self.b_mask = np.load(os.path.join(self.debug_path_simulation, 'target_algorithm_mask.npy'))
-    #     # if use_mask:
-    #     #     error = ((elf.b_output[self.b_mask] - self.a_output[self.a_mask]) ** 2).mean()
-    #     #     print(f'Total Error: {error}')
-
-    #     #     self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
-    #     #         self.configs['results_base_dir'], 'validation.eps'))
-    #     # else:
-    #     #     error = ((self.b_output - self.a_output) ** 2).mean()
-    #     #     print(f'Total Error: {error}')
-
-    #     #     self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
-    #     #         self.configs['results_base_dir'], 'validation.eps'))
-
     def plot_data(self, mask=None):
-        # self.plot_final_result(mask)
         self.plot_raw_input(mask)
-
         for name in self.plot_names:
             self.default_plot(name, mask)
-        # self.plot_final_result(use_mask)
