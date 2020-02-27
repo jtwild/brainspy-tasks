@@ -43,7 +43,7 @@ class RingClassificationTask():
 
     def save_reproducibility_data(self, result):
         save(mode='configs', file_path=os.path.join(self.reproducibility_dir, 'configs.json'), data=self.configs)
-        save(mode='torch', file_path=os.path.join(self.reproducibility_dir, 'model.pth'), data=self.algorithm.processor)
+        save(mode='torch', file_path=os.path.join(self.reproducibility_dir, 'model.pt'), data=self.algorithm.processor)
         save(mode='pickle', file_path=os.path.join(self.reproducibility_dir, 'results.pickle'), data=result)
 
     def judge(self, algorithm_data):
