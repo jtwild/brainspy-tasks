@@ -67,7 +67,7 @@ class RingDataLoader():
         mask = (targets == 1)
         targets[targets == 0] = 1
         targets[mask] = 0
-        targets = np.asarray(generate_waveform(targets, processor_configs['waveform']['amplitude_lengths'], processor_configs['waveform']['slope_lengths'])).T
+        # targets = np.asarray(generate_waveform(targets, processor_configs['waveform']['amplitude_lengths'], processor_configs['waveform']['slope_lengths'])).T
         if processor_configs["platform"] == 'simulation' and processor_configs["network_type"] == 'dnpu':
             return TorchUtils.get_tensor_from_numpy(targets)
         return targets
