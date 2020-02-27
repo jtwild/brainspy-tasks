@@ -14,7 +14,8 @@ setup(name='brainspy-tasks',
       'matplotlib',
       'openpyxl',
       'xlsxwriter',
-      'scipy'
+      'scipy',
+      'more_itertools'
       ],
       python_requires='~=3.6',
       zip_safe=False)
