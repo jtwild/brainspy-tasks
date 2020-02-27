@@ -1,12 +1,12 @@
 {
-    "results_base_dir": "tmp/output/ring/",
+    "results_base_dir": "tmp/output/ring/tests/",
     "steps": 1,
     "show_plots": false,
     "save_plots": true,
     "runs":3,
     "ring_data":{
         "generate_data":true,
-        "sample_no":40000
+        "sample_no":4000
     },
     "algorithm_configs": {
         "experiment_name":"noise",
@@ -16,9 +16,9 @@
             "save_interval": 5
         },
         "hyperparameters": {
-            "nr_epochs": 80,
-            "batch_size": 4000,
-            "learning_rate": 0.0085,
+            "nr_epochs": 1000,
+            "batch_size": 64,
+            "learning_rate": 0.001,
             "save_interval": 100,
             "optimizer":"adam",
             "loss_function": "fisher",
@@ -41,8 +41,7 @@
             "debug":true,
             "waveform": {
                 "amplitude_lengths": 1,
-                "slope_lengths": 0,
-                "output_clipping_value": 4.0
+                "slope_lengths": 0
             },
             "batch_norm": {
                 "use_running_stats" : true

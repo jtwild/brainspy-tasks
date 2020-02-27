@@ -9,11 +9,9 @@ import os
 from bspyalgo.algorithm_manager import get_algorithm
 from bspyproc.bspyproc import get_processor
 from matplotlib import pyplot as plt
-from bspyalgo.utils.performance import perceptron, corr_coeff
+from bspyalgo.utils.performance import accuracy, corr_coeff
 from bspyalgo.utils.io import create_directory, create_directory_timestamp, save
 from bspyproc.utils.pytorch import TorchUtils
-
-from bspyalgo.utils.performance import perceptron, decision
 
 
 class RingClassificationTask():
@@ -63,11 +61,10 @@ class RingClassificationTask():
 
     def get_accuracy(self, results):
         mask = results['mask']
-        if self.configs["algorithm_configs"]['hyperparameters']["loss_function"] == "fisher":
-            print('Calculating Accuracy ... ')
-            results['accuracy'], _, _ = decision(results['best_output'][mask], results['targets'][mask][:, np.newaxis])
-        else:
-            results['accuracy'], _, _ = perceptron(results['best_output'][mask], results['targets'][mask][:, np.newaxis], mask)
+        print('Calculating Accuracy ... ')
+        results['accuracy'] = accuracy(results['best_output'][mask],
+                                       results['targets'][mask],
+                                       plot=os.path.join(self.results_dir, f"perceptron.eps"))
         print(f"Accuracy: {results['accuracy']}")
         return results
 
