@@ -181,7 +181,7 @@ class FilterFinder():
     def find_filter(self):
         # Save configs for reproducability
         if self.is_main:
-            save(mode='configs', file_path=self.configs_dir, data=configs)
+            save(mode='configs', file_path=self.configs_dir, data=self.configs)
 
         # Load the required inputs:
         data_manager = VCDimDataManager(self.configs)
