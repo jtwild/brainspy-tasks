@@ -98,6 +98,7 @@ class FilterFinder():
         #TODO: Check if readable inputs is the correct one, or if you need transformed inputs
         excel_results = []
         for attempt in range(self.max_attempts):
+            print(f'\nAttempt {attempt} of {self.max_attempts}.')
             excel_results.append( self.find_filter_core(inputs) )
             distances = excel_results[attempt]['best_output'] - excel_results[attempt]['best_output'].T
             np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
