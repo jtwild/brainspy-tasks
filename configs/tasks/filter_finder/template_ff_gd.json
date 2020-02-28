@@ -7,7 +7,6 @@
         "algorithm_configs": {
             "algorithm": "gradient_descent",
             "results_base_dir": "tmp/output/filter_finder/gd/useless_test",
-            "experiment_name": "inputdim3_newpoints",
             "hyperparameters": {
                         "nr_epochs": 10,
                         "batch_size": 100,

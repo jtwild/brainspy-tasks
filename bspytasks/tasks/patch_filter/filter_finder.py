@@ -58,15 +58,18 @@ class FilterFinder():
     def init_dirs(self, input_dim):
         results_folder_name = f'patch_filter_{input_dim}_points'
         file_name = "patch_filter_results.xlsx"
-        self.base_dir = self.configs['results_base_dir']
+        base_dir = self.configs['results_base_dir']
         if self.is_main:
-            base_dir = create_directory_timestamp(self.base_dir, results_folder_name)
+            base_dir = create_directory_timestamp(base_dir, results_folder_name)
             self.excel_file = ExcelFile(os.path.join(base_dir, file_name))
         else:
             if self.excel_file is None:
-                self.excel_file = ExcelFile(os.path.join(self.base_dir, file_name))
-            base_dir = os.path.join(self.base_dir, results_folder_name)
-        self.configs['results_base_dir'] = base_dir
+                self.excel_file = ExcelFile(os.path.join(base_dir, file_name))
+            base_dir = os.path.join(base_dir, results_folder_name)
+        self.base_dir = base_dir
+
+        self.configs['results_base_dir'] = self.base_dir
+        self.configs['algorithm_configs']['results_base_dir'] = self.base_dir
         self.configs_dir = os.path.join(self.base_dir, 'test_configs.json')
         return base_dir
 
