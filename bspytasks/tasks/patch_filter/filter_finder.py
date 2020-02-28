@@ -11,6 +11,9 @@ from bspyalgo.algorithm_manager import get_algorithm  # to get either the GA or 
 from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager  # To generate the binary inputs for a patch
 import matplotlib.pyplot as plt
 import numpy as np
+import os  # for saving data.
+from bspyalgo.utils.io import create_directory, create_directory_timestamp, save  # For saving data
+from bspytasks.utils.excel import ExcelFile # For storing data to be saved
 #from bspyproc.bspyproc import get_processor # Only required for validation, elsewise this is called via get_algorithm
 #from bspyalgo.utils.io import create_directory  # to create directories for saving
 #from bspyproc.utils.pytorch import TorchUtils
@@ -20,30 +23,54 @@ class FilterFinder():
 # The loss is defined via the algorithm, for example via gd.py or ga.py
 # The optimizer is defined via the algorithm (via configs), for example via gd.py or ga.py
 # Trainable parameters are defined via the config file, as the control electrodes.
-    def __init__(self, configs):
+    def __init__(self, configs, is_main=True):
+        # Create directory structure if this is the main function.
         self.configs = configs
+        self.excel_file = None    # Not sure why it is done like this, but I copied the structure defined by Unai in capacity test
+        self.is_main = is_main
+        self.input_dim = len( configs['filter_finder']['algorithm_configs']['processor']['input_indices'] )
+        self.init_dirs(self.input_dim)  # Initialize directory and excel file.
+
+        # And load other relevant config parameters
+        self.load_methods(self.configs)
+        if 'validation' in self.configs['filter_finder']:
+            raise Warning('Validation not implemented. Ignoring!')
+        self.max_attempts = self.configs['filter_finder']['max_attempts']
+        self.show_plots = self.configs['filter_finder']['show_plots']
+        self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
+
+
         # Check if correct loss/fitness function is defined
-        if configs['filter_finder']['algorithm_configs']['algorithm'] == 'gradient_descent':
-            key = 'loss_function'
-        elif configs['filter_finder']['algorithm_configs']['algorithm'] == 'genetic':
-            key = 'fitness_function_type'
-        else:
-            raise ValueError('Selected algorithm not tested/implemented.')
+        #if self.configs['filter_finder']['algorithm_configs']['algorithm'] == 'gradient_descent':
+        #    key = 'loss_function'
+        #elif self.configs['filter_finder']['algorithm_configs']['algorithm'] == 'genetic':
+        #    key = 'fitness_function_type'
+        #else:
+        #    raise ValueError('Selected algorithm not tested/implemented.')
         #if configs['filter_finder']['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
         #    raise ValueError('For now, only implemented with sigmoidal distance loss/fitness function.')
         #else:
-        self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
+ #               self.algorithm = get_algorithm(configs['filter_finder']['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
 
-        # And load other relevant parts
-        self.load_methods(configs)
-        self.load_task_configs(configs)
-        self.max_attempts = configs['filter_finder']['max_attempts']
-        self.show_plots = configs['filter_finder']['show_plots']
+
+
+
+    def init_dirs(self, input_dim):
+        results_folder_name = f'patch_filter_{input_dim}_points'
+        file_name = "patch_filter_results.xlsx"
+        self.base_dir = self.configs['filter_finder']['results_base_dir']
+        if self.is_main:
+            base_dir = create_directory_timestamp(self.base_dir, results_folder_name)
+            self.excel_file = ExcelFile(os.path.join(base_dir, file_name))
+        else:
+            if self.excel_file is None:
+                self.excel_file = ExcelFile(os.path.join(self.base_dir, file_name))
+            base_dir = os.path.join(self.base_dir, results_folder_name)
+        self.configs['filter_finder']['results_base_dir'] = base_dir
+        self.configs_dir = os.path.join(self.base_dir, 'test_configs.json')
+        return base_dir
 
     def load_task_configs(self, configs):
-        if 'validation' in configs['filter_finder']:
-            raise Warning('Validation not implemented. Ignoring!')
-        self.input_dim = len( configs['filter_finder']['algorithm_configs']['processor']['input_indices'] )
 
     def load_methods(self, configs):
         if configs['filter_finder']['algorithm_configs']['processor']['platform'] == 'simulation':
@@ -89,6 +116,10 @@ class FilterFinder():
 
 # find_filter is the main method. All else above is required for this function
     def find_filter(self):
+        # Save configs for reproducability
+        if self.is_main:
+            save(mode='configs', file_path=self.configs_dir, data=configs)
+
         # Load the required inputs:
         data_manager = VCDimDataManager(self.configs)
         #self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = data_manager.get_data(self.input_dim)
@@ -96,6 +127,11 @@ class FilterFinder():
         #inputs = data_manager.get_targets(self.input_dim, verbose=False)[1]  # This calls a function orginally written to get targets for VC, but can also be used to generate boolean labels.
         #inputs = inputs.flatten(1)  # Flatten the inputs to have correct shape of [16, 2] instead of [16, 2, 1]
         #TODO: Check if readable inputs is the correct one, or if you need transformed inputs
+
+        # Start training different initializations (attempts)
+        print('--------------------------------------------------------------------')
+        print(f'       Patch Filter Finder with {str(self.input_dim)} points        ')
+        print('--------------------------------------------------------------------')
         excel_results = []
         for attempt in range(self.max_attempts):
             print(f'\nAttempt {attempt} of {self.max_attempts}.')
@@ -107,6 +143,10 @@ class FilterFinder():
             excel_results[attempt]['dist']['nn'] = distance_nearest  # all nearest neighbour distances
             excel_results[attempt]['dist']['avg'] = np.mean( distance_nearest )  # average nearest neighbour distance
             excel_results[attempt]['dist']['min'] = np.nanmin( distance_nearest )  # minimal nearest neighbour distanc
+
+        # Save data if required
+
+        # Plot best output
         self.plot_best_filter(excel_results, self.show_plots)
         return excel_results
 
@@ -114,5 +154,5 @@ class FilterFinder():
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
     configs = load_configs('configs/tasks/filter_finder/template_ff_gd.json')
-    task = FilterFinder(configs) #initialize class
+    task = FilterFinder(configs, is_main=True) #initialize class
     excel_results = task.find_filter()
