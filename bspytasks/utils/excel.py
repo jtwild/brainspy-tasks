@@ -10,6 +10,14 @@ class ExcelFile():
         if os.path.exists(file_path) and os.path.isfile(file_path):
             if self.overwrite:
                 os.remove(file_path)
+            else:
+                # Check if we can write to the file. If we cant,
+                try:
+                    with open(file_path, 'a') as a:
+                        pass
+                except IOError:
+                    raise IOError('Excel file cannot be opened and written to! Is it in use?')
+                #if not os.access(file_path, os.W_OK):  # this does not work because only checks permissions.
         else:
             # If the file does not exist, we need to call ExcelWriter with the 'w' function, a.k.a. 'overwriting' a nonexistent file.
             self.overwrite = True
