@@ -5,9 +5,14 @@ from openpyxl import load_workbook
 
 
 class ExcelFile():
-    def __init__(self, file_path):
+    def __init__(self, file_path, overwrite = True):
+        self.overwrite = overwrite
         if os.path.exists(file_path) and os.path.isfile(file_path):
-            os.remove(file_path)
+            if self.overwrite:
+                os.remove(file_path)
+        else:
+            # If the file does not exist, we need to call ExcelWriter with the 'w' function, a.k.a. 'overwriting' a nonexistent file.
+            self.overwrite = True
         self.file_path = file_path
         self.writer = None
         # self.writer = pd.ExcelWriter(file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
@@ -26,7 +31,15 @@ class ExcelFile():
             aux = self.data
         else:
             aux = data
-        aux.to_excel(self.writer, sheet_name=tab_name)
+        if not self.overwrite:
+            # Append at end of existing sheet
+            row_index = self.writer.book[tab_name].max_row
+            header_mode = None
+        else:
+            # Overwrite, default behaviour.
+            row_index = 0
+            header_mode = True
+        aux.to_excel(self.writer, sheet_name=tab_name, header=header_mode, startrow=row_index)
         self.writer.save()
 
     def reset(self):
@@ -38,8 +51,13 @@ class ExcelFile():
         book = None
         if os.path.exists(self.file_path) and os.path.isfile(self.file_path):
             book = load_workbook(self.file_path)
-        #engine changed from xlsxwriter to openpyxl to try and fix no attribute errors.
-        self.writer = pd.ExcelWriter(self.file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
+        # Check if we should write ('w') or append ('w') data:
+        if self.overwrite:
+            overwrite_mode = 'w'
+        else:
+            overwrite_mode = 'a'
+        # Engine changed from xlsxwriter to openpyxl to fix no attribute errors.
+        self.writer = pd.ExcelWriter(self.file_path, engine='openpyxl', mode=overwrite_mode)  # pylint: disable=abstract-class-instantiated
         if book is not None:
             self.writer.book = book
             self.writer.sheets = dict((ws.title, ws) for ws in book.worksheets)

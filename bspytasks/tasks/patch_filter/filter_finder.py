@@ -9,17 +9,18 @@ Created on Mon Feb 10 16:38:28 2020
 """
 from bspyalgo.algorithm_manager import get_algorithm  # to get either the GA or the GD algo
 from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager  # To generate the binary inputs for a patch
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # for plotting final figures, and saving them
 import numpy as np
 import os  # for saving data.
 from bspyalgo.utils.io import create_directory, create_directory_timestamp, save  # For saving data
 from bspytasks.utils.excel import ExcelFile # For storing data to be saved
+import time  # for timestamps
 #from bspyproc.bspyproc import get_processor # Only required for validation, elsewise this is called via get_algorithm
 #from bspyalgo.utils.io import create_directory  # to create directories for saving
 #from bspyproc.utils.pytorch import TorchUtils
 
 class FilterFinder():
-# The surrogate model is loaded via ...
+# The surrogate model is defined via config template
 # The loss is defined via the algorithm, for example via gd.py or ga.py
 # The optimizer is defined via the algorithm (via configs), for example via gd.py or ga.py
 # Trainable parameters are defined via the config file, as the control electrodes.
@@ -29,8 +30,8 @@ class FilterFinder():
         self.excel_file = None    # Not sure why it is done like this, but I copied the structure defined by Unai in capacity test
         self.is_main = is_main
         self.input_dim = len( configs['algorithm_configs']['processor']['input_indices'] )
-        self.init_dirs(self.input_dim)  # Initialize directory and excel file.
-        self.init_excel_file()
+        self.init_dirs(self.input_dim)  # Initialize directory and excel files
+
         # And load other relevant config parameters
         self.load_methods(self.configs)
         if 'validation' in self.configs:
@@ -52,10 +53,11 @@ class FilterFinder():
         #else:
  #               self.algorithm = get_algorithm(configs['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
 
-
-
-
     def init_dirs(self, input_dim):
+        # Main excel file, in the primary directory defined by configs
+        self.init_main_file(self.configs['main_results_filepath'])
+
+        # specific excel file for this run, in a timestamped directory.
         results_folder_name = f'patch_filter_{input_dim}_points'
         file_name = "patch_filter_results.xlsx"
         base_dir = self.configs['results_base_dir']
@@ -66,11 +68,12 @@ class FilterFinder():
             if self.excel_file is None:
                 self.excel_file = ExcelFile(os.path.join(base_dir, file_name))
             base_dir = os.path.join(base_dir, results_folder_name)
+        self.init_excel_file()
         self.base_dir = base_dir
 
         self.configs['results_base_dir'] = self.base_dir
         self.configs['algorithm_configs']['results_base_dir'] = self.base_dir
-        self.configs_dir = os.path.join(self.base_dir, 'test_configs.json')
+        self.configs_dir = os.path.join(self.base_dir, 'configs.json')
         return base_dir
 
     def init_excel_file(self):
@@ -80,6 +83,18 @@ class FilterFinder():
         #self.excel_file.insert_column('number of input points', self.input_dim)
         #self.excel_file.insert_column('input electrodes', '')
         #self.excel_file.insert_column('control electrodes', '')
+
+    def init_main_file(self, filepath):
+        # Initializes a main file which contains most important results of multiple runs.
+        # so data gets appended to this file instead of overwritten
+        self.starttime = time.strftime("%Y_%m_%d_%Hh%Mm%Ss")
+
+        self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
+                               'min seperation', 'min current', 'max current', 'attempts','epochs',
+                               'batch size', 'learning rate','loss value','output points', 'input points']
+        self.main_file = ExcelFile(filepath, overwrite=False)
+        self.main_file.init_data(self.main_file_keys)
+        self.main_file.reset()
 
     def load_methods(self, configs):
         if configs['algorithm_configs']['processor']['platform'] == 'simulation':
@@ -126,7 +141,43 @@ class FilterFinder():
         if save_plot:
             plt.savefig( os.path.join(self.base_dir, 'best_output.pdf') )
 
-# find_filter is the main method. All else above is required for this function
+    def fill_main_file(self):
+        # Keys: ['time', '# input dimensions', 'algorithm', 'loss function', 'min seperation', 'min current',
+        # 'max current', 'attempts','epochs','batch size', 'learning rate','loss value',
+        # 'input points', 'output points']
+        main_dict = dict()
+        main_dict['timestamp'] = self.starttime
+        main_dict["# input dimensions"] = self.input_dim
+        # algo done at done at end
+        # loss function done at end
+        main_dict['min seperation'] = self.excel_results[self.best_attempt_index]['dist']['min']
+        main_dict['min current'] = np.min(self.excel_results[self.best_attempt_index]['best_output'])
+        main_dict['max current'] = np.max(self.excel_results[self.best_attempt_index]['best_output'])
+        main_dict['attempts'] = self.max_attempts
+        main_dict['epochs'] = self.configs['algorithm_configs']['hyperparameters']['nr_epochs']
+        main_dict['batch size'] = self.configs['algorithm_configs']['hyperparameters']['batch_size']
+        main_dict['learning rate'] = self.configs['algorithm_configs']['hyperparameters']['learning_rate']
+        # loss value done at end
+        main_dict['input points'] = self.excel_results[self.best_attempt_index]['inputs'].tolist()
+        main_dict['output points'] = self.excel_results[self.best_attempt_index]['best_output'].tolist()
+        # Below fillings depend on the specific algoirhtm.
+        algo = self.configs['algorithm_configs']['algorithm']
+        main_dict['algorithm'] = algo
+        if algo == 'gradient_descent':
+            loss_key = 'loss_function'
+            loss_fn_filterer = np.nanmin  # Because we need smallest loss
+        elif algo == 'genetic':
+            Loss_key = 'fitness_function_type'
+            loss_fn_filterer = np.nanmax  # BEcause we need highest fitness
+        main_dict['loss function'] = self.configs['algorithm_configs']['hyperparameters'][loss_key]
+        main_dict['loss value'] = loss_fn_filterer(self.excel_results[self.best_attempt_index]['performance_history'])
+        # Finally, add one row to the excel file data:
+        self.main_file.add_result(main_dict)
+        return self.main_file.data.copy()
+
+
+
+# %% find_filter is the main method. All else above is required for this function
     def find_filter(self):
         # Save configs for reproducability
         if self.is_main:
@@ -146,7 +197,7 @@ class FilterFinder():
         print('--------------------------------------------------------------------')
         self.excel_results = []
         for attempt in range(self.max_attempts):
-            print(f'\nAttempt {attempt} of {self.max_attempts}.')
+            print(f'\nAttempt {attempt+1} of {self.max_attempts}.')
             self.excel_results.append( self.find_filter_core(inputs) )
             distances = self.excel_results[attempt]['best_output'] - self.excel_results[attempt]['best_output'].T
             np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
@@ -156,20 +207,27 @@ class FilterFinder():
             self.excel_results[attempt]['dist']['avg'] = np.mean( distance_nearest )  # average nearest neighbour distance
             self.excel_results[attempt]['dist']['min'] = np.nanmin( distance_nearest )  # minimal nearest neighbour distanc
             self.excel_file.add_result(self.excel_results[attempt])
+
         # Find best attempt:
         performance = []
         for results in self.excel_results:
             performance.append( np.nanmin( results['performance_history'] ) )
-        best_attempt_index = np.argmin(performance)
+        self.best_attempt_index = np.argmin(performance)
 
-        # Save data
+        # Save data to specific excel file
         aux = self.excel_file.data.copy()
-        tab_name = 'Filter_test'
+        tab_name = 'Patch_Filter'
         self.excel_file.save_tab(tab_name, data=aux)
         self.excel_file.close_file()
 
+        # Save data to main excel file
+        main_data = self.fill_main_file()
+        tab_name = 'main'
+        self.main_file.save_tab(tab_name, data=main_data)
+        self.main_file.close_file()
+
         # Plot best output
-        self.plot_best_filter(self.excel_results, best_attempt_index, self.show_plots, self.save_plot)
+        self.plot_best_filter(self.excel_results, self.best_attempt_index, self.show_plots, self.save_plot)
         return self.excel_results
 
 #%% Testing

@@ -1,6 +1,7 @@
 {
 "filter_finder":{
         "max_attempts":3,
+        "main_results_filepath": "tmp/output/filter_finder/filter_finder_collective_results.xlsx",
         "results_base_dir": "tmp/output/filter_finder/gd/useless_test",
         "save_plot": true,
         "show_plots": true,
