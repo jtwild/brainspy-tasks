@@ -91,7 +91,7 @@ class FilterFinder():
 
         self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
                                'min seperation', 'min current', 'max current', 'attempts','epochs',
-                               'batch size', 'learning rate','loss value','output points', 'input points']
+                               'batch size', 'learning rate','loss value','output points', 'input points', 'results directory']
         self.main_file = ExcelFile(filepath, overwrite=False)
         self.main_file.init_data(self.main_file_keys)
         self.main_file.reset()
@@ -160,6 +160,7 @@ class FilterFinder():
         # loss value done at end
         main_dict['input points'] = self.excel_results[self.best_attempt_index]['inputs'].tolist()
         main_dict['output points'] = self.excel_results[self.best_attempt_index]['best_output'].tolist()
+        main_dict['results directory'] = self.base_dir
         # Below fillings depend on the specific algoirhtm.
         algo = self.configs['algorithm_configs']['algorithm']
         main_dict['algorithm'] = algo
