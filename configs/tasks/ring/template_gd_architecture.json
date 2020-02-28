@@ -43,7 +43,6 @@
             },
             "checkpoints": {
               "use_checkpoints": false,
-              "save_dir": "tmp/output/ring/checkpoints",
               "save_interval": 5
             }
     }

@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from bspyalgo.utils.performance import perceptron, corr_coeff
 from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.algorithm_manager import get_algorithm
-from bspyalgo.utils.io import create_directory
+from bspyalgo.utils.io import create_directory, create_directory_timestamp
 from bspyproc.bspyproc import get_processor
-from bspyproc.utils.waveform import generate_slopped_plato
+
 
 MAX_CLIPPING_VALUE = np.array([1.0])
 MIN_CLIPPING_VALUE = np.array([1.5])
@@ -14,15 +14,14 @@ MIN_CLIPPING_VALUE = np.array([1.5])
 
 class BooleanGateTask():
 
-    def __init__(self, configs):
-        configs = self.load_directory_configs(configs) #create directory
-        self.algorithm = get_algorithm(configs['algorithm_configs']) #an instance of GD(..) or GA(..) class
+    def __init__(self, configs, is_main=True):
+        # configs = self.load_directory_configs(configs)
+        self.is_main = is_main
+        self.algorithm = get_algorithm(configs['algorithm_configs'])
         self.load_methods(configs['algorithm_configs'])
         self.load_task_configs(configs)
+
         if 'validation' in configs:
-            shape = (configs['validation']['processor']['waveform']['slope_lengths'] * 5) + (configs['validation']['processor']['waveform']['amplitude_lengths'] * 4)
-            configs['validation']['processor']['shape'] = shape
-            self.slopped_plato = generate_slopped_plato(configs['validation']['processor']['waveform']['slope_lengths'], )[np.newaxis, :]
             self.validation_processor_configs = configs['validation']['processor']
             self.validation_processor = get_processor(configs['validation']['processor'])
         else:
@@ -30,14 +29,17 @@ class BooleanGateTask():
 
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
-        self.scale_plots = configs['scale_plots']
-        self.base_dir = configs['results_dir']
+        self.base_dir = configs['results_base_dir']
         self.max_attempts = configs['max_attempts']
+        self.scale_plots = configs['scale_plots']
 
-    def load_directory_configs(self, configs):
-        create_directory(configs['results_dir'], overwrite=configs['overwrite'])
-        # configs['algorithm_configs']['checkpoints']['save_dir'] = os.path.join(configs['results_dir'], configs['algorithm_configs']['checkpoints']['save_dir'])
-        return configs
+    def init_dirs(self, gate):
+        if self.is_main:
+            base_dir = create_directory_timestamp(self.base_dir, gate)
+        else:
+            base_dir = os.path.join(self.base_dir, gate)
+            create_directory(base_dir)
+        return base_dir
 
     def load_methods(self, configs):
         if configs['algorithm'] == 'gradient_descent' and configs['processor']['platform'] == 'simulation':
@@ -55,6 +57,9 @@ class BooleanGateTask():
             attempt = 1
             print('==========================================================================================')
             print(f"Gate {gate}: ")
+            base_dir = self.init_dirs(str(gate))
+            self.gate_base_dir = base_dir
+            self.algorithm.init_dirs(base_dir)
             while True:
                 excel_results = self.find_gate_core(encoded_inputs, encoded_gate, mask)
                 excel_results['found'] = excel_results['accuracy'] >= threshold
@@ -63,11 +68,12 @@ class BooleanGateTask():
 
                 if excel_results['found'] or attempt >= self.max_attempts:
                     if excel_results['found']:
-                        print(f'VERDICT: PASS - Gate was found successfully in {str(attempt)} attempt(s)')
+                        print(f'VEREDICT: PASS - Gate was found successfully in {str(attempt)} attempt(s)')
                     else:
-                        print(f'VERDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
+                        print(f'VEREDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
                     print('==========================================================================================')
-                    self.plot_gate(excel_results, mask, show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, self.is_found(excel_results['found'])), scaled=self.scale_plots)
+                    #  in get_plot_dir
+                    self.plot_gate(excel_results, mask, str(gate), show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, base_dir), scaled=self.scale_plots)
                     break
                 else:
                     attempt += 1
@@ -76,10 +82,10 @@ class BooleanGateTask():
 
         return excel_results
 
-    def get_plot_dir(self, gate, found):
-        path = os.path.join(self.base_dir, found)
+    def get_plot_dir(self, gate, path):
+        #path = os.path.join(self.base_dir, found)
         create_directory(path, overwrite=False)
-        return os.path.join(path, str(gate) + '.png')
+        return os.path.join(path, str(gate) + '.eps')
 
     def find_gate_with_numpy(self, encoded_inputs, encoded_gate, mask):
         excel_results = self.optimize(encoded_inputs, encoded_gate, mask)
@@ -93,7 +99,7 @@ class BooleanGateTask():
         excel_results['accuracy'], _, _ = perceptron(excel_results['best_output'][excel_results['mask']], TorchUtils.get_numpy_from_tensor(encoded_gate[excel_results['mask']]))
         excel_results['encoded_gate'] = encoded_gate.cpu()
         # excel_results['targets'] = excel_results
-        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'].cpu()[excel_results['mask']].T)
+        excel_results['correlation'] = corr_coeff(excel_results['best_output'][excel_results['mask']].T, excel_results['targets'][excel_results['mask']].T)
         return excel_results
 
     def ignore_gate_with_torch(self, encoded_gate):
@@ -123,7 +129,7 @@ class BooleanGateTask():
 
         return excel_results
 
-    def plot_gate(self, row, mask, show_plots, save_dir=None, scaled=False):
+    def plot_gate(self, row, mask, gate, show_plots, save_dir=None, scaled=False):
         plt.figure()
         plt.step(range(len(row['best_output'][mask])), row['best_output'][mask], where='mid' )
         if scaled:
@@ -136,7 +142,7 @@ class BooleanGateTask():
         plt.legend(['output', 'target' + scaled_string])
         plt.ylabel('Current (nA)')
         plt.xlabel('Time')
-        plt.title(f"Best output for gate {row['encoded_gate'][:,0].int().tolist()}")
+        plt.title(f"Best output for gate " + gate + "\n" + gate + ''+ self.is_found(row['found']) )
         if save_dir is not None:
             plt.savefig(save_dir)
         if show_plots:
@@ -154,7 +160,7 @@ class BooleanGateTask():
         else:
             return 'not_found'
 
-    def validate_gate(self, gate, transformed_inputs, control_voltages, y_predicted, mask):
+    def validate_gate(self, gate, transformed_inputs, control_voltages, y_predicted, mask, base_dir):
         print('==========================================================================================')
         print(f"Gate {gate} validation: ")
         transformed_inputs = self.clip(transformed_inputs, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
@@ -164,28 +170,36 @@ class BooleanGateTask():
         print(f'MSE: {str(error)}')
         var_target = np.var(target[mask], ddof=1)
         print(f'(var) NMSE: {100*error/var_target} %')
-        plot_gate_validation(target[mask], y_predicted[mask], show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, 'validation'))
+        plot_gate_validation(target[mask], y_predicted[mask], str(gate), show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, base_dir))
         print('==========================================================================================')
         return error
 
 
-def single_gate(configs, gate, threshold, verbose=False, validate=False, control_voltages=None, best_output=None):
+def single_gate(configs, gate, threshold, verbose=False, validate=False, control_voltages=None, best_output=None, vcdim=4):
     data_manager = VCDimDataManager(configs)
+    configs['boolean_gate_test']['algorithm_configs']['processor']['shape'] = data_manager.get_shape(vcdim, validation=False)
+    configs['boolean_gate_test']['validation']['processor']['shape'] = data_manager.get_shape(vcdim, validation=True)
+
     test = BooleanGateTask(configs['boolean_gate_test'])
     excel_results = None
-    _, transformed_inputs, readable_targets, transformed_targets, _, mask = data_manager.get_data(4, verbose)
+
     if control_voltages is None and best_output is None:
+        _, transformed_inputs, readable_targets, transformed_targets, _, mask = data_manager.get_data(vcdim, verbose, validation=False)
         excel_results = test.find_gate(transformed_inputs, readable_targets[gate], transformed_targets[gate], mask, threshold)
         control_voltages = excel_results['control_voltages']
         best_output = excel_results['best_output']
     if validate:
-        control_voltages = test.slopped_plato * control_voltages[:, np.newaxis]
-        test.validate_gate(gate, transformed_inputs, control_voltages.T, best_output, mask)
+        _, transformed_inputs, readable_targets, transformed_targets, _, mask = data_manager.get_data(vcdim, verbose, validation=True)
+        validation_slopped_plato = data_manager.generate_slopped_plato(vcdim)
+        control_voltages = validation_slopped_plato * control_voltages[:, np.newaxis]
+
+        test.validate_gate(gate, transformed_inputs, control_voltages.T, best_output, mask, test.gate_base_dir)
     return excel_results
 
 
-def plot_gate_validation(output, prediction, show_plots, save_dir=None):
+def plot_gate_validation(output, prediction, gate, show_plots, save_dir=None):
     plt.figure()
+    plt.title(gate)
     plt.plot(output)
     plt.plot(prediction)
     plt.ylabel('Current (nA)')
@@ -201,16 +215,17 @@ def plot_gate_validation(output, prediction, show_plots, save_dir=None):
 def find_single_gate(configs_path, gate):
     configs = load_configs(configs_path)
     configs = configs['capacity_test']['vc_dimension_test']
+
     # gate = '[0 1 1 0]'
-    threshold = 0.95
+    threshold = configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['stop_threshold']  # 0.95
 
     result = single_gate(configs, gate, threshold, validate=False)
 
-    results_path = save('numpy', configs['boolean_gate_test']['results_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
-    save('numpy', results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
+    # save('numpy', configs['boolean_gate_test']['results_base_dir'], 'control_voltages', overwrite=False, data=result['control_voltages'])
+    # save('numpy', results_path, 'best_output', overwrite=False, data=result['best_output'], timestamp=False)
 
-    print(f"Control voltages: {result['control_voltages']}")
-    return results_path
+    # print(f"Control voltages: {result['control_voltages']}")
+    return result
 
 
 def validate_single_gate(configs_path, results_path):
@@ -232,5 +247,5 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import save
     from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 
-    results_path = find_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', '[0 0 0 1]')
-    validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', results_path)
+    results_path = find_single_gate('configs/benchmark_tests/capacity/template_ga_simulation.json', '[1 0 0 1]')
+    # validate_single_gate('configs/benchmark_tests/capacity/template_ga_validation.json', results_path)

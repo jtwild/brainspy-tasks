@@ -5,7 +5,7 @@ import torch
 from bspyproc.utils.waveform import generate_waveform
 
 
-class ArchitecturePlotter():
+class ArchitectureDebugger():
 
     def __init__(self, configs):
         self.configs = configs
@@ -29,19 +29,6 @@ class ArchitecturePlotter():
 
         return result
 
-    def save_plots(self, results, mask, configs, run=0, show_plot=False):
-        plt.figure()
-        plt.plot(results['best_output'][mask])
-        if configs['save_plots']:
-            plt.savefig(os.path.join(configs['results_base_dir'], f"output_ring_classifier_Run_{run}"))
-        plt.figure()
-        plt.plot(results['performance_history'])
-        if configs['save_plots']:
-            plt.savefig(os.path.join(configs['results_base_dir'], f"training_profile_Run_{run}"))
-        if show_plot:
-            plt.show()
-        plt.close('all')
-
     def plot_gate_validation(self, target, output, show_plot=False, save_dir=None):
         plt.figure()
         plt.plot(output)
@@ -62,7 +49,7 @@ class ArchitecturePlotter():
         plt.plot(b, label='model')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '.eps'))
         plt.show()
         plt.close()
 
@@ -71,7 +58,7 @@ class ArchitecturePlotter():
         plt.plot(x, label='error')
         plt.title(name)
         plt.legend()
-        plt.savefig(os.path.join(self.debug_path, name + '_error.jpg'))
+        plt.savefig(os.path.join(self.debug_path, name + '_error.eps'))
         plt.show()
         plt.close()
 
@@ -118,13 +105,13 @@ class ArchitecturePlotter():
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output[self.b_mask], self.a_output[self.a_mask], True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
         else:
             error = ((self.b_output - self.a_output) ** 2).mean()
             print(f'Total Error: {error}')
 
             self.plot_gate_validation(self.b_output, self.a_output, True, save_dir=os.path.join(
-                self.configs['results_base_dir'], 'validation.png'))
+                self.configs['results_base_dir'], 'validation.eps'))
 
     def plot_data(self, use_mask=False):
         self.plot_final_result(use_mask)

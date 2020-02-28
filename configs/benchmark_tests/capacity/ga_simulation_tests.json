@@ -2,13 +2,14 @@
 
   "capacity_test":{
       "from_dimension": 4,
-      "to_dimension":6,
+      "to_dimension":4,
       "vc_dimension_test":{
-              "threshold_parameter": 0.5,
+              "threshold_parameter": 0,
               "boolean_gate_test":{
                           "max_attempts":5,
-                          "results_base_dir": "tmp/output/ga/",
+                          "results_dir": "tmp/output/ga/",
                           "show_plots": true,
+                          "scale_plots": true,
                           "overwrite": false,
                           "algorithm_configs": {
                                     "algorithm": "genetic",
@@ -24,48 +25,45 @@
                                                                           "trafo_function": null
                                                           },
                                                           "stop_threshold": 0.93
-                                    }, 
+                                    },
                                     "processor": {
                                       "architecture":"single_device",
-                                      "platform": "hardware",
-                                      "setup_type": "cdaq_to_nidaq",
-                                      "input_channels" : [0,1,2,3,4,5,6],
-                                      "output_channels" : [0],
-                                      "sampling_frequency": 500,
-                                      "input_indices": [3, 4],
+                                      "platform": "simulation",
+                                      "simulation_type": "neural_network",
+                                      "network_type": "nn_model",
+                                      "torch_model_dict": "tmp/input/models/default_model_correct_keys.pt",
+                                      "input_indices": [0, 1],
                                       "input_electrode_no": 7,
+                                      "auto_generate_inputs": false,
                                       "use_noise":false,
                                       "waveform":{
-                                        "amplitude_lengths": 80,
-                                        "slope_lengths": 20,
-                                        "output_clipping_value": 4.0
-                                      },
-                                      "driver": {
-                                        "driver_type" : "local"
+                                          "use_waveform": false,
+                                          "amplitude_lengths": 1,
+                                          "slope_lengths": 0,
+                                          "output_clipping_value": 4.0
                                       }
                             },
                                     "checkpoints": {
-                                        "use_checkpoints": true,
+                                        "use_checkpoints": false,
+                                        "save_dir": "tmp/output/ga/checkpoints",
                                         "save_interval": 5
                                     }
                           },
                           "validation":{
-                                    "processor": {
-                                      "architecture":"single_device",
-                                      "platform": "hardware",
-                                      "setup_type": "cdaq_to_nidaq",
-                                      "input_channels" : [0,1,2,3,4,5,6],
-                                      "output_channels" : [0],
-                                      "sampling_frequency": 50,
-                                      "input_indices": [3, 4],
-                                      "input_electrode_no": 7,
-                                      "waveform":{
-                                        "amplitude_lengths": 80,
-                                        "slope_lengths": 20
-                                      },
-                                      "driver": {
-                                        "driver_type" : "local"
-                                      }
+                            "processor": {
+                              "architecture":"single_device",
+                              "platform": "simulation",
+                              "simulation_type": "neural_network",
+                              "network_type": "nn_model",
+                              "torch_model_dict": "tmp/input/models/default_model_correct_keys.pt",
+                              "input_indices": [0, 1],
+                              "input_electrode_no": 7,
+                              "use_noise":false,
+                              "waveform":{
+                                  "amplitude_lengths": 1,
+                                  "slope_lengths": 0,
+                                  "output_clipping_value": 4.0
+                              }
                             }
                           }
               }

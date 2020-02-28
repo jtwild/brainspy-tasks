@@ -1,38 +1,38 @@
 {
     "capacity_test":{
-        "from_dimension":7,
-        "to_dimension":9,
+        "from_dimension":4,
+        "to_dimension":4,
+        "results_base_dir": "tmp/output/ga/useless_test",
         "vc_dimension_test":{
-        "dimension": 4,
-        "threshold_parameter": 0,
-        "boolean_gate_test":{
+            "dimension": 4,
+            "threshold_parameter": 0,
+            "boolean_gate_test":{
                 "max_attempts":30,
-                "results_dir": "tmp/output/boolean_gates_test/gd/",
                 "show_plots": true,
                 "scale_plots": true,
                 "overwrite": true,
                 "algorithm_configs": {
                         "algorithm": "gradient_descent",
-                        "experiment_name": "inputdim3_newpoints",
+                        "results_base_dir": "tmp/output/ga/useless_test",
                         "hyperparameters": {
-                                    "nr_epochs": 1000,
-                                    "batch_size": 100,
+                                    "nr_epochs": 750,
+                                    "batch_size": 128,
                                     "learning_rate": 0.01,
                                     "loss_function": "corrsig",
-                                    "stop_threshold": 0.8
+                                    "stop_threshold": 0.1,
+                                    "optimizer": "adam"
                         },
                         "processor": {
                                     "architecture":"single_device",
                                     "platform": "simulation",
                                     "simulation_type": "neural_network",
                                     "network_type": "dnpu",
-                                    "torch_model_dict": "tmp/input/models/trained_network_12122019_noise.pt",
-                                    "auto_generate_inputs": true,
-                                    "input_indices": [3, 4],
+                                    "torch_model_dict": "tmp/input/models/model_2020.pt",
+                                    "input_indices": [0, 1],
+                                    "auto_generate_inputs": false,
                                     "input_electrode_no": 7,
                                     "num_elec": 8,
                                     "waveform":{
-                                        "use_waveform": true,
                                         "amplitude_lengths": 1,
                                         "slope_lengths": 0,
                                         "output_clipping_value": 3.55
@@ -40,10 +40,26 @@
                         },
                         "checkpoints": {
                             "use_checkpoints": false,
-                            "save_dir": "algorithm_checkpoints",
-                            "save_interval": 100
+                            "save_interval": 5
                         }
-                }
+                },
+                "validation":{
+                    "processor": {
+                      "architecture":"single_device",
+                      "platform": "simulation",
+                      "simulation_type": "neural_network",
+                      "network_type": "nn_model",
+                      "torch_model_dict": "tmp/input/models/model_2020.pt",
+                      "input_indices": [0, 1],
+                      "input_electrode_no": 7,
+                      "use_noise":false,
+                      "waveform":{
+                          "amplitude_lengths": 1,
+                          "slope_lengths": 0,
+                          "output_clipping_value": 4.0
+                      }
+                    }
+                  }
         }
         }
     }
