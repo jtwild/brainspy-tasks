@@ -55,7 +55,7 @@ class FilterFinder():
 
     def init_dirs(self, input_dim):
         # Main excel file, in the primary directory defined by configs
-        self.init_main_file(self.configs['main_results_filepath'])
+        self.init_main_file()
 
         # specific excel file for this run, in a timestamped directory.
         results_folder_name = f'patch_filter_{input_dim}_points'
@@ -80,19 +80,18 @@ class FilterFinder():
         #column_names = ['number of input points','minimum seperation','average seperation','minimum current', 'maximum current','input electrodes','control electrodes','control voltages','input voltages','output currents']
         self.excel_file.init_data([''])
         self.excel_file.reset()
-        #self.excel_file.insert_column('number of input points', self.input_dim)
-        #self.excel_file.insert_column('input electrodes', '')
-        #self.excel_file.insert_column('control electrodes', '')
 
-    def init_main_file(self, filepath):
+    def init_main_file(self):
         # Initializes a main file which contains most important results of multiple runs.
         # so data gets appended to this file instead of overwritten
         self.starttime = time.strftime("%Y_%m_%d_%Hh%Mm%Ss")
-
+        self.main_dir = self.configs['main_results_dir']
+        create_directory(self.main_dir)
+        filename = 'filter_finder_collective_results.xlsx'
+        self.main_file = ExcelFile(os.path.join(self.main_dir, filename), overwrite=False)
         self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
                                'min seperation', 'min current', 'max current', 'attempts','epochs',
                                'batch size', 'learning rate','loss value','output points', 'input points', 'results directory']
-        self.main_file = ExcelFile(filepath, overwrite=False)
         self.main_file.init_data(self.main_file_keys)
         self.main_file.reset()
 
@@ -174,7 +173,7 @@ class FilterFinder():
         main_dict['loss value'] = loss_fn_filterer(self.excel_results[self.best_attempt_index]['performance_history'])
         # Finally, add one row to the excel file data:
         self.main_file.add_result(main_dict)
-        return self.main_file.data.copy()
+        return main_dict
 
 
 
@@ -222,7 +221,8 @@ class FilterFinder():
         self.excel_file.close_file()
 
         # Save data to main excel file
-        main_data = self.fill_main_file()
+        self.fill_main_file()
+        main_data = self.main_file.data.copy()
         tab_name = 'main'
         self.main_file.save_tab(tab_name, data=main_data)
         self.main_file.close_file()
