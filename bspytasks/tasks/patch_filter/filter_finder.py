@@ -90,9 +90,10 @@ class FilterFinder():
         filename = 'filter_finder_collective_results.xlsx'
         self.main_file = ExcelFile(os.path.join(self.main_dir, filename), overwrite=False)
         self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
-                               'min seperation', 'min current', 'max current', 'attempts','epochs',
-                               'batch size', 'learning rate','loss value','output points', 'input points', 'results directory']
-        self.main_file.init_data(self.main_file_keys)
+                               'min seperation', 'current value at min seperation', 'min current', 'max current',
+                               'attempts','epochs', 'batch size', 'learning rate','loss value','output points',
+                               'input points', 'input indices', 'results directory']
+        self.main_file.init_data(self.main_file_keys) # Creates a pd.DataFrame with these entries, to be filled later.
         self.main_file.reset()
 
     def load_methods(self, configs):
@@ -141,15 +142,16 @@ class FilterFinder():
             plt.savefig( os.path.join(self.base_dir, 'best_output.pdf') )
 
     def fill_main_file(self):
-        # Keys: ['time', '# input dimensions', 'algorithm', 'loss function', 'min seperation', 'min current',
+        # Keys: ['time', '# input dimensions', 'algorithm', 'loss function', 'min seperation', 'current value at min seperation', 'min current',
         # 'max current', 'attempts','epochs','batch size', 'learning rate','loss value',
-        # 'input points', 'output points']
+        # 'input points', 'input indices', 'output points']
         main_dict = dict()
         main_dict['timestamp'] = self.starttime
         main_dict["# input dimensions"] = self.input_dim
         # algo done at done at end
         # loss function done at end
         main_dict['min seperation'] = self.excel_results[self.best_attempt_index]['dist']['min']
+        main_dict['current value at min seperation'] = self.excel_results[self.best_attempt_index]['dist']['abs_value'][0]  # a python number.
         main_dict['min current'] = np.min(self.excel_results[self.best_attempt_index]['best_output'])
         main_dict['max current'] = np.max(self.excel_results[self.best_attempt_index]['best_output'])
         main_dict['attempts'] = self.max_attempts
@@ -158,7 +160,8 @@ class FilterFinder():
         main_dict['learning rate'] = self.configs['algorithm_configs']['hyperparameters']['learning_rate']
         # loss value done at end
         main_dict['input points'] = self.excel_results[self.best_attempt_index]['inputs'].tolist()
-        main_dict['output points'] = self.excel_results[self.best_attempt_index]['best_output'].tolist()
+        main_dict['input indices'] = self.configs['algorithm_configs']['processor']['input_indices']
+        main_dict['output points'] = np.sort(self.excel_results[self.best_attempt_index]['best_output'], axis=0).tolist()
         main_dict['results directory'] = self.base_dir
         # Below fillings depend on the specific algoirhtm.
         algo = self.configs['algorithm_configs']['algorithm']
@@ -198,14 +201,19 @@ class FilterFinder():
         self.excel_results = []
         for attempt in range(self.max_attempts):
             print(f'\nAttempt {attempt+1} of {self.max_attempts}.')
+            # Do the epoch
             self.excel_results.append( self.find_filter_core(inputs) )
+
+            # Add the results to file
             distances = self.excel_results[attempt]['best_output'] - self.excel_results[attempt]['best_output'].T
             np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
-            distance_nearest = np.nanmin( abs(distances), axis=0 )
+            distance_nearest = np.nanmin( abs(distances), axis=0 )  ## index used to also print the absolute value
             self.excel_results[attempt]['dist'] = dict()  # intialize new key
             self.excel_results[attempt]['dist']['nn'] = distance_nearest  # all nearest neighbour distances
             self.excel_results[attempt]['dist']['avg'] = np.mean( distance_nearest )  # average nearest neighbour distance
-            self.excel_results[attempt]['dist']['min'] = np.nanmin( distance_nearest )  # minimal nearest neighbour distanc
+            distance_min_index = np.nanargmin(distance_nearest)
+            self.excel_results[attempt]['dist']['min'] = distance_nearest[distance_min_index]  # minimal nearest neighbour distance
+            self.excel_results[attempt]['dist']['abs_value'] = self.excel_results[attempt]['best_output'][distance_min_index]  # this is the absolute value of one of the nearest distances
             self.excel_file.add_result(self.excel_results[attempt])
 
         # Find best attempt:
@@ -234,6 +242,6 @@ class FilterFinder():
 #%% Testing
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/tasks/filter_finder/template_ff_gd.json')
+    configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
     task = FilterFinder(configs['filter_finder'], is_main=True) #initialize class
     excel_results = task.find_filter()

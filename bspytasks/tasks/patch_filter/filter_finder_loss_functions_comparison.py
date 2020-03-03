@@ -10,9 +10,9 @@ from bspytasks.tasks.patch_filter.filter_finder import FilterFinder
 from bspytasks.benchmarks.vcdim.vc_dimension_test import VCDimensionTest
 import copy
 
-loss_fns = ['sigmoid_distance', 'entropy', 'sigmoid_distance']
-inputs = [[1,2],[0,3,4],[1,2,3,4]]
-base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.json')
+loss_fns = ['entropy', 'entropy_abs', 'sigmoid_distance']
+inputs = [[0,3,4]]
+base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
 for loss in loss_fns:
     for inp in inputs:
         # Change the configs
