@@ -127,9 +127,9 @@ if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
     from bspytasks.utils.datasets import load_data
 
-    folder_name = 'searcher_0.2mV_2020_02_26_231845'
-    base_dir = 'tmp/output/ring/' + folder_name
+    folder_name = 'searcher_0.2mV_2020_03_03_204859'
+    base_dir = os.path.join('tmp', 'output', 'ring', folder_name)
     model, results, configs = load_data(base_dir)
     val = RingClassifierValidator(configs)
-    # val.validate(results, model)
-    val.test_accuracy(model)
+    val.validate(results, model)
+    # val.test_accuracy(model)
