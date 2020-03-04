@@ -90,16 +90,16 @@ class RingClassifierValidator():
 
         simulation_accuracy = accuracy(model_output[mask],
                                        targets[mask],
-                                       plot=os.path.join(self.main_dir, f"simulation_perceptron.eps"))
+                                       plot=os.path.join(self.main_dir, f"simulation_perceptron." + debugger_extension))
         print(f"Simulation accuracy: {simulation_accuracy}")
 
         hardware_accuracy = accuracy(real_output[mask],
                                      targets[mask],
-                                     plot=os.path.join(self.main_dir, f"hardware_perceptron.eps"))
+                                     plot=os.path.join(self.main_dir, f"hardware_perceptron." + debugger_extension))
         print(f"Hardware accuracy: {hardware_accuracy}")
         return simulation_accuracy, hardware_accuracy
 
-    def plot_validation_results(self, model_output, real_output, mask, save_dir=None, show_plot=False, name='validation_plot'):
+    def plot_validation_results(self, model_output, real_output, mask, save_dir=None, show_plot=False, name='validation_plot', extension='png'):
 
         error = ((model_output[mask] - real_output[mask]) ** 2).mean()
         print(f'Total Error: {error}')
@@ -113,7 +113,7 @@ class RingClassifierValidator():
 
         plt.legend(['Simulation', 'Hardware'])
         if save_dir is not None:
-            plt.savefig(os.path.join(save_dir, name + '.eps'))
+            plt.savefig(os.path.join(save_dir, name + extension))
             np.savez(os.path.join(self.main_dir, name + '_data'), model_output=model_output, real_output=real_output, mask=mask)
         if show_plot:
             plt.show()
