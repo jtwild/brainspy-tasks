@@ -33,8 +33,7 @@ class RingSearcher():
         self.search_stats_dir = os.path.join(base_dir, search_stats_dir)
         create_directory(self.search_stats_dir)
 
-        self.task.init_dirs(base_dir)
-        return configs
+        self.task.init_dirs(base_dir, is_main=False)
 
     def reset(self, output_shape):
         self.task.reset()
