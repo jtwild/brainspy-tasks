@@ -16,7 +16,7 @@ def ring(sample_no, inner_radius=0.1, gap=0.2, outer_radius=None):
         gamma = gap / inner_radius
         outer_radius = inner_radius * np.sqrt(2 * (1 + gamma) + gamma**2)
 
-    samples = -outer_radius + 2 * outer_radius * np.random.rand(sample_no, 2)
+    samples = (-1 * outer_radius) + 2 * outer_radius * np.random.rand(sample_no, 2)
     norm = np.sqrt(np.sum(samples**2, axis=1))
     labels = np.empty(samples.shape[0])
 
