@@ -82,7 +82,7 @@ class RingSearcher():
         np.savez(os.path.join(self.search_stats_dir, f"search_data_{self.configs['runs']}_runs.npz"), outputs=self.outputs_per_run, performance=self.performance_per_run, correlation=self.correlation_per_run, accuracy=self.accuracy_per_run, seed=self.seeds_per_run, control_voltages=self.control_voltages_per_run)
         self.plot_search_results()
 
-    def plot_search_results(self):
+    def plot_search_results(self, extension='png'):
         best_index = self.best_run['index']
         performance = self.best_run["best_performance"]
         print(f"Best performance {performance} in run {best_index} with corr. {self.correlation_per_run[best_index]}")
@@ -92,28 +92,28 @@ class RingSearcher():
         plt.title('Correlation vs Fisher')
         plt.xlabel('Correlation')
         plt.ylabel('Fisher value')
-        plt.savefig(os.path.join(self.search_stats_dir, 'correlation_vs_fisher.eps'))
+        plt.savefig(os.path.join(self.search_stats_dir, 'correlation_vs_fisher.' + extension))
 
         plt.figure()
         plt.plot(self.accuracy_per_run, self.performance_per_run, 'o')
         plt.title('Accuracy vs Fisher')
         plt.xlabel('Accuracy')
         plt.ylabel('Fisher value')
-        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_vs_fisher.eps'))
+        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_vs_fisher.' + extension))
 
         plt.figure()
         plt.hist(self.performance_per_run, 100)
         plt.title('Histogram of Fisher values')
         plt.xlabel('Fisher values')
         plt.ylabel('Counts')
-        plt.savefig(os.path.join(self.search_stats_dir, 'fisher_values_histogram.eps'))
+        plt.savefig(os.path.join(self.search_stats_dir, 'fisher_values_histogram.' + extension))
 
         plt.figure()
         plt.hist(self.accuracy_per_run, 100)
         plt.title('Histogram of Accuracy values')
         plt.xlabel('Accuracy values')
         plt.ylabel('Counts')
-        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_histogram.eps'))
+        plt.savefig(os.path.join(self.search_stats_dir, 'accuracy_histogram.' + extension))
 
         if self.configs["show_plots"]:
             plt.show()
