@@ -64,7 +64,7 @@ class RingClassificationTask():
         print('Calculating Accuracy ... ')
         results['accuracy'] = accuracy(results['best_output'][mask],
                                        results['targets'][mask],
-                                       plot=os.path.join(self.results_dir, f"perceptron.eps"))
+                                       plot=None)
         print(f"Accuracy: {results['accuracy']}")
         return results
 
