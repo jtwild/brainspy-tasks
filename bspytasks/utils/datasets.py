@@ -4,10 +4,11 @@ authors: H. C. Ruiz and Unai Alegre-Ibarra
 """
 
 import numpy as np
+from bspyproc.utils.pytorch import TorchUtils
 
 
 def ring(sample_no, inner_radius=0.1, gap=0.2, outer_radius=None):
-    '''Generates labelled data of a ring with class 1 and the center with class 0
+    '''Generates labelled TorchUtilsdata of a ring with class 1 and the center with class 0
     '''
     if outer_radius:
         outer_radius = inner_radius + gap + outer_radius
@@ -83,7 +84,7 @@ def load_data(base_dir):
     model_dir = os.path.join(base_dir, 'reproducibility', 'model.pt')
     results_dir = os.path.join(base_dir, 'reproducibility', 'results.pickle')
     configs_dir = os.path.join(base_dir, 'reproducibility', 'configs.json')
-    model = torch.load(model_dir)
+    model = torch.load(model_dir, map_location=TorchUtils.get_accelerator_type())
     results = pickle.load(open(results_dir, "rb"))
     configs = load_configs(configs_dir)
     configs['results_base_dir'] = base_dir
