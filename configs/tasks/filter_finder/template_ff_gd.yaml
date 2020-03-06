@@ -1,16 +1,15 @@
 filter_finder:
     max_attempts: 100
-    main_results_dir: tmp/output/filter_finder/
-    results_base_dir: tmp/output/filter_finder/useless_test
+    main_results_dir: tmp/output/filter_finder/production_run_3_adjusted_hard_boundaries
+    results_base_dir: tmp/output/filter_finder/production_run_3_adjusted_hard_boundaries
     save_plot: true
-    show_plots: true
+    show_plots: false
     algorithm_configs:
         algorithm: gradient_descent
         #results_base_dir: tmp/output/filter_finder/testruns\patch_filter_4_points_2020_03_02_172058    #Not required, because algorithm is called with is_main=False flag
         hyperparameters:
-            nr_epochs: 1000
-            batch_size: 100
-            learning_rate: 0.001
+            nr_epochs: 2000
+            batch_size: 1000
             learning_rate: 0.001                                                         # With noise, 0.0005 seems like a good value for patch filtering.
             loss_function: entropy_hard_boundaries
             optimizer: adam
@@ -27,7 +26,7 @@ filter_finder:
                 mode: multi_scaler
             torch_model_dict: tmp/input/models/model_2020.pt
             use_noise: false
-            input_indices: [1,2]
+            input_indices: [0,3,4]
             input_electrode_no: 7                                                           # The total amount of input electrodes. Required for the processor to determine the control electrodes.
             waveform:
                 amplitude_lengths: 1                                                        # In simulation, you can set this to 0 to just feed one datapoint.
@@ -36,9 +35,9 @@ filter_finder:
         checkpoints:
             use_checkpoints: false
             save_dir: algorithm_checkpoints
-            save_interval: 100
+            save_interval: 200
             live_plot: false
-            live_plot_interval: 8
+            live_plot_interval: 20
     boolean_gate_test:
         validation:
             processor:
@@ -51,7 +50,7 @@ filter_finder:
             processor:
                 auto_generate_inputs: true
                 platform: simulation
-                input_indices: [1,2]
+                input_indices: [0,3,4]
                 input_electrode_no: 7
                 num_elec: 8
                 waveform:
