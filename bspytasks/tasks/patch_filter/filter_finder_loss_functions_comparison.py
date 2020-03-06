@@ -18,18 +18,18 @@ class NullIO(StringIO):
     def write(self, txt):
        pass
 
-loss_fns = ['entropy_hard_boundaries']
-inputs = [[0,3,4]]
+loss_fns = ['sigmoid_nn_distance']*10
+inputs = [[1,2,3,4]]
 batch_sizes = [4]
-types = ['dnpu', 'IOnet','IOnet','IOnet','IOnet']
-scaling = [None, 'single_scaler', 'single_scaler', 'multi_scaler','multi_scaler']
-regularizers = [[None, None], [76, -150], [76, -320], [76, -150], [76, -320]] # not be looped seperately, but combine with the above
+types = ['IOnet','dnpu']
+scaling = ['single_scaler', None]
+regularizers = [[76, -200],[None, None]]             # not be looped seperately, but combine with the above
 
 
 base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
-for batch in batch_sizes:
+for inp in inputs:
     for loss in loss_fns:
-        for inp in inputs:
+        for batch in batch_sizes:
             for i in range(len(types)):
                 # Change the configs
                 configs = copy.deepcopy(base_configs )
