@@ -11,6 +11,7 @@ filter_finder:
             nr_epochs: 1000
             batch_size: 100
             learning_rate: 0.001
+            learning_rate: 0.001                                                         # With noise, 0.0005 seems like a good value for patch filtering.
             loss_function: entropy_hard_boundaries
             optimizer: adam
             #betas: [0.99, 0.999]                                                           # Beta values used for the Adam optimizer. When not spupplied, torch default values (0.9, 0.999) will be used.
@@ -19,7 +20,11 @@ filter_finder:
             architecture: single_device
             platform: simulation
             simulation_type: neural_network
-            network_type: dnpu
+            network_type: IOnet                                                           #IOnet, dnpu, ...
+            IOinfo:                                                                         # Only necessary when calling an instance of IOnet
+                output_high: 76             #max and minimum info of the training daata. Outside will be regularized by adding a loss.
+                output_low: -150
+                mode: multi_scaler
             torch_model_dict: tmp/input/models/model_2020.pt
             use_noise: false
             input_indices: [1,2]

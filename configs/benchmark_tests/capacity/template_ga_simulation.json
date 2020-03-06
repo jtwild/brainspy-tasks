@@ -14,7 +14,7 @@
                           "algorithm_configs": {
                                     "algorithm": "genetic",
                                     "hyperparameters": {
-                                                          "epochs": 300,
+                                                          "epochs": 100,
                                                           "fitness_function_type": "corrsig_fit",
                                                           "seed": null,
                                                           "generange": [ [-1.2, 0.6], [-1.2, 0.6], [-1.2, 0.6], [-0.7, 0.3], [-0.7, 0.3] ],

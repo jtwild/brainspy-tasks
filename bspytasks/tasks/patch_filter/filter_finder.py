@@ -3,7 +3,7 @@
 Created on Mon Feb 10 16:38:28 2020
 
 @author: Jochem
-
+For multinoulli classification.
     #TODO: use the new is_main idea to save data, also. In general, save data
     #TODO: fix loss function such that there is not such a large bias for large output currents? Or punish hjigh outputs currents?
 """
@@ -33,7 +33,7 @@ class FilterFinder():
         self.init_dirs(self.input_dim)  # Initialize directory and excel files
 
         # And load other relevant config parameters
-        self.load_methods(self.configs)
+#        self.load_methods(self.configs)
         if 'validation' in self.configs:
             raise Warning('Validation not implemented. Ignoring!')
         self.max_attempts = self.configs['max_attempts']
@@ -96,16 +96,17 @@ class FilterFinder():
         self.main_file.init_data(self.main_file_keys) # Creates a pd.DataFrame with these entries, to be filled later.
         self.main_file.reset()
 
-    def load_methods(self, configs):
-        if configs['algorithm_configs']['processor']['platform'] == 'simulation':
-            self.find_filter_core = self.optimize
-        else:
-            raise ValueError('Algorithm or processor not yet implemented')
+    # def load_methods(self, configs):
+    #     if configs['algorithm_configs']['processor']['platform'] == 'simulation':
+    #         self.find_filter_core = self.optimize
+    #     else:
+    #         raise ValueError('Algorithm or processor not yet implemented')
 
     def optimize(self, inputs):
         # First do the optimization defined by this specific algorithm (GA/GD)
         algorithm_data = self.algorithm.optimize(inputs)
         algorithm_data.judge()  # Updates information in the results, such as control voltages.
+        #print('algo.judge diasable because doesnot work with ionet yet!')
         # Then generate the information regarding the results, such as performace
         # this also sets algorithm_data.results (type: excel_data, a child of a Pandas DataFrame)
         excel_results = algorithm_data.results
@@ -202,9 +203,9 @@ class FilterFinder():
         for attempt in range(self.max_attempts):
             print(f'\nAttempt {attempt+1} of {self.max_attempts}.')
             # Do the epoch
-            self.excel_results.append( self.find_filter_core(inputs) )
+            self.excel_results.append( self.optimize(inputs) )
 
-            # Add the results to file
+            # Add the results to file. This should be added to the judge function..? Not really, because it is very specific.
             distances = self.excel_results[attempt]['best_output'] - self.excel_results[attempt]['best_output'].T
             np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
             distance_nearest = np.nanmin( abs(distances), axis=0 )  ## index used to also print the absolute value
@@ -214,8 +215,12 @@ class FilterFinder():
             distance_min_index = np.nanargmin(distance_nearest)
             self.excel_results[attempt]['dist']['min'] = distance_nearest[distance_min_index]  # minimal nearest neighbour distance
             self.excel_results[attempt]['dist']['abs_value'] = self.excel_results[attempt]['best_output'][distance_min_index]  # this is the absolute value of one of the nearest distances
+            # If we have an IOscaler class, our inputs gets scaled. Therefore overwrite the wrong inputs in data:
+            if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
+                self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu().detach().numpy()
             self.excel_file.add_result(self.excel_results[attempt])
-
+#            print(f"offset is {self.excel_results[attempt]['processor'].offset}")
+#            print(f"scaling is {self.excel_results[attempt]['processor'].scaling}")
         # Find best attempt:
         performance = []
         for results in self.excel_results:
@@ -234,6 +239,7 @@ class FilterFinder():
         tab_name = 'main'
         self.main_file.save_tab(tab_name, data=main_data)
         self.main_file.close_file()
+        #print('Fill main disabled')
 
         # Plot best output
         self.plot_best_filter(self.excel_results, self.best_attempt_index, self.show_plots, self.save_plot)

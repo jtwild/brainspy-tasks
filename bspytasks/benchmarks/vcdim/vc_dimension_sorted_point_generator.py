@@ -12,7 +12,8 @@ import numpy as np
 
 # %% Generation itself
 def generate_unsorted_points(input_dim):
-    sets = [[-0.3, 0.7]]
+    sets = [[0, -1]]
+    print('Using base {sets} for automatic point generation.')
     # another set used:
     #sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2.
     # check inputs
