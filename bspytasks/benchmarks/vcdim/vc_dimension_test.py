@@ -23,7 +23,6 @@ class VCDimensionTest():
         self.data_manager = VCDimDataManager(configs)
         self.base_dir = configs['results_base_dir']
         self.threshold_parameter = configs['threshold_parameter']
-        self.test_data_plot_name = '_plot.eps'
         self.is_main = is_main
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
 
@@ -116,7 +115,7 @@ class VCDimensionTest():
         except AttributeError:
             print('\nThere is no closing function for the current algorithm configuration. Skipping. \n')
 
-    def plot_results(self, base_dir):
+    def plot_results(self, base_dir, plot_name='_plot', extension='png'):
         plt.figure()
         fitness_classifier = self.excel_file.data['best_performance'].to_numpy()
         plt.plot(fitness_classifier, self.excel_file.data['accuracy'].to_numpy(), 'o')
@@ -127,7 +126,7 @@ class VCDimensionTest():
         plt.ylabel('Accuracy')
 
         # create_directory(path)
-        plt.savefig(os.path.join(base_dir, 'dimension_' + str(self.vc_dimension) + self.test_data_plot_name))
+        plt.savefig(os.path.join(base_dir, 'dimension_' + str(self.vc_dimension) + plot_name + '.' + extension))
         if self.show_plots:
             plt.show()
 

@@ -93,7 +93,7 @@ class ArchitectureDebugger():
         error = self.print_error(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1')
         self.plot_comparison(a[:, input_indices[1]], b[:, 1], '1_' + name + '_1', (error ** 2).mean())
 
-    def plot_data(self, mask=None, extension='.png', show_plots=False):
+    def plot_data(self, mask=None, extension='png', show_plots=False):
         self.extension = extension
         self.plot_raw_input(mask)
         i = 2

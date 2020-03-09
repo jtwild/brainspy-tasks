@@ -68,17 +68,17 @@ class RingClassificationTask():
         print(f"Accuracy: {results['accuracy']}")
         return results
 
-    def plot_results(self, results):
+    def plot_results(self, results, extension='png'):
         plt.figure()
         plt.plot(results['best_output'][results['mask']])
         plt.title(f"Output (nA) \n Performance: {results['best_performance'][0]} \n Accuracy: {results['accuracy']}", fontsize=12)
         if self.configs['save_plots']:
-            plt.savefig(os.path.join(self.results_dir, f"output.eps"))
+            plt.savefig(os.path.join(self.results_dir, f"output." + extension))
         plt.figure()
         plt.title(f'Learning profile', fontsize=12)
         plt.plot(results['performance_history'])
         if self.configs['save_plots']:
-            plt.savefig(os.path.join(self.results_dir, f"training_profile.eps"))
+            plt.savefig(os.path.join(self.results_dir, f"training_profile." + extension))
 
         plt.figure()
         plt.title(f"Inputs (V) \n {self.configs['ring_data']['gap']}mV gap", fontsize=12)
@@ -90,7 +90,7 @@ class RingClassificationTask():
             targets = results['targets']
         plt.scatter(inputs[results['mask']][:, 0], inputs[results['mask']][:, 1], c=targets[results['mask']])
         if self.configs['save_plots']:
-            plt.savefig(os.path.join(self.results_dir, f"input.eps"))
+            plt.savefig(os.path.join(self.results_dir, f"input." + extension))
 
         if self.configs['show_plots']:
             plt.show()
@@ -105,14 +105,12 @@ if __name__ == '__main__':
     from bspytasks.tasks.ring.data_loader import RingDataLoader
 
     gap = 0.2
-    configs = load_configs('configs/tasks/ring/template_ann_gd.json')
+
+    configs = load_configs('configs/tasks/ring/template_gd_architecture_3.json')
     configs['ring_data']['gap'] = gap
     task = RingClassificationTask(configs)
     data_loader = RingDataLoader(configs)
     inputs, targets, mask = data_loader.generate_new_data(configs['algorithm_configs']['processor'], gap=gap)
-    if type(inputs) is np.ndarray:
-        inputs = TorchUtils.get_tensor_from_numpy(inputs)
-        targets = TorchUtils.get_tensor_from_numpy(targets)
     result = task.run_task(inputs, targets, mask)
     task.save_reproducibility_data(result)
     task.plot_results(result)

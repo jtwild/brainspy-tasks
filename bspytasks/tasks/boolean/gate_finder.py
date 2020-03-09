@@ -81,10 +81,10 @@ class BooleanGateTask():
 
         return excel_results
 
-    def get_plot_dir(self, gate, path):
+    def get_plot_dir(self, gate, path, extension='png'):
         #path = os.path.join(self.base_dir, found)
         create_directory(path, overwrite=False)
-        return os.path.join(path, str(gate) + '.eps')
+        return os.path.join(path, str(gate) + '.' + extension)
 
     def find_gate_with_numpy(self, encoded_inputs, encoded_gate, mask):
         excel_results = self.optimize(encoded_inputs, encoded_gate, mask)
