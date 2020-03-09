@@ -1,7 +1,7 @@
 filter_finder:
-    max_attempts: 10
-    main_results_dir: tmp/output/filter_finder/model_march/
-    results_base_dir: tmp/output/filter_finder/model_march/run2
+    max_attempts: 1
+    main_results_dir: tmp/output/filter_finder/march_single/
+    results_base_dir: tmp/output/filter_finder/march_single/run3_pretrained_input
     save_plot: true
     show_plots: false
     algorithm_configs:
@@ -9,8 +9,8 @@ filter_finder:
         #results_base_dir: tmp/output/filter_finder/testruns\patch_filter_4_points_2020_03_02_172058    #Not required, because algorithm is called with is_main=False flag
         hyperparameters:
             nr_epochs: 2000
-            batch_size: 4
-            learning_rate: 0.001                                                         # With noise, 0.0005 seems like a good value for patch filtering.
+            batch_size: 16
+            learning_rate: 0.0005                                                         # With noise, 0.0005 seems like a good value for patch filtering.
             loss_function: sigmoid_nn_distance
             optimizer: adam
             #betas: [0.99, 0.999]                                                           # Beta values used for the Adam optimizer. When not spupplied, torch default values (0.9, 0.999) will be used.
@@ -19,11 +19,15 @@ filter_finder:
             architecture: single_device
             platform: simulation
             simulation_type: neural_network
-            network_type: IOnet                                                           #IOnet, dnpu, ...
+            network_type: dnpu                                                           #IOnet, dnpu, ...
             IOinfo:                                                                         # Only necessary when calling an instance of IOnet
-                output_high: 76             #max and minimum info of the training daata. Outside will be regularized by adding a loss.
+                output_high: 76             # max and minimum info of the training daata. Outside will be regularized by adding a loss.
                 output_low: -320
-                mode: multi_scaler
+                mode: none # single_scaler or multi_scaler
+                scaling_low: 0.1
+                scaling_high: 1
+                offset_low: 0
+                offset_high: 1
             torch_model_dict: tmp/input/models/default_model_2020_march.pt
             use_noise: false
             input_indices: [1,2,3,4]
@@ -49,6 +53,7 @@ filter_finder:
             algorithm: gradient_descent
             processor:
                 auto_generate_inputs: true
+                point_generation_sets: [[-0.7, 0.3]] # the points that will be used to autogenerate hypercubes of inputs. Must be smth by 2. For example, [[-0.7, 0.3]] or [[-1, 0], [-0.5, 0.5]]
                 platform: simulation
                 input_indices: [1,2,3,4]
                 input_electrode_no: 7

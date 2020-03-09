@@ -11,11 +11,10 @@ import numpy as np
 
 
 # %% Generation itself
-def generate_unsorted_points(input_dim):
-    sets = [[0, -1]]
+def generate_unsorted_points(input_dim, sets=[[-0.7, 0.3]]):
+    # another set that can be used:
+    #sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be something by 2.
     print('Using base {sets} for automatic point generation.')
-    # another set used:
-    #sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2.
     # check inputs
     num_points = 2**input_dim * len(sets)  # get maximum number of points possible with the given sets
     for i in sets:
@@ -99,8 +98,8 @@ def flat_index_to_dimensional_index(flat_index, test_array):
     x = int( flat_index / xmax )
     return [x,y]
 
-def generate_sorted_points(vc_dim, input_dim):
-    unsorted_points = generate_unsorted_points(input_dim)
+def generate_sorted_points(vc_dim, input_dim, sets=[[-0.7, 0.3]]):
+    unsorted_points = generate_unsorted_points(input_dim, sets)
     if vc_dim > np.shape(unsorted_points)[1]:
         raise ValueError('Too many points requested! Either add generation sets in main file, or lower VC dimension.')
     sorted_points = sort_points( unsorted_points )

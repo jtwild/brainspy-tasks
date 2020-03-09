@@ -25,6 +25,10 @@ class ExcelFile():
         self.writer = None
         # self.writer = pd.ExcelWriter(file_path, engine='openpyxl')  # pylint: disable=abstract-class-instantiated
 
+    def read_file(self, sheet_name='main'):
+        xlsx = pd.ExcelFile(self.file_path, engine='openpyxl')
+        return xlsx.parse(sheet_name)
+
     def init_data(self, column_names, index=None):
         if index is None:
             self.data = pd.DataFrame(columns=column_names)

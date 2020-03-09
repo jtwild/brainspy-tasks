@@ -24,6 +24,8 @@ class VCDimDataManager():
         #added by Jochem for multi dim input:
         self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
         self.auto_generate_inputs = configs['boolean_gate_test']['algorithm_configs']['processor']['auto_generate_inputs']
+        if self.auto_generate_inputs:
+            self.point_generation_sets = configs['boolean_gate_test']['algorithm_configs']['processor']['point_generation_sets']
         # Perhaps the error checking below is already in the lower level code?
         #self.output_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices'] )
         #for inp in configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']:
@@ -68,7 +70,7 @@ class VCDimDataManager():
     def get_inputs(self, vc_dimension, validation=False):
         # readable inputs do not contain the waveform. Transformed does.
         if self.auto_generate_inputs:
-            readable_inputs = generate_sorted_points(vc_dimension, self.input_dim)
+            readable_inputs = generate_sorted_points(vc_dimension, self.input_dim, sets = self.point_generation_sets)
         else:
             readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:

@@ -1,0 +1,25 @@
+{
+    "results_base_dir": "tmp/output/ring/",
+    "validation":{
+                  "processor": {
+                    "architecture":"single_device",
+                    "platform": "hardware",
+                    "setup_type": "cdaq_to_nidaq",
+                    "input_channels" : [0,1,2,3,4,5,6],
+                    "output_channels" : [0],
+                    "sampling_frequency": 1000,
+                    "input_indices": [1,2,3,4],
+                    "input_electrode_no": 7,
+                    "amplification": 100.0,
+                    "shape":420,
+                    "waveform":{
+                      "amplitude_lengths": 80,
+                      "slope_lengths": 20,
+                      "output_clipping_value": 3.35
+                    },
+                    "driver": {
+                      "driver_type" : "local"
+                    }
+            }
+    }
+}

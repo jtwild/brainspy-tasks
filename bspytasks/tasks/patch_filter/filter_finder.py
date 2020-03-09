@@ -38,8 +38,8 @@ class FilterFinder():
             raise Warning('Validation not implemented. Ignoring!')
         self.max_attempts = self.configs['max_attempts']
         self.show_plots = self.configs['show_plots']
-        self.algorithm = get_algorithm(configs['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
-        self.algorithm.init_dirs(self.base_dir)
+        self.algorithm = get_algorithm(configs['algorithm_configs'], is_main=True)  # An instance of GD or GA, loading all algorithm related parameters.
+        #self.algorithm.init_dirs(self.base_dir)
         self.save_plot = self.configs['save_plot']
         # Check if correct loss/fitness function is defined
         #if self.configs['algorithm_configs']['algorithm'] == 'gradient_descent':
@@ -73,11 +73,10 @@ class FilterFinder():
 
         self.configs['results_base_dir'] = self.base_dir
         self.configs['algorithm_configs']['results_base_dir'] = self.base_dir
-        self.configs_dir = os.path.join(self.base_dir, 'configs.json')
+        self.configs_dir = os.path.join(self.base_dir, 'configs.yaml')
         return base_dir
 
     def init_excel_file(self):
-        #column_names = ['number of input points','minimum seperation','average seperation','minimum current', 'maximum current','input electrodes','control electrodes','control voltages','input voltages','output currents']
         self.excel_file.init_data([''])
         self.excel_file.reset()
 
@@ -92,21 +91,15 @@ class FilterFinder():
         self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
                                'min seperation', 'current value at min seperation', 'min current', 'max current',
                                'attempts','epochs', 'batch size', 'learning rate','loss value','output points',
-                               'input points', 'input indices', 'results directory']
+                               'input points', 'point_generation_sets','control_voltages', 'input indices',
+                               'results directory', 'scaling', 'regularizer_interval', 'best_attempt_index',]
         self.main_file.init_data(self.main_file_keys) # Creates a pd.DataFrame with these entries, to be filled later.
         self.main_file.reset()
-
-    # def load_methods(self, configs):
-    #     if configs['algorithm_configs']['processor']['platform'] == 'simulation':
-    #         self.find_filter_core = self.optimize
-    #     else:
-    #         raise ValueError('Algorithm or processor not yet implemented')
 
     def optimize(self, inputs):
         # First do the optimization defined by this specific algorithm (GA/GD)
         algorithm_data = self.algorithm.optimize(inputs)
         algorithm_data.judge()  # Updates information in the results, such as control voltages.
-        #print('algo.judge diasable because doesnot work with ionet yet!')
         # Then generate the information regarding the results, such as performace
         # this also sets algorithm_data.results (type: excel_data, a child of a Pandas DataFrame)
         excel_results = algorithm_data.results
@@ -143,9 +136,7 @@ class FilterFinder():
             plt.savefig( os.path.join(self.base_dir, 'best_output.pdf') )
 
     def fill_main_file(self):
-        # Keys: ['time', '# input dimensions', 'algorithm', 'loss function', 'min seperation', 'current value at min seperation', 'min current',
-        # 'max current', 'attempts','epochs','batch size', 'learning rate','loss value',
-        # 'input points', 'input indices', 'output points']
+        # FIll interesting information that should be logged
         main_dict = dict()
         main_dict['timestamp'] = self.starttime
         main_dict["# input dimensions"] = self.input_dim
@@ -162,8 +153,12 @@ class FilterFinder():
         # loss value done at end
         main_dict['input points'] = self.excel_results[self.best_attempt_index]['inputs'].tolist()
         main_dict['input indices'] = self.configs['algorithm_configs']['processor']['input_indices']
-        main_dict['output points'] = np.sort(self.excel_results[self.best_attempt_index]['best_output'], axis=0).tolist()
+        main_dict['output points'] = self.excel_results[self.best_attempt_index]['best_output'].tolist()
         main_dict['results directory'] = self.base_dir
+        main_dict['control_voltages'] = self.excel_results[self.best_attempt_index]['control_voltages'].tolist()
+        main_dict['scaling'] = self.configs['algorithm_configs']['processor']['IOinfo']['mode']
+        main_dict['best_attempt_index'] = self.best_attempt_index
+        main_dict['point_generation_sets'] = self.configs['boolean_gate_test']['algorithm_configs']['processor']['point_generation_sets']
         # Below fillings depend on the specific algoirhtm.
         algo = self.configs['algorithm_configs']['algorithm']
         main_dict['algorithm'] = algo
@@ -175,6 +170,9 @@ class FilterFinder():
             loss_fn_filterer = np.nanmax  # BEcause we need highest fitness
         main_dict['loss function'] = self.configs['algorithm_configs']['hyperparameters'][loss_key]
         main_dict['loss value'] = loss_fn_filterer(self.excel_results[self.best_attempt_index]['performance_history'])
+        # Some specifics for IOnet:
+        if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
+            main_dict['regularizer_interval'] = self.excel_results[self.best_attempt_index]['regularizer_interval']
         # Finally, add one row to the excel file data:
         self.main_file.add_result(main_dict)
         return main_dict
@@ -189,11 +187,8 @@ class FilterFinder():
 
         # Load the required inputs:
         data_manager = VCDimDataManager(self.configs)
-        #self.readable_inputs, self.transformed_inputs, readable_targets, transformed_targets, found, self.mask = data_manager.get_data(self.input_dim)
         inputs = data_manager.get_inputs(2**self.input_dim)[1]  # Get inputs from a function originally written for VC targets.
-        #inputs = data_manager.get_targets(self.input_dim, verbose=False)[1]  # This calls a function orginally written to get targets for VC, but can also be used to generate boolean labels.
-        #inputs = inputs.flatten(1)  # Flatten the inputs to have correct shape of [16, 2] instead of [16, 2, 1]
-        #TODO: Check if readable inputs is the correct one, or if you need transformed inputs
+
 
         # Start training different initializations (attempts)
         print('--------------------------------------------------------------------')
@@ -218,6 +213,8 @@ class FilterFinder():
             # If we have an IOscaler class, our inputs gets scaled. Therefore overwrite the wrong inputs in data:
             if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
                 self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu().detach().numpy()
+                self.excel_results[attempt]['regularizer_interval'] = [self.algorithm.processor.output_high, self.algorithm.processor.output_low]
+                self.excel_results[attempt]['control_voltages'] = self.algorithm.processor.get_control_voltages()
             self.excel_file.add_result(self.excel_results[attempt])
 #            print(f"offset is {self.excel_results[attempt]['processor'].offset}")
 #            print(f"scaling is {self.excel_results[attempt]['processor'].scaling}")
