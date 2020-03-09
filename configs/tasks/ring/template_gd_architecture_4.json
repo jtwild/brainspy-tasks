@@ -27,9 +27,9 @@
             "processor_type": "dnpu",
             "architecture": "single_device",
             "architecture_type": "221", 
-            "torch_model_dict": "tmp/input/models/model_2020.pt",
+            "torch_model_dict": "tmp/input/models/default_model.pt",
             "debug":true,
-            "use_noise": true,
+            "noise": 1.432,
             "input_indices": [1,2],
             "input_electrode_no": 7,
             "waveform": {
@@ -53,12 +53,12 @@
             "use_noise":false,
             "debug":true,
             "batch_norm": {
-                "use_running_stats" : true
+                "use_running_stats" : false
             },
             "platform": "simulation",
             "processor_type": "surrogate",
-            "torch_model_dict": "tmp/input/models/model_2020.pt",
-            "input_indices": [3,4],
+            "torch_model_dict": "tmp/input/models/default_model.pt",
+            "input_indices": [1,2],
             "input_electrode_no": 7,
             "waveform": {
                 "amplitude_lengths": 80,
