@@ -2,11 +2,13 @@
     "capacity_test":{
         "from_dimension": 4,
         "to_dimension":4,
+        "results_base_dir": "tmp/output/gd/capacity_test_experiments",
         "vc_dimension_test":{
         "threshold_parameter": 0.5,
+        "results_base_dir": "tmp/output/gd/vc_dimension_experiments",
         "boolean_gate_test":{
                 "max_attempts":5,
-                "results_base_dir": "tmp/output/boolean_gates_test/gd/",
+                "results_base_dir": "tmp/output/gd/boolean_gate_experiments",
                 "show_plots": false,
                 "overwrite": true,
                 "algorithm_configs": {
@@ -16,14 +18,14 @@
                                     "batch_size": 128,
                                     "learning_rate": 0.01,
                                     "loss_function": "corrsig",
+                                    "optimizer":"yogi",
                                     "stop_threshold": 0.001
                         },  
                         "processor": {
                                     "architecture":"single_device",
                                     "platform": "simulation",
-                                    "simulation_type": "neural_network",
-                                    "network_type": "dnpu",
-                                    "torch_model_dict": "tmp/input/models/default_model.pt",
+                                    "processor_type": "dnpu",
+                                    "torch_model_dict": "tmp/input/models/model_2020.pt",
                                     "input_indices": [0, 1],
                                     "input_electrode_no": 7,
                                     "waveform":{
@@ -41,9 +43,8 @@
                     "processor": {
                       "architecture":"single_device",
                       "platform": "simulation",
-                      "simulation_type": "neural_network",
-                      "network_type": "nn_model",
-                      "torch_model_dict": "tmp/input/models/default_model.pt",
+                      "processor_type": "surrogate",
+                      "torch_model_dict": "tmp/input/models/model_2020.pt",
                       "input_indices": [0, 1],
                       "input_electrode_no": 7,
                       "use_noise":false,

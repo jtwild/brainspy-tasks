@@ -5,6 +5,7 @@
       "to_dimension":4,
       "results_base_dir": "tmp/output/ga/capacity_test_experiments",
       "vc_dimension_test":{
+              "dimension":4,
               "threshold_parameter": 0.5,
               "results_base_dir": "tmp/output/ga/vc_dimension_experiments",
               "boolean_gate_test":{
@@ -29,8 +30,7 @@
                                     "processor": {
                                       "architecture":"single_device",
                                       "platform": "simulation",
-                                      "simulation_type": "neural_network",
-                                      "network_type": "nn_model",
+                                      "processor_type": "surrogate",
                                       "torch_model_dict": "tmp/input/models/model_2020.pt",
                                       "input_indices": [0, 1],
                                       "input_electrode_no": 7,
@@ -50,8 +50,7 @@
                             "processor": {
                               "architecture":"single_device",
                               "platform": "simulation",
-                              "simulation_type": "neural_network",
-                              "network_type": "nn_model",
+                              "processor_type": "surrogate",
                               "torch_model_dict": "tmp/input/models/model_2020.pt",
                               "input_indices": [0, 1],
                               "input_electrode_no": 7,

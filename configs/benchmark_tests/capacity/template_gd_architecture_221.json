@@ -2,12 +2,14 @@
   "capacity_test":{
     "from_dimension": 4,
     "to_dimension":6,
+    "results_base_dir": "tmp/output/gd/capacity_test_experiments",
     "vc_dimension_test":{
         "dimension": 4,
         "threshold_parameter": 0.5,
+        "results_base_dir": "tmp/output/gd/vc_dimension_experiments",
             "boolean_gate_test":{
                       "max_attempts":10,
-                      "results_base_dir": "tmp/output/boolean_gates_test/gd/",
+                      "results_base_dir": "tmp/output/gd/boolean_gate_experiments",
                       "show_plots": false,
                       "overwrite": true,
                       "algorithm_configs": {
@@ -24,8 +26,7 @@
                                               "architecture": "device_architecture",
                                               "architecture_type":"221",
                                               "platform": "simulation",
-                                              "simulation_type": "neural_network",
-                                              "network_type": "dnpu",
+                                              "processor_type": "dnpu",
                                               "torch_model_dict": "tmp/input/models/nn_test/checkpoint3000_02-07-23h47m.pt",
                                               "input_indices": [0, 1],
                                               "input_electrode_no": 7,
