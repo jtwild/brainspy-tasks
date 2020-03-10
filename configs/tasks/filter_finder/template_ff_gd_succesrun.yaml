@@ -1,0 +1,70 @@
+filter_finder:
+    max_attempts: 10
+    main_results_dir: tmp/output/filter_finder/march_single/succes_config
+    results_base_dir: tmp/output/filter_finder/march_single/succes_config
+    save_plot: true
+    show_plots: false
+    algorithm_configs:
+        algorithm: gradient_descent
+        hyperparameters:
+            nr_epochs: 100
+            batch_size: 4
+            learning_rate: 0.0005
+            loss_function: sigmoid_nn_distance
+            optimizer: adam
+            stop_threshold: -1000
+        processor:
+            architecture: single_device
+            platform: simulation
+            simulation_type: neural_network
+            network_type: IOnet
+            IOinfo:
+                mode: multi_scaler
+                output_high: 110
+                output_low: -110
+                scaling_low: [-1.2000, -1.2000, -1.0000, -1.0000]
+                scaling_high: [0.5000, 0.5000, 0.5000, 0.3000]
+                offset_low: [-0.3500, -0.3500, -0.2500, -0.3500]
+                offset_high: [-0.3500, -0.3500, -0.2500, -0.3500]
+                alpha: 1
+            torch_model_dict: tmp/input/models/model_brains06032020.pt
+            use_noise: false
+            input_indices: [1,2,3,4]
+            input_electrode_no: 7
+            waveform:
+                amplitude_lengths: 1
+                slope_lengths: 0
+                output_clipping_value: 3.55
+        checkpoints:
+            use_checkpoints: false
+            save_dir: algorithm_checkpoints
+            save_interval: 200
+            live_plot: false
+            live_plot_interval: 20
+    boolean_gate_test:
+        validation:
+            processor:
+                waveform:
+                    amplitude_lengths: 1
+                    slope_lengths: 0
+                    output_clipping_value: 3.55
+        algorithm_configs:
+            algorithm: gradient_descent
+            processor:
+                auto_generate_inputs: true
+                point_generation_sets:
+                -   - 0
+                    - 1
+                platform: simulation
+                input_indices:
+                - 1
+                - 2
+                - 3
+                - 4
+                input_electrode_no: 7
+                num_elec: 8
+                waveform:
+                    use_waveform: true
+                    amplitude_lengths: 1
+                    slope_lengths: 0
+                    output_clipping_value: 3.55

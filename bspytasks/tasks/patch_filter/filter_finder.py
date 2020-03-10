@@ -245,6 +245,6 @@ class FilterFinder():
 #%% Testing
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
+    configs = load_configs('configs/tasks/filter_finder/template_ff_gd_succesrun.yaml')
     task = FilterFinder(configs['filter_finder'], is_main=True) #initialize class
     excel_results = task.find_filter()
