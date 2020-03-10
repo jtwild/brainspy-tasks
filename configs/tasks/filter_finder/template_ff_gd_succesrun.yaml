@@ -7,7 +7,7 @@ filter_finder:
     algorithm_configs:
         algorithm: gradient_descent
         hyperparameters:
-            nr_epochs: 100
+            nr_epochs: 5000
             batch_size: 4
             learning_rate: 0.0005
             loss_function: sigmoid_nn_distance
