@@ -12,6 +12,8 @@ from matplotlib import pyplot as plt
 from bspyalgo.utils.performance import accuracy, corr_coeff
 from bspyalgo.utils.io import create_directory, create_directory_timestamp, save
 from bspyproc.utils.pytorch import TorchUtils
+import matplotlib
+matplotlib.use('Agg')
 
 
 class RingClassificationTask():
