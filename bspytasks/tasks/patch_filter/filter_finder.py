@@ -212,17 +212,17 @@ class FilterFinder():
             self.excel_results[attempt]['dist']['abs_value'] = self.excel_results[attempt]['best_output'][distance_min_index]  # this is the absolute value of one of the nearest distances
             # If we have an IOscaler class, our inputs gets scaled. Therefore overwrite the wrong inputs in data:
             if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
-                self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu().detach().numpy()
+                self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu().detach().numpy().copy()
                 self.excel_results[attempt]['regularizer_interval'] = [self.algorithm.processor.output_high, self.algorithm.processor.output_low]
-                self.excel_results[attempt]['control_voltages'] = self.algorithm.processor.get_control_voltages()
+                self.excel_results[attempt]['control_voltages'] = self.algorithm.processor.get_control_voltages().cpu().detach().numpy().copy()
             self.excel_file.add_result(self.excel_results[attempt])
 #            print(f"offset is {self.excel_results[attempt]['processor'].offset}")
 #            print(f"scaling is {self.excel_results[attempt]['processor'].scaling}")
         # Find best attempt:
-        performance = []
+        min_dist = []
         for results in self.excel_results:
-            performance.append( np.nanmin( results['performance_history'] ) )
-        self.best_attempt_index = np.argmin(performance)
+            min_dist.append( np.nanmin( results['dist']['min'] ) )
+        self.best_attempt_index = np.argmax(min_dist)
 
         # Save data to specific excel file
         aux = self.excel_file.data.copy()
