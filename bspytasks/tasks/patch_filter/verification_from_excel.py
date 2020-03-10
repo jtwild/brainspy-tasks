@@ -45,10 +45,10 @@ from ast import literal_eval
 from bspyproc.bspyproc import get_processor
 from bspytasks.tasks.patch_filter.validation import PatchFilterValidator
 #%% Define the timestamps that you want to check, and the models
-timestamps = ['2020_03_09_21h15m35s', '2020_03_09_21h15m34s', '2020_03_09_21h15m33s', '2020_03_09_21h15m32s']
-base_folder = r"C:\Users\Jochem\STACK\Daily_Usage\GIT_SourceTree\brainspy-tasks\tmp\output\filter_finder\march_single\useless_test"
-file = r"filter_finder_collective_results.xlsx"
-proc_base_folder = r'C:\Users\Jochem\STACK\Daily_Usage\GIT_SourceTree\brainspy-tasks\tmp\output\filter_finder\march_single\useless_test\patch_filter_4_points_2020_03_09_201537.35\gradient_descent_data\gradient_descent_data_2020_03_09_201537.39\reproducibility'
+timestamps = ['2020_03_09_23h27m37s', '2020_03_09_22h24m49s', '2020_03_09_23h06m06s', '2020_03_09_22h06m53s', '2020_03_09_22h17m41s','2020_03_09_23h16m00s']
+base_folder = r"C:\Users\Jochem\STACK\Daily_Usage\GIT_SourceTree\brainspy-tasks\tmp\output\filter_finder\march_single"
+file = r"OPEN ME - filter_finder_collective_results.xlsx"
+proc_base_folder = r'C:\Users\Jochem\STACK\Daily_Usage\GIT_SourceTree\brainspy-tasks\tmp\output\filter_finder\march_single\run3_pretrained_input\patch_filter_4_points_2020_03_09_205421.33\gradient_descent_data_2020_03_09_205421.35\reproducibility'
 proc_file = r'results.pickle'
 verification_configs_path = r'configs\tasks\filter_finder\template_gd_cdaq_to_nidaq_validation.json'
 

@@ -17,9 +17,9 @@ learning_rates = [0.0005]
 input_sets = [[[-0.6425618529319763, -1.177810549736023]], [[-0.2975066602230072, -0.9924330711364746]], [[-0.12653665244579315,-0.699944019317627]], [[-0.171392023563385, -0.8662018179893494]]]
 # combined loops:
 inputs = [[1,2,3,4]]
-types = ['dnpu' ] #combined loop
+types = ['IOnet' ] #combined loop
 scaling = ['None'] #combined loop
-regularizers = [[None,None]]             # not be looped seperately, but combine with the above
+regularizers = [[76,320]]             # not be looped seperately, but combine with the above
 
 
 base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
@@ -51,4 +51,4 @@ for lr in learning_rates:
                     print('---------------------------------------------\n\n')
                     task = FilterFinder(configs['filter_finder'], is_main=True) #initialize class
                     excel_results = task.find_filter()
-                    #plt.close("all")
+                    plt.close("all")
