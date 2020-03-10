@@ -17,7 +17,7 @@ class RingClassifierCapacity():
     def run_task(self):
         self.searcher.base_dir = self.init_dirs()
         gap = self.configs['start_gap']
-        while gap > self.configs['stop_gap']:
+        while gap >= self.configs['stop_gap']:
             print(f'********* GAP {gap} **********')
             self.searcher.search_solution(gap)
             gap = gap / 2
