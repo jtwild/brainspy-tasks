@@ -11,15 +11,15 @@ from bspytasks.benchmarks.vcdim.vc_dimension_test import VCDimensionTest
 import matplotlib.pyplot as plt
 import copy
 
-loss_fns = ['sigmoid_nn_distance']*362
-batch_sizes = [4,16]
+loss_fns = ['sigmoid_nn_distance']*20
+batch_sizes = [4]
 learning_rates = [0.0005]
-input_sets = [[[-0.6425618529319763, -1.177810549736023]], [[-0.2975066602230072, -0.9924330711364746]], [[-0.12653665244579315,-0.699944019317627]], [[-0.171392023563385, -0.8662018179893494]]]
+input_sets = [[[0, 1]]]
 # combined loops:
 inputs = [[1,2,3,4]]
-types = ['IOnet' ] #combined loop
-scaling = ['None'] #combined loop
-regularizers = [[76,320]]             # not be looped seperately, but combine with the above
+types = ['IOnet'] #combined loop
+scaling = ['multi_scaler'] #combined loop
+#regularizers = [[110,-110]]             # not be looped seperately, but combine with the above
 
 
 base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
@@ -41,8 +41,8 @@ for lr in learning_rates:
                     configs['filter_finder']['algorithm_configs']['processor']['input_indices'] = inputs[i]
                     configs['filter_finder']['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] = inputs[i]
                     configs['filter_finder']['algorithm_configs']['processor']['network_type'] = types[i]
-                    configs['filter_finder']['algorithm_configs']['processor']['IOinfo']['output_high']  = regularizers[i][0]
-                    configs['filter_finder']['algorithm_configs']['processor']['IOinfo']['output_low']  = regularizers[i][1]
+                    # configs['filter_finder']['algorithm_configs']['processor']['IOinfo']['output_high']  = regularizers[i][0]
+                    # configs['filter_finder']['algorithm_configs']['processor']['IOinfo']['output_low']  = regularizers[i][1]
                     configs['filter_finder']['algorithm_configs']['processor']['IOinfo']['mode'] = scaling[i]
 
                     # Run the task
