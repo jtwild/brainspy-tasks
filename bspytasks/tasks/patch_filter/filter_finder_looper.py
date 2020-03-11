@@ -11,18 +11,18 @@ from bspytasks.benchmarks.vcdim.vc_dimension_test import VCDimensionTest
 import matplotlib.pyplot as plt
 import copy
 
-loss_fns = ['sigmoid_nn_distance']*20
+loss_fns = ['sigmoid_nn_distance']*45
 batch_sizes = [4]
 learning_rates = [0.0005]
 input_sets = [[[0, 1]]]
 # combined loops:
 inputs = [[1,2,3,4]]
 types = ['IOnet'] #combined loop
-scaling = ['multi_scaler'] #combined loop
+scaling = ['single_scaler'] #combined loop
 #regularizers = [[110,-110]]             # not be looped seperately, but combine with the above
 
 
-base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd.yaml')
+base_configs = load_configs('configs/tasks/filter_finder/template_ff_gd_succesrun.yaml')
 loop=0
 max_loop = len(loss_fns) * len(batch_sizes) * len(learning_rates) * len(types) * len(input_sets)
 for lr in learning_rates:
