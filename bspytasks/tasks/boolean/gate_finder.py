@@ -49,6 +49,8 @@ class BooleanGateTask():
             self.ignore_gate = self.ignore_gate_with_numpy
 
     def find_gate(self, encoded_inputs, gate, encoded_gate, mask, threshold):
+        min_threshold = (1 - 1 / len(gate)) * 100.0
+        assert threshold >= min_threshold, f"Threshold cannot be less or equal than {min_threshold}; it is now {threshold}"
         if len(np.unique(gate)) == 1:
             print('Label ', gate, ' ignored')
             excel_results = self.ignore_gate(encoded_gate)

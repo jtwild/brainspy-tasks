@@ -69,7 +69,7 @@ class VCDimensionTest():
         self.excel_file.insert_column('found', found)
 
     def calculate_threshold(self):
-        return 1 - (self.threshold_parameter / self.vc_dimension)
+        return (1 - (self.threshold_parameter / self.vc_dimension)) * 100.0
 
     def run_test(self, vc_dimension, validate=False):
         base_dir = self.init_test(vc_dimension)
