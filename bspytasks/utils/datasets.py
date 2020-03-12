@@ -5,27 +5,32 @@ authors: H. C. Ruiz and Unai Alegre-Ibarra
 
 import numpy as np
 from bspyproc.utils.pytorch import TorchUtils
+from bspyproc.utils.input import get_map_to_voltage_vars
+from bspyproc.utils.electrodes import load_voltage_ranges
 
 
-def ring(sample_no, inner_radius=0.1, gap=0.2, outer_radius=None):
+def ring(sample_no, inner_radius=0.25, gap=0.5, outer_radius=1, scale=0.9, offset=-0.3):
     '''Generates labelled TorchUtilsdata of a ring with class 1 and the center with class 0
     '''
-    if outer_radius:
-        outer_radius = inner_radius + gap + outer_radius
-    else:
-        gamma = gap / inner_radius
-        outer_radius = inner_radius * np.sqrt(2 * (1 + gamma) + gamma**2)
+    assert outer_radius <= 1
+    # scale, offset = get_map_to_voltage_vars(min_input_volt[input_indices], max_input_volt[input_indices])
+    # if outer_radius:
+    #     outer_radius = inner_radius + gap + outer_radius
+    # else:
+    #     gamma = gap / inner_radius
+    #     outer_radius = inner_radius * np.sqrt(2 * (1 + gamma) + gamma**2)
 
-    samples = (-1 * outer_radius) + 2 * outer_radius * np.random.rand(sample_no, 2)
-    norm = np.sqrt(np.sum(samples**2, axis=1))
+    samples = (-1 * outer_radius) + (2 * outer_radius * np.random.rand(sample_no, 2))
+    norm = np.sqrt(np.sum((samples)**2, axis=1))
+
+    # Filter out samples outside the classes
     labels = np.empty(samples.shape[0])
-
     labels[norm < inner_radius] = 0
     labels[(norm < outer_radius) * (norm > inner_radius + gap)] = 1
-    # Filter out samples outside the classes
     labels[norm > outer_radius] = np.nan
     labels[(norm > inner_radius) * (norm < inner_radius + gap)] = np.nan
-    return samples[labels == 0], samples[labels == 1]
+
+    return data, labels
 
 
 def subsample(class0, class1):
@@ -70,9 +75,33 @@ def process_dataset(class0, class1):
     return filter_and_reverse(class0, class1)
 
 
-def generate_data(configs):
-    class0, class1 = ring(sample_no=configs['sample_no'], gap=configs['gap'], outer_radius=0.1)
-    return process_dataset(class0, class1)
+# The gap needs to be in a scale from -1 to 1. This function enables to transform the gap in volts to this scale.
+def transform_gap(gap_in_volts, scale):
+    assert len(scale[scale == scale.mean()]) != len(scale),
+    'The GAP information is going to be inaccurate because the selected input electrodes have a different voltage range. In order for this data to be accurate, please make sure that the input electrodes have the same voltage ranges.'
+    if len(scale) > 1:
+        scale = scale[0]
+
+    return gap_in_volts / scale
+
+
+def generate_data(configs, sample_no, gap):
+    # Get information from the electrode ranges in order to calculate the linear transformation parameters for the inputs
+    min_voltage, max_voltage = load_voltage_ranges(configs)
+    i = configs['input_indices']
+    scale, offset = get_map_to_voltage_vars(min_voltage[i], max_voltage[i])
+    gap = transform_gap(gap, scale)
+
+    data, labels = ring(sample_no=sample_no, gap=gap, scale=scale, offset=offset)
+    data = process_dataset(data[labels == 0], data[labels == 1])
+
+    # Transform dataset to control voltage range
+    samples = (data * scale) + offset
+    gap = gap * scale
+
+    print(f'The input ring dataset has a {gap}V gap.')
+    print(f'There are {len(data[labels == 0]) + len(samples[labels == 1])} samples')
+    return data, labels
 
 
 def load_data(base_dir):
@@ -89,14 +118,3 @@ def load_data(base_dir):
     configs = load_configs(configs_dir)
     configs['results_base_dir'] = base_dir
     return model, results, configs
-
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    configs = {'sample_no': 10000, 'gap': 0.4}
-    waveforms, targets = generate_data(configs)
-
-    print(f'sample efficiency: {configs["sample_no"]/len(waveforms)}')
-    plt.figure()
-    plt.plot(waveforms[:, 0], waveforms[:, 1], '.')
-    plt.show()
