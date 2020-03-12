@@ -30,7 +30,7 @@ def ring(sample_no, inner_radius=0.25, gap=0.5, outer_radius=1, scale=0.9, offse
     labels[norm > outer_radius] = np.nan
     labels[(norm > inner_radius) * (norm < inner_radius + gap)] = np.nan
 
-    return data, labels
+    return samples, labels
 
 
 def subsample(class0, class1):
@@ -77,12 +77,11 @@ def process_dataset(class0, class1):
 
 # The gap needs to be in a scale from -1 to 1. This function enables to transform the gap in volts to this scale.
 def transform_gap(gap_in_volts, scale):
-    assert len(scale[scale == scale.mean()]) != len(scale),
-    'The GAP information is going to be inaccurate because the selected input electrodes have a different voltage range. In order for this data to be accurate, please make sure that the input electrodes have the same voltage ranges.'
+    assert (len(scale[scale == scale.mean()]) == len(scale)), "The GAP information is going to be inaccurate because the selected input electrodes have a different voltage range. In order for this data to be accurate, please make sure that the input electrodes have the same voltage ranges."
     if len(scale) > 1:
         scale = scale[0]
 
-    return gap_in_volts / scale
+    return (gap_in_volts / scale)
 
 
 def generate_data(configs, sample_no, gap):
@@ -93,7 +92,7 @@ def generate_data(configs, sample_no, gap):
     gap = transform_gap(gap, scale)
 
     data, labels = ring(sample_no=sample_no, gap=gap, scale=scale, offset=offset)
-    data = process_dataset(data[labels == 0], data[labels == 1])
+    data, labels = process_dataset(data[labels == 0], data[labels == 1])
 
     # Transform dataset to control voltage range
     samples = (data * scale) + offset
