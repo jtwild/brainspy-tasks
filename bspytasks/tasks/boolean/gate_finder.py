@@ -8,8 +8,8 @@ from bspyalgo.utils.io import create_directory, create_directory_timestamp
 from bspyproc.bspyproc import get_processor
 
 
-MAX_CLIPPING_VALUE = np.array([1.0])
-MIN_CLIPPING_VALUE = np.array([1.5])
+MAX_CLIPPING_VALUE = np.array([1.5])
+MIN_CLIPPING_VALUE = np.array([-1.5])
 
 
 class BooleanGateTask():
@@ -145,7 +145,7 @@ class BooleanGateTask():
 
     def clip(self, x, max_value, min_value):
         x[x > max_value] = max_value
-        x[x > min_value] = min_value
+        x[x < min_value] = min_value
         return x
 
     def is_found(self, found):
