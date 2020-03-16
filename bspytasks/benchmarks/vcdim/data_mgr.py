@@ -94,7 +94,7 @@ class VCDimDataManager():
         # @todo create a function that automatically generates non-linear inputs
         assert len(X) == len(Y), f"Number of data in both dimensions must be equal ({len(X)},{len(Y)})"
         try:
-            if vc_dimension < len(X):
+            if vc_dimension <= len(X):
                 return [X[:vc_dimension], Y[:vc_dimension]]
             else:
                 raise VCDimensionException()
