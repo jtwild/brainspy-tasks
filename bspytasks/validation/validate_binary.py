@@ -59,7 +59,7 @@ def validate_outputs(configs):
             mserror, _, measurement = validator.validate_prediction(name, inputs, cv, predictions[n], mask)
             plt_name = os.path.join(validator.validation_dir, name)
             accuracy, predicted_labels, threshold = perceptron(measurement, targets_array[n], plot=plt_name)
-            correlation_array[n] = corr_coeff(measurement, targets_array[n])
+            correlation_array[n] = corr_coeff(measurement.T, targets_array[n].T)
             mserror_array[n] = mserror
             print(f"{name} has accuracy {accuracy:.2f} % and correlation {correlation_array[n]:.2f}")
             found_array[n] = accuracy > acceptance_threshold
