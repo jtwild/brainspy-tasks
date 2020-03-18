@@ -14,7 +14,7 @@ class Hardware_Validator:
 
     def __init__(self, configs):
         self.configs = configs
-        self.processor = get_processor(configs['processor'])
+
         self.validation_dir = configs['data_dir']
         self.show_plots = configs['show_plots']
         self.input_indices = configs['processor']["input_indices"]
@@ -45,7 +45,13 @@ class Hardware_Validator:
         inputs = self.clip(inputs, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
         control_voltages = self.clip(control_voltages, max_value=MAX_CLIPPING_VALUE, min_value=MIN_CLIPPING_VALUE)
         input_matrix = self.generate_input_matrix(inputs, control_voltages)
-        measurement = self.processor.get_output(input_matrix)
+
+        if self.configs["processor"]["shape"] != len(predictions):
+            print(f"Changing shape key of processor from value {self.configs['processor']['shape']} to {len(predictions)}")
+            self.configs["processor"]["shape"] = len(predictions)
+        processor = get_processor(self.configs['processor'])
+        measurement = processor.get_output(input_matrix)
+        processor.close_tasks()
         error = ((measurement[mask, 0] - predictions[mask]) ** 2).mean()  # TODO: predictions should be 2 dim array with last dim singleton
         print(f'MSE: {str(error)}')
         var_measurement = np.var(measurement[mask], ddof=1)
