@@ -2,10 +2,12 @@ import numpy as np
 import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
 
-
-ZERO = -1.2
-ONE = 0.6
-QUARTER = (abs(ZERO) + abs(ONE)) / 4
+# ZERO = -0.5
+# ONE = 0.5
+# QUARTER =  (abs(ZERO) + abs(ONE)) / 4
+# TODO: Include this is the configuration file
+X = [-0.7, -0.7, 0.5, 0.5, -0.35, 0.25, 0.0, 0.0]
+Y = [-0.7, 0.5, -0.7, 0.5, 0.0, 0.0, -0.35, 0.25]
 
 
 class VCDimDataManager():
@@ -36,7 +38,7 @@ class VCDimDataManager():
         if validation:
             return self.validation_amplitude_lengths
         else:
-            return  self.amplitude_lengths
+            return self.amplitude_lengths
 
     def generate_slopped_plato(self, vcdim):
         shape = self.get_shape(vcdim, validation=True)
@@ -90,23 +92,28 @@ class VCDimDataManager():
 
     def generate_test_inputs(self, vc_dimension):
         # @todo create a function that automatically generates non-linear inputs
+        assert len(X) == len(Y), f"Number of data in both dimensions must be equal ({len(X)},{len(Y)})"
         try:
-            if vc_dimension == 4:
-                return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
-            elif vc_dimension == 5:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER],
-                        [ONE, ZERO, ONE, ZERO, 0.0]]
-            elif vc_dimension == 6:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
-            elif vc_dimension == 7:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
-            elif vc_dimension == 8:
-                return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
-                        [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+            if vc_dimension <= len(X):
+                return [X[:vc_dimension], Y[:vc_dimension]]
             else:
                 raise VCDimensionException()
+            # if vc_dimension == 4:
+            #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
+            # elif vc_dimension == 5:
+            #     return [[ZERO, ZERO, ONE, ONE, QUARTER],
+            #             [ONE, ZERO, ONE, ZERO, 0.0]]
+            # elif vc_dimension == 6:
+            #     return [[ZERO, ZERO, ONE, ONE, QUARTER, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, QUARTER]]
+            # elif vc_dimension == 7:
+            #     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
+            # elif vc_dimension == 8:
+            #     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+            # else:
+            #     raise VCDimensionException()
         except VCDimensionException:
             print(
                 'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)

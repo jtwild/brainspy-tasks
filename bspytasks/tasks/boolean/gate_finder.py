@@ -8,8 +8,8 @@ from bspyalgo.utils.io import create_directory, create_directory_timestamp
 from bspyproc.bspyproc import get_processor
 
 
-MAX_CLIPPING_VALUE = np.array([1.0])
-MIN_CLIPPING_VALUE = np.array([1.5])
+MAX_CLIPPING_VALUE = np.array([1.5])
+MIN_CLIPPING_VALUE = np.array([-1.5])
 
 
 class BooleanGateTask():
@@ -49,6 +49,8 @@ class BooleanGateTask():
             self.ignore_gate = self.ignore_gate_with_numpy
 
     def find_gate(self, encoded_inputs, gate, encoded_gate, mask, threshold):
+        min_threshold = (1 - 1 / len(gate)) * 100.0
+        assert threshold >= min_threshold, f"Threshold cannot be less or equal than {min_threshold}; it is now {threshold}"
         if len(np.unique(gate)) == 1:
             print('Label ', gate, ' ignored')
             excel_results = self.ignore_gate(encoded_gate)
@@ -143,7 +145,7 @@ class BooleanGateTask():
 
     def clip(self, x, max_value, min_value):
         x[x > max_value] = max_value
-        x[x > min_value] = min_value
+        x[x < min_value] = min_value
         return x
 
     def is_found(self, found):
