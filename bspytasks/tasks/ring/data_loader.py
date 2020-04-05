@@ -6,8 +6,8 @@ from bspyproc.utils.input import normalise, map_to_voltage
 from bspytasks.utils.datasets import generate_data
 
 # @todo: This data should come from the model
-MAX_INPUT_VOLT = np.asarray([0.6, 0.6, 0.6, 0.6, 0.6, 0.3, 0.3])
-MIN_INPUT_VOLT = np.asarray([-1.2, -1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
+# MAX_INPUT_VOLT = np.asarray([0.6, 0.6, 0.6, 0.6, 0.6, 0.3, 0.3])
+# MIN_INPUT_VOLT = np.asarray([-1.2, -1.2, -1.2, -1.2, -1.2, -0.7, -0.7])
 
 
 class RingDataLoader():
@@ -22,8 +22,9 @@ class RingDataLoader():
             return self.read_data(processor_configs, gap, istest=istest)
 
     def generate_new_data(self, processor_configs, gap):
-        inputs, targets = generate_data(self.configs['ring_data'])
+        inputs, targets = generate_data(processor_configs, self.configs['ring_data']['sample_no'], self.configs['ring_data']['gap'])
         inputs, targets, mask = self.process_data(inputs, targets, processor_configs)
+
         return inputs, targets, mask
 
     def get_data_filename(self, gap, istest=False):
@@ -52,12 +53,12 @@ class RingDataLoader():
 
     def process_inputs(self, inputs, processor_configs):
         assert inputs.shape[1] == len(processor_configs['input_indices'])
-        for i in range(inputs.shape[1]):
-            inputs[:, i] = normalise(inputs[:, i])
-            inputs[:, i] = map_to_voltage(inputs[:, i],
-                                          MIN_INPUT_VOLT[processor_configs['input_indices'][i]],
-                                          MAX_INPUT_VOLT[processor_configs['input_indices'][i]])
-            # inputs[:, i] = generate_waveform(inputs[:, i], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
+        # for i in range(inputs.shape[1]):
+        #     inputs[:, i] = normalise(inputs[:, i])
+        #     inputs[:, i] = map_to_voltage(inputs[:, i],
+        #                                   MIN_INPUT_VOLT[processor_configs['input_indices'][i]],
+        #                                   MAX_INPUT_VOLT[processor_configs['input_indices'][i]])
+        # inputs[:, i] = generate_waveform(inputs[:, i], processor_configs['waveform']['amplitude_lengths'], slope_lengths=processor_configs['waveform']['slope_lengths'])
         # inputs = self.generate_data_waveform(inputs, processor_configs['waveform']['amplitude_lengths'], processor_configs['waveform']['slope_lengths'])
         if processor_configs["processor_type"] == 'dnpu':
             return TorchUtils.get_tensor_from_numpy(inputs)

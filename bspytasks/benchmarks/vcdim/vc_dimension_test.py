@@ -23,7 +23,6 @@ class VCDimensionTest():
         self.data_manager = VCDimDataManager(configs)
         self.base_dir = configs['results_base_dir']
         self.threshold_parameter = configs['threshold_parameter']
-        self.test_data_plot_name = '_plot.eps'
         self.is_main = is_main
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
 
@@ -70,7 +69,7 @@ class VCDimensionTest():
         self.excel_file.insert_column('found', found)
 
     def calculate_threshold(self):
-        return 1 - (self.threshold_parameter / self.vc_dimension)
+        return (1 - (self.threshold_parameter / self.vc_dimension)) * 100.0
 
     def run_test(self, vc_dimension, validate=False):
         base_dir = self.init_test(vc_dimension)
@@ -78,10 +77,41 @@ class VCDimensionTest():
         print(f'    VC DIMENSION {str(vc_dimension)} TEST')
         print('---------------------------------------------')
 
-        for _, row in self.excel_file.data.iterrows():
+        number_gates = 2**vc_dimension
+        gate_array = np.zeros((number_gates, vc_dimension))
+        accuracy_array = np.zeros(number_gates)
+        performance_array = np.zeros_like(accuracy_array)
+        found_array = np.zeros_like(accuracy_array)
+        correlation_array = np.zeros_like(accuracy_array)
+        control_voltages_per_gate = np.zeros((number_gates, 5))  # TODO: un-hard code nr. dimensions
+
+        length_waveform = len(self.transformed_inputs)
+        output_array = np.zeros((number_gates, length_waveform))
+        targets_array = np.zeros_like(output_array)
+        for nr, r in enumerate(self.excel_file.data.iterrows()):
+            _, row = r
             excel_results = self.boolean_gate_task.find_gate(self.transformed_inputs, row['gate'], row['encoded_gate'], self.mask, self.threshold)
             self.excel_file.add_result(excel_results, row['gate'])
-
+            # Collect results
+            gate_array[nr] = excel_results['gate']
+            accuracy_array[nr] = excel_results['accuracy']
+            performance_array[nr] = excel_results['best_performance']
+            found_array[nr] = excel_results['found']
+            correlation_array[nr] = excel_results['correlation']
+            control_voltages_per_gate[nr] = excel_results['control_voltages']
+            if type(row['encoded_gate']) is np.ndarray:
+                targets_array[nr] = row['encoded_gate'][:, 0]
+            else:
+                targets_array[nr] = row['encoded_gate'].cpu().numpy()[:, 0]
+            if type(excel_results['control_voltages']) is float:
+                output_array[nr] = excel_results['best_output']
+            else:
+                output_array[nr] = excel_results['best_output'][:, 0]
+        mask = self.mask
+        if type(row['encoded_gate']) is np.ndarray:
+            inputs = self.transformed_inputs
+        else:
+            inputs = self.transformed_inputs.detach().cpu().numpy()
         # if validate:
         #     for _, row in self.excel_file.data.iterrows():
         #         if row['control_voltages'] is not np.nan:
@@ -89,14 +119,27 @@ class VCDimensionTest():
         #             row['validation_error'] = validation_error
         #             self.excel_file.add_result(row.to_dict(), row['gate'])
 
+        capacity = np.mean(found_array)
         result = self.close_test(base_dir)
-
+        os.mkdir(os.path.join(base_dir, 'validation'))
+        numpy_file = os.path.join(base_dir, 'validation', 'result_arrays')
+        np.savez(numpy_file,
+                 gate_array=gate_array,
+                 accuracy_array=accuracy_array,
+                 performance_array=performance_array,
+                 found_array=found_array,
+                 correlation_array=correlation_array,
+                 control_voltages_per_gate=control_voltages_per_gate,
+                 targets_array=targets_array,
+                 output_array=output_array, inputs=inputs, mask=mask)
         print('---------------------------------------------')
         if result:
             print(f'VC DIMENSION {str(vc_dimension)} TEST VEREDICT: PASSED')
         else:
             print(f'VC DIMENSION {str(vc_dimension)} TEST VEREDICT: FAILED')
         print('---------------------------------------------')
+
+        return capacity, accuracy_array, performance_array, correlation_array
 
     def get_not_found_gates(self):
         return self.excel_file.data['gate'].loc[self.excel_file.data['found'] == False].size  # noqa: E712
@@ -116,7 +159,7 @@ class VCDimensionTest():
         except AttributeError:
             print('\nThere is no closing function for the current algorithm configuration. Skipping. \n')
 
-    def plot_results(self, base_dir):
+    def plot_results(self, base_dir, plot_name='_plot', extension='png'):
         plt.figure()
         fitness_classifier = self.excel_file.data['best_performance'].to_numpy()
         plt.plot(fitness_classifier, self.excel_file.data['accuracy'].to_numpy(), 'o')
@@ -127,7 +170,7 @@ class VCDimensionTest():
         plt.ylabel('Accuracy')
 
         # create_directory(path)
-        plt.savefig(os.path.join(base_dir, 'dimension_' + str(self.vc_dimension) + self.test_data_plot_name))
+        plt.savefig(os.path.join(base_dir, 'dimension_' + str(self.vc_dimension) + plot_name + '.' + extension))
         if self.show_plots:
             plt.show()
 

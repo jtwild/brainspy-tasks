@@ -12,7 +12,6 @@
       "sample_no":40000
   },
   "algorithm_configs": {
-      "experiment_name":"noise",
       "algorithm": "gradient_descent",
       "hyperparameters": {
           "nr_epochs": 800,
