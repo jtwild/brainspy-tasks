@@ -4,32 +4,34 @@ Created on Mon Feb 10 16:38:28 2020
 
 @author: Jochem
 For multinoulli classification.
-    #TODO: use the new is_main idea to save data, also. In general, save data
-    #TODO: fix loss function such that there is not such a large bias for large output currents? Or punish hjigh outputs currents?
+
 """
 from bspyalgo.algorithm_manager import get_algorithm  # to get either the GA or the GD algo
-from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager  # To generate the binary inputs for a patch
+# To generate the binary inputs for a patch
+from bspytasks.benchmarks.vcdim.data_mgr import VCDimDataManager
 import matplotlib.pyplot as plt  # for plotting final figures, and saving them
 import numpy as np
 import os  # for saving data.
 from bspyalgo.utils.io import create_directory, create_directory_timestamp, save  # For saving data
-from bspytasks.utils.excel import ExcelFile # For storing data to be saved
+from bspytasks.utils.excel import ExcelFile  # For storing data to be saved
 import time  # for timestamps
-#from bspyproc.bspyproc import get_processor # Only required for validation, elsewise this is called via get_algorithm
-#from bspyalgo.utils.io import create_directory  # to create directories for saving
+# from bspyproc.bspyproc import get_processor # Only required for validation, elsewise this is called via get_algorithm
+# from bspyalgo.utils.io import create_directory  # to create directories for saving
 #from bspyproc.utils.pytorch import TorchUtils
 
+
 class FilterFinder():
-# The surrogate model is defined via config template
-# The loss is defined via the algorithm, for example via gd.py or ga.py
-# The optimizer is defined via the algorithm (via configs), for example via gd.py or ga.py
-# Trainable parameters are defined via the config file, as the control electrodes.
+    # The surrogate model is defined via config template
+    # The loss is defined via the algorithm, for example via gd.py or ga.py
+    # The optimizer is defined via the algorithm (via configs), for example via gd.py or ga.py
+    # Trainable parameters are defined via the config file, as the control electrodes.
     def __init__(self, configs, is_main=True):
         # Create directory structure if this is the main function.
         self.configs = configs
-        self.excel_file = None    # Not sure why it is done like this, but I copied the structure defined by Unai in capacity test
+        # Not sure why it is done like this, but I copied the structure defined by Unai in capacity test
+        self.excel_file = None
         self.is_main = is_main
-        self.input_dim = len( configs['algorithm_configs']['processor']['input_indices'] )
+        self.input_dim = len(configs['algorithm_configs']['processor']['input_indices'])
         self.init_dirs(self.input_dim)  # Initialize directory and excel files
 
         # And load other relevant config parameters
@@ -38,19 +40,20 @@ class FilterFinder():
             raise Warning('Validation not implemented. Ignoring!')
         self.max_attempts = self.configs['max_attempts']
         self.show_plots = self.configs['show_plots']
-        self.algorithm = get_algorithm(configs['algorithm_configs'], is_main=True)  # An instance of GD or GA, loading all algorithm related parameters.
-        #self.algorithm.init_dirs(self.base_dir)
+        # An instance of GD or GA, loading all algorithm related parameters.
+        self.algorithm = get_algorithm(configs['algorithm_configs'], is_main=True)
+        # self.algorithm.init_dirs(self.base_dir)
         self.save_plot = self.configs['save_plot']
         # Check if correct loss/fitness function is defined
-        #if self.configs['algorithm_configs']['algorithm'] == 'gradient_descent':
+        # if self.configs['algorithm_configs']['algorithm'] == 'gradient_descent':
         #    key = 'loss_function'
-        #elif self.configs['algorithm_configs']['algorithm'] == 'genetic':
+        # elif self.configs['algorithm_configs']['algorithm'] == 'genetic':
         #    key = 'fitness_function_type'
-        #else:
+        # else:
         #    raise ValueError('Selected algorithm not tested/implemented.')
-        #if configs['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
+        # if configs['algorithm_configs']['hyperparameters'][key] != 'sigmoid_distance':
         #    raise ValueError('For now, only implemented with sigmoidal distance loss/fitness function.')
-        #else:
+        # else:
  #               self.algorithm = get_algorithm(configs['algorithm_configs'])  # An instance of GD or GA, loading all algorithm related parameters.
 
     def init_dirs(self, input_dim):
@@ -87,19 +90,22 @@ class FilterFinder():
         self.main_dir = self.configs['main_results_dir']
         create_directory(self.main_dir)
         filename = 'filter_finder_collective_results.xlsx'
-        self.main_file = ExcelFile(os.path.join(self.main_dir, filename), overwrite=False)
+        self.main_file = ExcelFile(os.path.join(
+            self.main_dir, filename), overwrite=False)
         self.main_file_keys = ['timestamp', '# input dimensions', 'algorithm', 'loss function',
                                'min seperation', 'current value at min seperation', 'min current', 'max current',
-                               'attempts','epochs', 'batch size', 'learning rate','loss value','output points',
-                               'input points', 'point_generation_sets','control_voltages', 'input indices',
-                               'results directory', 'scaling', 'regularizer_interval', 'best_attempt_index',]
-        self.main_file.init_data(self.main_file_keys) # Creates a pd.DataFrame with these entries, to be filled later.
+                               'attempts', 'epochs', 'batch size', 'learning rate', 'loss value', 'output points',
+                               'input points', 'point_generation_sets', 'control_voltages', 'input indices',
+                               'results directory', 'scaling', 'regularizer_interval', 'best_attempt_index', ]
+        # Creates a pd.DataFrame with these entries, to be filled later.
+        self.main_file.init_data(self.main_file_keys)
         self.main_file.reset()
 
     def optimize(self, inputs):
         # First do the optimization defined by this specific algorithm (GA/GD)
         algorithm_data = self.algorithm.optimize(inputs)
-        algorithm_data.judge()  # Updates information in the results, such as control voltages.
+        # Updates information in the results, such as control voltages.
+        algorithm_data.judge()
         # Then generate the information regarding the results, such as performace
         # this also sets algorithm_data.results (type: excel_data, a child of a Pandas DataFrame)
         excel_results = algorithm_data.results
@@ -107,19 +113,19 @@ class FilterFinder():
 
     def plot_best_filter(self, excel_results, index, show_plots=True, save_plot=True):
         # Setup axes
-        fig, axs = plt.subplots(1,2, sharey=False)
+        fig, axs = plt.subplots(1, 2, sharey=False)
         y = excel_results[index]['best_output']
         inputs = excel_results[index]['inputs'].tolist()
 
         # Plot lines in output current
-        for i in range( len(y) ):
-            axs[0].plot([0,1], [y[i], y[i]] )
-            text = ''.join(str(round(e,2))+', ' for e in inputs[i] )
-            axs[0].annotate(text, [0,y[i]])
+        for i in range(len(y)):
+            axs[0].plot([0, 1], [y[i], y[i]])
+            text = ''.join(str(round(e, 2)) + ', ' for e in inputs[i])
+            axs[0].annotate(text, [0, y[i]])
         # Pplot of the loss over time
         axs[1].plot(excel_results[index]['performance_history'])
 
-        #Formatting:
+        # Formatting:
         axs[1].grid(which='both')
         axs[0].set_ylabel('Current (nA)')
         axs[0].grid(which='major')
@@ -133,7 +139,7 @@ class FilterFinder():
             plt.show()
         # Save plot if required:
         if save_plot:
-            plt.savefig( os.path.join(self.base_dir, 'best_output.pdf') )
+            plt.savefig(os.path.join(self.base_dir, 'best_output.pdf'))
 
     def fill_main_file(self):
         # FIll interesting information that should be logged
@@ -143,9 +149,12 @@ class FilterFinder():
         # algo done at done at end
         # loss function done at end
         main_dict['min seperation'] = self.excel_results[self.best_attempt_index]['dist']['min']
-        main_dict['current value at min seperation'] = self.excel_results[self.best_attempt_index]['dist']['abs_value'][0]  # a python number.
-        main_dict['min current'] = np.min(self.excel_results[self.best_attempt_index]['best_output'])
-        main_dict['max current'] = np.max(self.excel_results[self.best_attempt_index]['best_output'])
+        # a python number.
+        main_dict['current value at min seperation'] = self.excel_results[self.best_attempt_index]['dist']['abs_value'][0]
+        main_dict['min current'] = np.min(
+            self.excel_results[self.best_attempt_index]['best_output'])
+        main_dict['max current'] = np.max(
+            self.excel_results[self.best_attempt_index]['best_output'])
         main_dict['attempts'] = self.max_attempts
         main_dict['epochs'] = self.configs['algorithm_configs']['hyperparameters']['nr_epochs']
         main_dict['batch size'] = self.configs['algorithm_configs']['hyperparameters']['batch_size']
@@ -169,7 +178,8 @@ class FilterFinder():
             Loss_key = 'fitness_function_type'
             loss_fn_filterer = np.nanmax  # BEcause we need highest fitness
         main_dict['loss function'] = self.configs['algorithm_configs']['hyperparameters'][loss_key]
-        main_dict['loss value'] = loss_fn_filterer(self.excel_results[self.best_attempt_index]['performance_history'])
+        main_dict['loss value'] = loss_fn_filterer(
+            self.excel_results[self.best_attempt_index]['performance_history'])
         # Some specifics for IOnet:
         if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
             main_dict['regularizer_interval'] = self.excel_results[self.best_attempt_index]['regularizer_interval']
@@ -178,8 +188,9 @@ class FilterFinder():
         return main_dict
 
 
-
 # %% find_filter is the main method. All else above is required for this function
+
+
     def find_filter(self):
         # Save configs for reproducability
         if self.is_main:
@@ -187,8 +198,8 @@ class FilterFinder():
 
         # Load the required inputs:
         data_manager = VCDimDataManager(self.configs)
-        inputs = data_manager.get_inputs(2**self.input_dim)[1]  # Get inputs from a function originally written for VC targets.
-
+        # Get inputs from a function originally written for VC targets.
+        inputs = data_manager.get_inputs(2**self.input_dim)[1]
 
         # Start training different initializations (attempts)
         print('--------------------------------------------------------------------')
@@ -198,30 +209,40 @@ class FilterFinder():
         for attempt in range(self.max_attempts):
             print(f'\nAttempt {attempt+1} of {self.max_attempts}.')
             # Do the epoch
-            self.excel_results.append( self.optimize(inputs) )
+            self.excel_results.append(self.optimize(inputs))
 
             # Add the results to file. This should be added to the judge function..? Not really, because it is very specific.
-            distances = self.excel_results[attempt]['best_output'] - self.excel_results[attempt]['best_output'].T
-            np.fill_diagonal(distances, np.nan)  # ignore diagonal, distance to itself always zero
-            distance_nearest = np.nanmin( abs(distances), axis=0 )  ## index used to also print the absolute value
+            distances = self.excel_results[attempt]['best_output'] - \
+                self.excel_results[attempt]['best_output'].T
+            # ignore diagonal, distance to itself always zero
+            np.fill_diagonal(distances, np.nan)
+            # index used to also print the absolute value
+            distance_nearest = np.nanmin(abs(distances), axis=0)
             self.excel_results[attempt]['dist'] = dict()  # intialize new key
-            self.excel_results[attempt]['dist']['nn'] = distance_nearest  # all nearest neighbour distances
-            self.excel_results[attempt]['dist']['avg'] = np.mean( distance_nearest )  # average nearest neighbour distance
+            # all nearest neighbour distances
+            self.excel_results[attempt]['dist']['nn'] = distance_nearest
+            self.excel_results[attempt]['dist']['avg'] = np.mean(
+                distance_nearest)  # average nearest neighbour distance
             distance_min_index = np.nanargmin(distance_nearest)
-            self.excel_results[attempt]['dist']['min'] = distance_nearest[distance_min_index]  # minimal nearest neighbour distance
-            self.excel_results[attempt]['dist']['abs_value'] = self.excel_results[attempt]['best_output'][distance_min_index]  # this is the absolute value of one of the nearest distances
+            # minimal nearest neighbour distance
+            self.excel_results[attempt]['dist']['min'] = distance_nearest[distance_min_index]
+            # this is the absolute value of one of the nearest distances
+            self.excel_results[attempt]['dist']['abs_value'] = self.excel_results[attempt]['best_output'][distance_min_index]
             # If we have an IOscaler class, our inputs gets scaled. Therefore overwrite the wrong inputs in data:
             if self.configs['algorithm_configs']['processor']['network_type'] == 'IOnet':
-                self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu().detach().numpy().copy()
-                self.excel_results[attempt]['regularizer_interval'] = [self.algorithm.processor.output_high, self.algorithm.processor.output_low]
-                self.excel_results[attempt]['control_voltages'] = self.algorithm.processor.get_control_voltages().cpu().detach().numpy().copy()
+                self.excel_results[attempt]['inputs'] = self.algorithm.processor.input.cpu(
+                ).detach().numpy().copy()
+                self.excel_results[attempt]['regularizer_interval'] = [
+                    self.algorithm.processor.output_high, self.algorithm.processor.output_low]
+                self.excel_results[attempt]['control_voltages'] = self.algorithm.processor.get_control_voltages(
+                ).cpu().detach().numpy().copy()
             self.excel_file.add_result(self.excel_results[attempt])
 #            print(f"offset is {self.excel_results[attempt]['processor'].offset}")
 #            print(f"scaling is {self.excel_results[attempt]['processor'].scaling}")
         # Find best attempt:
         min_dist = []
         for results in self.excel_results:
-            min_dist.append( np.nanmin( results['dist']['min'] ) )
+            min_dist.append(np.nanmin(results['dist']['min']))
         self.best_attempt_index = np.argmax(min_dist)
 
         # Save data to specific excel file
@@ -239,12 +260,14 @@ class FilterFinder():
         #print('Fill main disabled')
 
         # Plot best output
-        self.plot_best_filter(self.excel_results, self.best_attempt_index, self.show_plots, self.save_plot)
+        self.plot_best_filter(self.excel_results,
+                              self.best_attempt_index, self.show_plots, self.save_plot)
         return self.excel_results
 
-#%% Testing
+
+# %% Testing
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
     configs = load_configs('configs/tasks/filter_finder/template_ff_gd_succesrun.yaml')
-    task = FilterFinder(configs['filter_finder'], is_main=True) #initialize class
+    task = FilterFinder(configs['filter_finder'], is_main=True)  # initialize class
     excel_results = task.find_filter()

@@ -1,0 +1,14 @@
+processor:
+    results_base_dir: tmp/output/useless_stuff
+    architecture: single_device
+    platform: simulation
+    simulation_type: neural_network
+    processor_type: dnpu                                                           #IOnet, dnpu, ...
+    torch_model_dict: tmp/input/models/model_brains19032020.pt
+    use_noise: false
+    input_indices: [1,2,3,4]
+    input_electrode_no: 7                                                           # The total amount of input electrodes. Required for the processor to determine the control electrodes.
+    waveform:
+        amplitude_lengths: 1                                                        # In simulation, you can set this to 0 to just feed one datapoint.
+        slope_lengths: 0
+        output_clipping_value: 3.55

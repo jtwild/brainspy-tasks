@@ -16,17 +16,20 @@ class CapacityTest():
         self.configs = configs
         self.current_dimension = configs['from_dimension']
         configs = self.init_dirs(configs)
-        self.vcdimension_test = VCDimensionTest(configs['vc_dimension_test'], is_main=False)
+        self.vcdimension_test = VCDimensionTest(
+            configs['vc_dimension_test'], is_main=False)
 
     def init_dirs(self, configs):
-        base_dir = create_directory_timestamp(configs['results_base_dir'], 'capacity_test')
+        base_dir = create_directory_timestamp(
+            configs['results_base_dir'], 'capacity_test')
         configs['vc_dimension_test']['results_base_dir'] = base_dir
         self.configs_dir = os.path.join(base_dir, 'test_configs.json')
         return configs
 
     def run_test(self, validate=False):
         print('*****************************************************************************************')
-        print(f"CAPACITY TEST FROM VCDIM {self.configs['from_dimension']} TO VCDIM {self.configs['to_dimension']} ")
+        print(
+            f"CAPACITY TEST FROM VCDIM {self.configs['from_dimension']} TO VCDIM {self.configs['to_dimension']} ")
         print('*****************************************************************************************')
         save(mode='configs', file_path=self.configs_dir, data=configs)
         while True:
@@ -47,7 +50,8 @@ class CapacityTest():
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
-    configs = load_configs('configs/benchmark_tests/capacity/template_ga_simulation.json')
+    configs = load_configs(
+        'configs/benchmark_tests/capacity/template_ga_simulation.json')
 
     test = CapacityTest(configs['capacity_test'])
     test.run_test(validate=False)

@@ -17,7 +17,8 @@ filter_finder:
             architecture: single_device
             platform: simulation
             simulation_type: neural_network
-            network_type: IOnet
+            processor_type: dnpu
+            network_type: dnpu
             IOinfo:
                 mode: multi_scaler
                 output_high: 110
@@ -39,7 +40,7 @@ filter_finder:
             use_checkpoints: false
             save_dir: algorithm_checkpoints
             save_interval: 200
-            live_plot: false
+            live_plot: true
             live_plot_interval: 20
     boolean_gate_test:
         validation:
