@@ -3,7 +3,7 @@
     "torch_model_dict": "tmp/input/models/darwin_model_12h_hans.pt",
     },
 "perturbation":{
-    "electrodes_sets": [[0], [2], [4], [6]],
+    "electrodes_sets": [[0], [1], [2], [3],[4],[5],[6]],
     "perturb_fraction_sets": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     },
 "data": {
