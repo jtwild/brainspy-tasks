@@ -36,15 +36,16 @@ for i in range(len(perturb_fraction_sets)):
         error_subsets, grid, ranges = pert.sort_by_input_voltage(inputs_unperturbed[:, electrode], error,
                                                             min_val=-0.7, max_val=0.3, granularity=0.2)
         pert.plot_hists(np.abs(error_subsets), ax=axs_hist[counter], legend=grid.round(2).tolist())
-        pert.rank_low_to_high(grid, pert.np_object_array_mean(np.abs(error_subsets)),
+        pert.rank_low_to_high(grid,
+                              np.sqrt(pert.np_object_array_mean(error_subsets**2)),
                               do_plot=True, ax=axs_bar[counter])
-        axs_bar[counter].set_ylabel('Avg. error (nA)')
+        axs_bar[counter].set_ylabel('RMSE (nA)')
         # And root mean square error
         rmse[i, j] = np.sqrt(np.mean(error**2))
         counter += 1
 
 # Visualize results
-fig_bar.suptitle('Voltage range ranking based on avg. abs. error')
+fig_bar.suptitle('Voltage range ranking based on RMSE on interval')
 # Ranking electrode importance
 pert.rank_low_to_high(electrodes_sets, rmse[0, :], do_plot=True)
 plt.ylabel('RMSE (nA)))')

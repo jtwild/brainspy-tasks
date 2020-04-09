@@ -144,12 +144,13 @@ def rank_low_to_high(descriptions, values, do_plot=False, ax=None):
     return ranking, ranked_values
 
 
-def np_object_array_mean(arr):
+def np_object_array_mean(obj_arr):
     # Takes the averages of the object elements of a numpy array.
     # Because if you have a numpy array of a numpy array, just using np.mean(arr, axis=0) does not work.
-    for i in range(arr.size):
-        arr[i] = arr[i].mean()
-    return arr
+    float_arr = np.zeros(obj_arr.size)
+    for i in range(obj_arr.size):
+        float_arr[i] = obj_arr[i].mean()
+    return float_arr
 
 
 # %% Example c0de
