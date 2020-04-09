@@ -1,0 +1,13 @@
+{
+"processor": {
+    "torch_model_dict": "tmp/input/models/darwin_model_12h_hans.pt",
+    },
+"perturbation":{
+    "electrodes_sets": [[0],[1],[2],[0, 1, 2]],
+    "perturb_fraction_sets": [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3]
+    },
+"data": {
+    "input_data_file": "tmp/input/data/darwin_2020_03_11/test_data.npz",
+    "perturbed_data_file": "tmp/input/data/darwin_2020_03_11/perturbed_data.npz"
+    }
+}

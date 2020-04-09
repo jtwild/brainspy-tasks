@@ -16,6 +16,8 @@ from bspyalgo.utils.io import load_configs
 from bspysmg.model.data.outputs import test_model
 
 # %% Below are all the functions used for this purpose
+
+
 def perturb_data(configs, save_data=False, steps=1):
     # Adds noise to a specific electrode of a set of input data
     # Noise gets added to electrodes in configs['perturbation']['electrodes']
@@ -123,6 +125,8 @@ def plot_hists(values, ax=None, n_bins=15, legend=None):
 def rank_low_to_high(descriptions, values, do_plot=False, ax=None):
     # Ranks the descriptions according to the values, and potentially makes a barplot out of it.
     # Potentially plots in a specified axes
+    descriptions = np.array(descriptions)
+    values = np.array(values)
     ranking_indices = np.argsort(-values)  # take negative of slope to order the slope from largest (most positive -> most negative) to smallest
     ranking = descriptions[ranking_indices]
     ranked_values = values[ranking_indices]
@@ -136,8 +140,6 @@ def rank_low_to_high(descriptions, values, do_plot=False, ax=None):
             s = np.array2string(np.array(ranking[j]))
             xy = [j, ranked_values[j]]
             ax.annotate(s, xy)
-        ax.set_title(f"Ranking: \n \
-                       {np.array2string(ranking.round(2).flatten())}")
         ax.set_xlabel('Ranking')
     return ranking, ranked_values
 
@@ -153,7 +155,7 @@ def np_object_array_mean(arr):
 # %% Example c0de
 if __name__ == "__main__":
     # User variables
-    configs = load_configs('configs/validation/perturbation_configs.json')
+    configs = load_configs('configs/validation/single_perturbation_all_electrodes_configs.json')
 
     # Get inputs and do error calculation
     electrodes_sets = configs['perturbation']['electrodes_sets']
@@ -212,5 +214,7 @@ if __name__ == "__main__":
         linear_params[0, j], linear_params[1, j] = clf.intercept_, clf.coef_[0]
 
     # Ranking electrode importance
-    ranking, ranked_values = rank_low_to_high(electrodes_sets, linear_params[1, :], do_plot=True)
+    #ranking, ranked_values = rank_low_to_high(electrodes_sets, linear_params[1, :], do_plot=True)
+    rank_low_to_high(electrodes_sets, rmse[0, :], do_plot=True)
     plt.ylabel('Slope (RMSE / noise fraction)')
+    plt.title('Electrode ranking based on RMSE')
