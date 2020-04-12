@@ -5,38 +5,20 @@ Created on Thu Apr  9 12:02:19 2020
 @author: Jochem
 """
 # %% Load packages
-from sklearn import linear_model
-import bspytasks.validation.electrode_ranking.perturbation_utils as pert
 import numpy as np
 import matplotlib.pyplot as plt
+import bspytasks.validation.electrode_ranking.perturbation_utils as pert
+from sklearn import linear_model
 from bspyalgo.utils.io import load_configs
 
 # %% Gather data
 # User variables
 configs = load_configs('configs/validation/multi_perturbation_multi_electrodes_configs.json')
-
-# Get inputs
 electrodes_sets = configs['perturbation']['electrodes_sets']
 perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
 
-# Initialize arrays and plots
-rmse = np.zeros((len(perturb_fraction_sets), len(electrodes_sets)))
-counter = 0
-# Loop over required params
-for i in range(len(perturb_fraction_sets)):
-    configs['perturbation']['perturb_fraction'] = perturb_fraction_sets[i]
-    for j in range(len(electrodes_sets)):
-        configs['perturbation']['electrodes'] = electrodes_sets[j]
-        electrode = electrodes_sets[j][0]  # does not work if more than one electrode is perturbed..., so 'fixed' by taking only first component.
-        # Perturb data, get prediciton, get error, get rmse
-        inputs_perturbed, targets, info, inputs_unperturbed = pert.perturb_data(configs, save_data=False)
-        targets = targets.flatten()
-        prediction = pert.get_prediction(configs, inputs_perturbed)
-        # Real error
-        error = prediction - targets  # for unkown size,s can use lists [([[]]*10)]*5 and convert to numpy afterwards
-       # And root mean square error
-        rmse[i, j] = np.sqrt(np.mean(error**2))
-        counter += 1
+# Get rmse, compare to unperturbed simulation output
+rmse = pert.get_perturbed_rmse(configs, compare_to_measurement=False, return_error=True)
 
 # %% Visualize results
 plt.figure()

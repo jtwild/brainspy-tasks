@@ -17,28 +17,32 @@ from bspysmg.model.data.outputs import test_model
 
 # %% Below are all the functions used for this purpose
 
+def load_data(configs, steps=1):
+    # Load input data
+    input_file = configs["data"]['input_data_file']
+#    inputs, outputs, info = test_model.load_data(input_file, steps)
+    return test_model.load_data(input_file, steps)
 
-def perturb_data(configs, save_data=False, steps=1):
+def perturb_data(configs, inputs_unperturbed, save_data=False, steps=1):
     # Adds noise to a specific electrode of a set of input data
     # Noise gets added to electrodes in configs['perturbation']['electrodes']
     # with an peak-peak amplitude of configs['perturbation']['perturb_fraction'] *100% of
     # that electrodes current value range
 
-    # Load input data
-    input_file = configs["data"]['input_data_file']
-    output_file = configs['data']['perturbed_data_file']
+    # Load config data
     electrodes = configs['perturbation']['electrodes']
     perturb_fraction = configs['perturbation']['perturb_fraction']
-    inputs_unperturbed, outputs, info = test_model.load_data(input_file, steps)
+
     # Perturb the data of the required electrodes
     inputs_perturbed = np.copy(inputs_unperturbed)
     for i in electrodes:
         amplitude = perturb_fraction * (inputs_perturbed[:, i].max() - inputs_perturbed[:, i].min())
         inputs_perturbed[:, i] = inputs_perturbed[:, i] + np.random.uniform(low=-amplitude / 2, high=+amplitude / 2, size=inputs_perturbed[:, i].shape)
-    # Save perturbed data such that it can be read by the (existing) test_model.get_error(.) function
+    # Save perturbed data such that it can be read by the (existing) test_model.get_error(.) function -> broken funcitonality with update
     if save_data:
-        np.savez(output_file, inputs=inputs_perturbed, outputs=outputs, info=info, inputs_unperturbed=inputs_unperturbed)
-    return inputs_perturbed, outputs, info, inputs_unperturbed
+        output_file = configs['data']['perturbed_data_file']
+        np.savez(output_file, inputs_perturbed=inputs_perturbed)
+    return inputs_perturbed
 
 
 def get_prediction(configs, inputs, batch_size=2048):
@@ -59,7 +63,7 @@ def get_prediction(configs, inputs, batch_size=2048):
     return prediction
 
 
-def get_perturbed_rmse(configs):
+def get_perturbed_rmse(configs, compare_to_measurement=False, return_error=False):
     # Gets the RMSE due to all perturbation specified in the config
     # Loops over configs['perturbation']['electrodes_sets'] and
     # over['perturbation']['perturb_fraction_sets']
@@ -67,19 +71,30 @@ def get_perturbed_rmse(configs):
     # Load config data:
     electrodes_sets = configs['perturbation']['electrodes_sets']
     perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
+
+  # Load unperturbed data
+  inputs_unperturbed, targets_measured, info = load_data(configs)
+   if compare_to_measurement:
+        targets = targets_measured.flatten()
+    else:
+        targets = get_prediction(configs, inputs_unperturbed).flatten()
+
     # Preallocate array and start loop
     rmse = np.zeros((len(perturb_fraction_sets), len(electrodes_sets)))
+    error = np.zeros((len(perturb_fraction_sets),len(electrodes_sets),len(targets)))
     for i in range(len(perturb_fraction_sets)):
         configs['perturbation']['perturb_fraction'] = perturb_fraction_sets[i]
         for j in range(len(electrodes_sets)):
             configs['perturbation']['electrodes'] = electrodes_sets[j]
             # Perturb data, get prediciton, get error, get rmse
-            inputs_perturbed, targets, info, inputs_unperturbed = perturb_data(configs, save_data=False)
-            targets = targets.flatten()
+            inputs_perturbed = perturb_data(configs, inputs_unperturbed)
             prediction = get_prediction(configs, inputs_perturbed)
-            error = prediction - targets
+            error[i,j,:] = prediction - targets
             rmse[i, j] = np.sqrt(np.mean(error**2))
-    return rmse
+    if return_error:
+        return rmse, error
+    else:
+        return rmse
 
 
 def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None):
