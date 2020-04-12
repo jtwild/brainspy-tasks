@@ -21,10 +21,6 @@ perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
 
 # Initialize arrays and plots
 rmse = np.zeros((len(perturb_fraction_sets), len(electrodes_sets)))
-fig_hist, axs_hist = plt.subplots(2, 4)
-axs_hist = axs_hist.flatten()
-fig_bar, axs_bar = plt.subplots(2, 4)
-axs_bar = axs_bar.flatten()
 counter = 0
 # Loop over required params
 for i in range(len(perturb_fraction_sets)):
