@@ -57,5 +57,5 @@ ani = FuncAnimation(fig, update, frames=frames,
                     init_func=init, blit=True)
 # Saving the animation has dependency:
 # conda install -c conda-forge ffmpeg
+ani.save(r'tmp/output/perturbation_animation.mp4')
 plt.show()
-ani.save(r'tmp/output/animation.mp4')
