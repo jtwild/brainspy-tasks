@@ -21,6 +21,7 @@ perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
 # Get rmse, compare to unperturbed simulation output (not to measurement output)
 error = pert.get_perturbed_rmse(configs, compare_to_measurement=False, return_error=True)[1]
 error = error.squeeze(axis=1)  # remove the electrodes_sets axis
+
 # %% Create animated plot
 # User variables
 fig, ax = plt.subplots()
@@ -41,7 +42,6 @@ def init():
     ax.set_ylim([0, 1.2])
     ax.plot(ax.get_xlim(), [0, 1], color='black')  # line to converge to
     ax.grid(b=True)
-    plt.show()
     return ln, text
 
 
