@@ -9,53 +9,116 @@ Created on Thu Feb  6 15:19:29 2020
 #TODO: Add diamond generation for larger seperation
 import numpy as np
 
-
 # %% Generation itself
-def generate_unsorted_points(input_dim):
-    sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2. Old point:
-    # check inputs
-    num_points = 2**input_dim * len(sets)  # get maximum number of points possible with the given sets
-    for i in sets:
-        if len(i) != 2:
-            raise ValueError('Program was only written to make hypercubes, so only 2 points per set! Change the input sets.')
+def generate_unsorted_points(input_dim, voltage_intervals = [-0.7, 0.3], num_levels = 2):
+    # Auto generates a set of coordinates in N dimensional space (N=input_dim)
+    # possibly with multiple levels per electrode interval (given by num_levels_per_electrode)
+    # and possibly on a different voltage interval per electrode.
+    # if voltage interval is 1D, same interval used for all electrodes. Dimension must be 2, min and max voltage.
+    # if voltage interval is 2D, outer dimension must match input_dim and an interval per electrode is used
+    # if voltage_interval is 3D, the script will basically repeated N times, where N is the outer dimension of voltage_intervals_per electrode.
+    # If num_levels is 0D, same amount of levels for all electrodes.
+    # If num_levels is 1D, custom level per electrode.
 
-    # loop em up
-    samples = np.zeros([input_dim, num_points])
-    index = np.zeros(input_dim, dtype=int)
-    done = False
-    for s in sets:
-        # slightly ugly command to built a meshgrid with the required amount of dimensions
-        #coor = np.array([]);
+    # Reshape the voltage intervals to always be 3D shape.
+    voltage_intervals = np.array(voltage_intervals)
+    if voltage_intervals.ndim == 1:
+        assert voltage_intervals.shape == (2,), "Voltage intervals not understood. Inner dimension must be of size 2: (min, max)."
+        voltage_intervals = voltage_intervals.reshape(1,1,2)
+        voltage_intervals = np.repeat(voltage_intervals, input_dim, axis=1)
+        # final shape: (1,input_dim, 2).
+    elif voltage_intervals.ndim == 2:
+        assert voltage_intervals.shape == (input_dim, 2), "Voltage intervals not understood. See source code for examples. "
+        voltage_intervals = voltage_intervals.reshape(1,input_dim,2)
+        # final shape (1,input_dim, 2)
+    assert voltage_intervals.ndim == 3 and voltage_intervals.shape[1:]==(input_dim,2)
+    # Reshape num_levels to always be 1D, elements are the numbers, dimension is the electrode
+    num_levels = np.array(num_levels, dtype=int)
+    if num_levels.ndim == 0:
+        num_levels = num_levels.reshape(1,)
+        num_levels = np.repeat(num_levels, input_dim, axis=0)
+    elif num_levels.ndim > 1:
+        raise ValueError('Number of levels input not understood. See source code for valid inputs.')
+
+    # Now our input has right format, continue to point generation
+    coordinates = np.empty((input_dim,0))
+    for electrode_intervals in voltage_intervals:
+        vectors_encoded = np.zeros(input_dim, dtype=object)
+        for i in range(input_dim):
+            # unfortunately, we cannot use variable step size icw np.linspace, so we need to loop
+            vectors_encoded[i] = np.linspace(electrode_intervals[i,0], electrode_intervals[i,1], num=num_levels[i])
+        # Now get the meshgrid with the points
         if input_dim == 1:
-            coor = np.meshgrid(s)
+            grid = np.meshgrid(vectors_encoded[0])
         elif input_dim == 2:
-            coor = np.meshgrid(s,s)
+            grid = np.meshgrid(vectors_encoded[0], vectors_encoded[1])
         elif input_dim == 3:
-            coor = np.meshgrid(s,s,s)
+            grid = np.meshgrid(vectors_encoded[0], vectors_encoded[1],
+                               vectors_encoded[2])
         elif input_dim == 4:
-            coor = np.meshgrid(s,s,s,s)
+            grid = np.meshgrid(vectors_encoded[0], vectors_encoded[1],
+                               vectors_encoded[2], vectors_encoded[2])
         elif input_dim == 5:
-            coor = np.meshgrid(s,s,s,s,s)
+            grid = np.meshgrid(vectors_encoded[0], vectors_encoded[1],
+                               vectors_encoded[2], vectors_encoded[3],
+                               vectors_encoded[4])
         elif input_dim == 6:
-            coor = np.meshgrid(s,s,s,s,s,s)
+            grid = np.meshgrid(vectors_encoded[0], vectors_encoded[1],
+                               vectors_encoded[2], vectors_encoded[3],
+                               vectors_encoded[4], vectors_encoded[5])
         else:
-            raise ValueError('Input dimensions not implemented. Please add manually to code.')
-        dim = 0
-        for i in coor:
-            # flatten the numpy array such that we can paste it in the samples array
-            i = i.flatten()
-            if index[dim] + len(i) >= num_points:
-                # this means we have too many points, throw away some
-                i = i[0 : (num_points - index[dim])]
-                # also, we are done with filling after we have filled all these dimensions
-                done = True
-            samples[dim, index[dim] : index[dim]+len(i) ] = i
-            index[dim] = index[dim]+len(i)
-            dim +=1
-        if done:
-            break
-        # else, continue onto next set of points
-    return samples
+            raise ValueError('Input dimension not yet implemented. Add to sourcecode.')
+        coordinates = np.append(coordinates, np.reshape(grid, (input_dim, -1)), axis=1 )
+    return coordinates
+
+#%% ha
+#def generate_unsorted_points(input_dim):
+##    sets = [[-1.2, 0.6], [-0.6, 0.0]]  # must be X by 2. Old point:
+#    sets = [[-1.2, 0.6]]
+#    # check inputs
+#    num_points = 2**input_dim * len(sets)  # get maximum number of points possible with the given sets
+#    for i in sets:
+#        if len(i) != 2:
+#            raise ValueError('Program was only written to make hypercubes, so only 2 points per set! Change the input sets.')
+#
+#    # loop em up
+#    samples = np.zeros([input_dim, num_points])
+#    index = np.zeros(input_dim, dtype=int)
+#    done = False
+#    for s in sets:
+#        # slightly ugly command to built a meshgrid with the required amount of dimensions
+#        #coor = np.array([]);
+#        if input_dim == 1:
+#            coor = np.meshgrid(s)
+#        elif input_dim == 2:
+#            coor = np.meshgrid(s,s)
+#        elif input_dim == 3:
+#            coor = np.meshgrid(s,s,s)
+#        elif input_dim == 4:
+#            coor = np.meshgrid(s,s,s,s)
+#        elif input_dim == 5:
+#            coor = np.meshgrid(s,s,s,s,s)
+#        elif input_dim == 6:
+#            coor = np.meshgrid(s,s,s,s,s,s)
+#        else:
+#            raise ValueError('Input dimensions not implemented. Please add manually to code. \
+#                             Or even better, fix this ugly hardcoding.')
+#        dim = 0
+#        for i in coor:
+#            # flatten the numpy array such that we can paste it in the samples array
+#            i = i.flatten()
+#            if index[dim] + len(i) >= num_points:
+#                # this means we have too many points, throw away some
+#                i = i[0 : (num_points - index[dim])]
+#                # also, we are done with filling after we have filled all these dimensions
+#                done = True
+#            samples[dim, index[dim] : index[dim]+len(i) ] = i
+#            index[dim] = index[dim]+len(i)
+#            dim +=1
+#        if done:
+#            break
+#        # else, continue onto next set of points
+#    return samples
 
 def sort_points(coordinates):
     # First dimension defines the dimensional coordinate of the point, the second dimension defines the point number
@@ -66,11 +129,7 @@ def sort_points(coordinates):
     for n1 in range(number_of_points):
         for n2 in range(number_of_points):
             # we do not have to evaluate the lower triangle of the square matrix, that is double information, but okay.
-            temp_distance = 0
-            for d in range(dimension):
-                # We calculate each distance twice, inefficient, but okay.
-                temp_distance += (coordinates[d, n1] - coordinates[d, n2] ) **2
-            distance[n1, n2] = temp_distance
+            distance[n1,n2] = np.sum((coordinates[:, n1] - coordinates[:, n2] ) **2)
     # Now we know the distances between points, we can start ordering
     sorted_coordinates = np.zeros_like(coordinates)
     # Start intial two points
@@ -87,17 +146,22 @@ def sort_points(coordinates):
         distance[index, sorted_set] = np.nan
         distance[sorted_set, index] = np.nan
         sorted_set.append(index)
+        #TODO: Update sorting to sort by a sum of maxed distances, instead of only the maximum closest distance as is used now
     return coordinates[:,sorted_set]
 
 
 def flat_index_to_dimensional_index(flat_index, test_array):
+    # Links the index of a flattened array (given by flat_index) to
+    # the 2D index the un-flattened array (given by test_array) would have
+    assert flat_index <= test_array.size, "Index too large for this array!"
+    assert test_array.ndim == 2, "Test array must be 2 dimensional!"
     xmax = np.shape(test_array)[0]
     y = flat_index % xmax  # modulus
     x = int( flat_index / xmax )
     return [x,y]
 
-def generate_sorted_points(vc_dim, input_dim):
-    unsorted_points = generate_unsorted_points(input_dim)
+def generate_sorted_points(vc_dim, input_dim, voltage_intervals, num_levels):
+    unsorted_points = generate_unsorted_points(input_dim, voltage_intervals=voltage_intervals, num_levels=num_levels)
     if vc_dim > np.shape(unsorted_points)[1]:
         raise ValueError('Too many points requested! Either add generation sets in main file, or lower VC dimension.')
     sorted_points = sort_points( unsorted_points )
@@ -105,14 +169,16 @@ def generate_sorted_points(vc_dim, input_dim):
     return sorted_points[:,0:vc_dim]
 
 # %% Test code
-
+# Make a rotating 3D plot which labels the points by the order thet are given by the sorted point generator
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
     vc_dim = 16
     input_dim = 3
-    points = generate_sorted_points(vc_dim, input_dim)
+    num_levels = [3, 3, 4]
+    voltage_intervals = [[-1.2, 0.6], [-0.7, 0.3],[-0.1, 0.1]]
+    points = generate_sorted_points(vc_dim, input_dim, voltage_intervals, num_levels)
 
     if input_dim == 2:
         # Show results in a plot
@@ -136,7 +202,7 @@ if __name__ == '__main__':
             ax.text(points[0][i], points[1][i], points[2][i], str(i), size=15, zorder=0)
         plt.grid('on')
         plt.show()
-        for angle in range(0, 3*360):
+        for angle in range(0, 360):
             ax.view_init(30, angle)
             plt.draw()
             plt.pause(.001)
