@@ -26,16 +26,7 @@ class VCDimDataManager():
 
         #added by Jochem for multi dim input:
         self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
-        self.auto_generate_inputs = configs['boolean_gate_test']['algorithm_configs']['processor']['auto_generate_inputs']
-        # Perhaps the error checking below is already in the lower level code?
-        #self.output_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices'] )
-        #for inp in configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']:
-        #    for outp in configs['boolean_gate_test']['algorithm_configs']['processor']['output_indices']:
-        #        if inp == outp:
-        #            raise ValueError('Input dimensions also defined as output dimension! Adjust config template to fix.')
-                    #is this the best way to raise an error?
-        #if self.input_dim + self.output_dim >= configs['boolean_gate_test']['algorithm_configs']['processor']['num_elec'] -1:
-        #    raise ValueError('The input and output electrodes fully occupy all electrodes. No electrodes left as control elecrodes. Adjust config template to fix.')
+        self.auto_generate_inputs = configs['auto_generate_inputs']
 
     def get_shape(self, vcdim, validation):
         slope_lengths = self.get_slopes(validation)
@@ -119,19 +110,18 @@ class VCDimDataManager():
             if self.input_dim == 2:
                 if vc_dimension <= len(X):
                     return [X[:vc_dimension], Y[:vc_dimension]]
+                else:
+                    raise VCDimensionException()
             elif self.input_dim ==3:
+                dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
+                dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
+                dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
                 if vc_dimension <= len(dim1):
-                    dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
-                    dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
-                    dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
                     return [dim1[0:vc_dimension], dim2[0:vc_dimension], dim3[0:vc_dimension]]
                 else:
                     raise VCDimensionException()
             else:
                 return VCDimensionException()
-                        
-            else:
-                raise VCDimensionException()
             # if vc_dimension == 4:
             #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
             # elif vc_dimension == 5:

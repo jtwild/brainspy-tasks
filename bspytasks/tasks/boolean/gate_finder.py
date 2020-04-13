@@ -30,7 +30,7 @@ class BooleanGateTask():
     def load_task_configs(self, configs):
         self.show_plots = configs['show_plots']
         self.scale_plots = configs['scale_plots']
-        self.base_dir = configs['results_dir']
+        self.base_dir = configs['results_base_dir']
         self.max_attempts = configs['max_attempts']
 
     def init_dirs(self, gate):
@@ -75,7 +75,7 @@ class BooleanGateTask():
                         print(f'VEREDICT: FAILED - Gate was NOT found in {str(attempt)} attempt(s)')
                     print('==========================================================================================')
                     #  in get_plot_dir
-                    self.plot_gate(excel_results, mask, str(gate), show_plots=self.show_plots, save_dir=self.get_plot_dir(gate, base_dir))
+                    self.plot_gate(excel_results, mask, str(gate), self.show_plots, save_dir=self.get_plot_dir(gate, base_dir), scaled=self.scale_plots)
                     break
                 else:
                     attempt += 1
@@ -131,7 +131,7 @@ class BooleanGateTask():
 
         return excel_results
 
-    def plot_gate(self, row, mask, show_plots, save_dir=None, scaled=False):
+    def plot_gate(self, row, mask, gate, show_plots, save_dir=None, scaled=False):
         plt.figure()
         plt.title(gate + ' ' + self.is_found(row['found']))
         plt.step(range(len(row['best_output'][mask])), row['best_output'][mask], where='mid' )
@@ -149,7 +149,6 @@ class BooleanGateTask():
             plt.savefig(save_dir)
         if show_plots:
             plt.show()
-        plt.close()
 
     def clip(self, x, max_value, min_value):
         x[x > max_value] = max_value

@@ -25,18 +25,20 @@ class VCDimensionTest():
         self.data_manager = VCDimDataManager(configs)
         self.base_dir = configs['results_base_dir']
         self.threshold_parameter = configs['threshold_parameter']
+        self.show_plots = configs['show_plots']
         self.is_main = is_main
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
 
     def load_boolean_gate_configs(self, configs):
         self.boolean_gate_test_configs = configs
-        self.show_plots = configs['show_plots']
         self.load_algorithm_configs(configs)
         self.excel_file = None
 
     def load_algorithm_configs(self, configs):
         self.amplitude_lengths = configs['algorithm_configs']['processor']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['algorithm_configs']['processor']['waveform']['slope_lengths']
+        self.input_dim = len(configs['algorithm_configs']['processor']['input_indices'])
+        self.control_dim = configs['algorithm_configs']['processor']["input_electrode_no"] - self.input_dim
 
     def init_dirs(self, vc_dimension):
         results_folder_name = f'vc_dimension_{vc_dimension}'
@@ -85,7 +87,7 @@ class VCDimensionTest():
         performance_array = np.zeros_like(accuracy_array)
         found_array = np.zeros_like(accuracy_array)
         correlation_array = np.zeros_like(accuracy_array)
-        control_voltages_per_gate = np.zeros((number_gates, 5))  # TODO: un-hard code nr. dimensions
+        control_voltages_per_gate = np.zeros((number_gates, self.control_dim))  # TODO: un-hard code nr. dimensions
 
         length_waveform = len(self.transformed_inputs)
         output_array = np.zeros((number_gates, length_waveform))
