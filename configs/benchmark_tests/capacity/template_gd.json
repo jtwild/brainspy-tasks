@@ -25,7 +25,7 @@
                                     "architecture":"single_device",
                                     "platform": "simulation",
                                     "simulation_type": "neural_network",
-                                    "network_type": "dnpu",
+                                    "processor_type": "dnpu",
                                     "torch_model_dict": "tmp/input/models/trained_network_12122019_noise.pt",
                                     "auto_generate_inputs": true,
                                     "input_indices": [3, 4],
