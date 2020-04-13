@@ -20,8 +20,7 @@
                       "architecture_type":"221",
                       "batch_norm":true,
                       "platform": "simulation",
-                      "simulation_type": "neural_network",
-                      "network_type": "dnpu",
+                      "processor_type": "dnpu",
                       "torch_model_dict": "tmp/input/models/trained_network_12122019.pt",
                       "debug":true,
                       "input_indices": [3, 4],
@@ -42,7 +41,6 @@
             },
             "checkpoints": {
               "use_checkpoints": false,
-              "save_dir": "tmp/output/ring/checkpoints",
               "save_interval": 5
             }
     },

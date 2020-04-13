@@ -3,10 +3,12 @@ import bspyproc.utils.waveform as waveform
 from bspyproc.utils.pytorch import TorchUtils
 from bspytasks.benchmarks.vcdim.vc_dimension_sorted_point_generator import generate_sorted_points
 
-
-ZERO = -1.2
-ONE = 0.6
-QUARTER = (abs(ZERO) + abs(ONE)) / 4
+# ZERO = -0.5
+# ONE = 0.5
+# QUARTER =  (abs(ZERO) + abs(ONE)) / 4
+# TODO: Include this is the configuration file
+X = [-0.7, -0.7, 0.5, 0.5, -0.35, 0.25, 0.0, 0.0]
+Y = [-0.7, 0.5, -0.7, 0.5, 0.0, 0.0, -0.35, 0.25]
 
 
 class VCDimDataManager():
@@ -14,7 +16,9 @@ class VCDimDataManager():
     def __init__(self, configs):
         self.amplitude_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['amplitude_lengths']
         self.slope_lengths = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['slope_lengths']
-        self.use_waveform = configs['boolean_gate_test']['algorithm_configs']['processor']['waveform']['use_waveform']
+        self.validation_amplitude_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['amplitude_lengths']
+        self.validation_slope_lengths = configs['boolean_gate_test']['validation']['processor']['waveform']['slope_lengths']
+        self.use_waveform = True
         if configs['boolean_gate_test']['algorithm_configs']['algorithm'] == 'gradient_descent' and configs['boolean_gate_test']['algorithm_configs']['processor']['platform'] == 'simulation':
             self.use_torch = True
         else:
@@ -33,22 +37,45 @@ class VCDimDataManager():
         #if self.input_dim + self.output_dim >= configs['boolean_gate_test']['algorithm_configs']['processor']['num_elec'] -1:
         #    raise ValueError('The input and output electrodes fully occupy all electrodes. No electrodes left as control elecrodes. Adjust config template to fix.')
 
-    def get_data(self, vc_dimension, verbose=True):
-        readable_inputs, transformed_inputs = self.get_inputs(vc_dimension)
-        readable_targets, transformed_targets = self.get_targets(vc_dimension, verbose)
-        mask = waveform.generate_mask(readable_targets[1], self.amplitude_lengths, slope_lengths=self.slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
+    def get_shape(self, vcdim, validation):
+        slope_lengths = self.get_slopes(validation)
+        amplitude_lengths = self.get_amplitudes(validation)
+        return (slope_lengths * (vcdim + 1)) + (amplitude_lengths * vcdim)
+
+    def get_slopes(self, validation):
+        if validation:
+            return self.validation_slope_lengths
+        else:
+            return self.slope_lengths
+
+    def get_amplitudes(self, validation):
+        if validation:
+            return self.validation_amplitude_lengths
+        else:
+            return self.amplitude_lengths
+
+    def generate_slopped_plato(self, vcdim):
+        shape = self.get_shape(vcdim, validation=True)
+        return waveform.generate_slopped_plato(self.validation_slope_lengths, shape)[np.newaxis, :]
+
+    def get_data(self, vc_dimension, verbose=True, validation=False):
+        amplitude_lengths = self.get_amplitudes(validation)
+        slope_lengths = self.get_slopes(validation)
+        readable_inputs, transformed_inputs = self.get_inputs(vc_dimension, validation)
+        readable_targets, transformed_targets = self.get_targets(vc_dimension, verbose, validation)
+        mask = waveform.generate_mask(readable_targets[1], amplitude_lengths, slope_lengths=slope_lengths)  # Chosen readable_targets[1] because it might be better for debuggin purposes. Any other label or input could be taken.
         readable_targets, transformed_targets, found = self.get_dictionaries(readable_inputs, transformed_inputs, readable_targets, transformed_targets)
         #from here, the targets are now dict instead of an array
         return readable_inputs, transformed_inputs, readable_targets, transformed_targets, found, mask
 
-    def get_inputs(self, vc_dimension):
+    def get_inputs(self, vc_dimension, validation=False):
         # readable inputs do not contain the waveform. Transformed does.
         if self.auto_generate_inputs:
             readable_inputs = generate_sorted_points(vc_dimension, self.input_dim)
         else:
             readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:
-            transformed_inputs = self.generate_inputs_waveform(readable_inputs)
+            transformed_inputs = self.generate_inputs_waveform(readable_inputs, validation)
         else:
             transformed_inputs = readable_inputs
         if self.use_torch:
@@ -74,10 +101,10 @@ class VCDimDataManager():
 
         return readable_targets_dict, transformed_targets_dict, found_dict
 
-    def get_targets(self, vc_dimension, verbose=True):
+    def get_targets(self, vc_dimension, verbose=True, validation=False):
         readable_targets = self.generate_test_targets(vc_dimension, verbose)
         if self.use_waveform:
-            transformed_targets = self.generate_targets_waveform(readable_targets)
+            transformed_targets = self.generate_targets_waveform(readable_targets, validation)
         else:
             transformed_targets = readable_targets
         if self.use_torch:
@@ -87,47 +114,52 @@ class VCDimDataManager():
 
     def generate_test_inputs(self, vc_dimension):
         # @todo create a function that automatically generates non-linear inputs
+        assert len(X) == len(Y), f"Number of data in both dimensions must be equal ({len(X)},{len(Y)})"
         try:
             if self.input_dim == 2:
-                # testing colinear points
-                if vc_dimension == 4:
-                    return [[ZERO, ZERO, ZERO, ZERO], [ONE, 0.0, -QUARTER, ZERO]]
-                # if vc_dimension == 4:
-                #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
-                elif vc_dimension == 5:
-                    return [[ZERO, ZERO, ONE, ONE, -QUARTER],
-                            [ONE, ZERO, ONE, ZERO, 0.0]]
-                elif vc_dimension == 6:
-                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER],
-                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0]]
-                elif vc_dimension == 7:
-                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
-                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
-                elif vc_dimension == 8:
-                    return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
-                            [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
-                else:
-                    raise VCDimensionException()
-            elif self.input_dim == 3:
-                dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
-                dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
-                dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
+                if vc_dimension <= len(X):
+                    return [X[:vc_dimension], Y[:vc_dimension]]
+            elif self.input_dim ==3:
                 if vc_dimension <= len(dim1):
+                    dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
+                    dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
+                    dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
                     return [dim1[0:vc_dimension], dim2[0:vc_dimension], dim3[0:vc_dimension]]
                 else:
                     raise VCDimensionException()
             else:
+                return VCDimensionException()
+                        
+            else:
                 raise VCDimensionException()
-
+            # if vc_dimension == 4:
+            #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
+            # elif vc_dimension == 5:
+            #     return [[ZERO, ZERO, ONE, ONE, QUARTER],
+            #             [ONE, ZERO, ONE, ZERO, 0.0]]
+            # elif vc_dimension == 6:
+            #     return [[ZERO, ZERO, ONE, ONE, QUARTER, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, QUARTER]]
+            # elif vc_dimension == 7:
+            #     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0]]
+            # elif vc_dimension == 8:
+            #     return [[ZERO, ZERO, ONE, ONE, -QUARTER, QUARTER, 0.0, 0.0],
+            #             [ONE, ZERO, ONE, ZERO, 0.0, 0.0, 1.0, -1.0]]
+            # else:
+            #     raise VCDimensionException()
         except VCDimensionException:
-            print('Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
+            print(
+                'Dimension Exception occurred. The selected VC Dimension is %d Please insert a value between ' % vc_dimension)
 
-    def generate_inputs_waveform(self, inputs):
+    def generate_inputs_waveform(self, inputs, validation=False):
         Warning('Waveform not tested for multi input dimension VC dim')
         #TODO: Test waveform generation
         inputs_waveform = np.array([])
+        amplitude_lengths = self.get_amplitudes(validation)
+        slope_lengths = self.get_slopes(validation)
         for inp in inputs:
-            input_waveform = waveform.generate_waveform(inp, self.amplitude_lengths, slope_lengths=self.slope_lengths)
+            input_waveform = waveform.generate_waveform(inp, amplitude_lengths, slope_lengths=slope_lengths)
             if inputs_waveform.shape == (0,):
                 inputs_waveform = np.concatenate((inputs_waveform, input_waveform))
             else:
@@ -162,10 +194,12 @@ class VCDimDataManager():
             print('===' * vc_dimension)
         return binary_targets
 
-    def generate_targets_waveform(self, targets):
+    def generate_targets_waveform(self, targets, validation=False):
         targets_waveform = np.array([])[:, np.newaxis]
+        amplitude_lengths = self.get_amplitudes(validation)
+        slope_lengths = self.get_slopes(validation)
         for target in targets:
-            target_waveform = waveform.generate_waveform(target, self.amplitude_lengths, slope_lengths=self.slope_lengths)
+            target_waveform = waveform.generate_waveform(target, amplitude_lengths, slope_lengths=slope_lengths)
             waveform_length = len(target_waveform)
             target_waveform = target_waveform[:, np.newaxis]
             # targets_waveform.append(targets_waveform)

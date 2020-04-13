@@ -1,15 +1,17 @@
 name: bspytasks
 dependencies:
-   - python=3.6
-   - pip
-   - git
-   - pip:
-     - git+https://github.com/BraiNEdarwin/brainspy-instruments.git
-     - git+https://github.com/BraiNEdarwin/brainspy-processors.git
-     - git+https://github.com/BraiNEdarwin/brainspy-algorithms.git
-     - numpy
-     - pandas
-     - matplotlib
-     - xlsxwriter
-     - scipy
-     - ipython
+  - python=3.6
+  - pip
+  - git
+  - openpyxl
+  - numpy
+  - pandas
+  - matplotlib
+  - xlsxwriter
+  - scipy
+  - ipython
+  - more_itertools
+  - pip:
+    - git+https://github.com/BraiNEdarwin/brainspy-processors.git
+    - git+https://github.com/BraiNEdarwin/brainspy-algorithms.git
+    - git+https://github.com/BraiNEdarwin/brainspy-tasks.git

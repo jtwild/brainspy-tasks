@@ -1,0 +1,52 @@
+capacity_test:                                              # An example comment
+    from_dimension: 4                                       # All capacities between this and below variable will be checked.
+    to_dimension: 4
+    results_base_dir: tmp/output/boolean_gates_test/gd/     # Only the higest base directory will be used, and then passed to called functions.
+    vc_dimension_test:
+        threshold_parameter: 0.95                            # The fraction of points in a CV test that must be correctly classified to return a PASS VERDICT
+        results_base_dir: tmp/output/boolean_gates_test/gd/
+        boolean_gate_test:
+            max_attempts: 10
+            results_base_dir: tmp/output/boolean_gates_test/gd/
+            show_plots: false
+            overwrite: true
+            algorithm_configs:
+                algorithm: gradient_descent
+                hyperparameters:
+                    nr_epochs: 100
+                    batch_size: 128                         # The amount of points to pass through the batches of SGD. FOr simulation VC dimension you typically have a limited set of points, so you pass everything simultaneously.
+                    learning_rate: 0.01
+                    loss_function: corrsig
+                    optimizer: adam
+                    betas: [0.9, 0.99]                      # The beta values used for adam optimizer.
+                    stop_threshold: 0.001
+                processor:
+                    architecture: single_device
+                    platform: simulation
+                    simulation_type: neural_network
+                    processor_type: dnpu                    # THe network type, currently dubbely noted in configs. Still needs fixing.
+                    network_type: dnpu
+                    torch_model_dict: tmp/input/models/default_model.pt
+                    input_indices: [0,1]
+                    input_electrode_no: 7                   # The total number of input+contorl electrodes (a.k.a.: not output electrodes)
+                    waveform:
+                        amplitude_lengths: 1                # Waveform creation can be used for hardware. In simulation, set this to 1 to prevent feeding same data multiple times
+                        slope_lengths: 0                    # See comment above. Set this to zero for simulation.
+                        output_clipping_value: 3.55
+                checkpoints:
+                    use_checkpoints: false
+                    save_interval: 5
+            validation:
+                processor:
+                    architecture: single_device
+                    platform: simulation
+                    simulation_type: neural_network
+                    network_type: nn_model
+                    torch_model_dict: tmp/input/models/default_model.pt
+                    input_indices: [0,1]
+                    input_electrode_no: 7
+                    use_noise: false
+                    waveform:
+                        amplitude_lengths: 1
+                        slope_lengths: 0
+                        output_clipping_value: 4.0
