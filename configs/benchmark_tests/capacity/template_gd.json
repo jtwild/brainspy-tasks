@@ -1,23 +1,25 @@
 {
     "capacity_test":{
         "from_dimension": 4,
-        "to_dimension":5,
+        "to_dimension":6,
         "results_base_dir": "tmp/TEST/output/gd/capacity_test_experiments/",
         "vc_dimension_test":{
             "threshold_parameter": 0,
             "results_base_dir": "tmp/TEST/output/gd/vc_dimension_experiments",
-            "show_plots": false,
+            "show_plots": true,
             "auto_generate_inputs": true,
+            "voltage_intervals": [-0.7, 0.3],
+            "num_levels": 6,
             "boolean_gate_test":{
-                    "max_attempts":1,
+                    "max_attempts":10,
                     "results_base_dir": "tmp/TEST/output/gd/boolean_gate_experiments",
-                    "show_plots": true,
+                    "show_plots": false,
                     "scale_plots": true,
                     "overwrite": true,
                     "algorithm_configs": {
                             "algorithm": "gradient_descent",
                             "hyperparameters": {
-                                        "nr_epochs": 10,
+                                        "nr_epochs": 750,
                                         "batch_size": 128,
                                         "learning_rate": 0.01,
                                         "loss_function": "corrsig",
@@ -29,7 +31,7 @@
                                         "platform": "simulation",
                                         "processor_type": "dnpu",
                                         "torch_model_dict": "tmp/input/models/model_2020.pt",
-                                        "input_indices": [0, 1, 2],
+                                        "input_indices": [0],
                                         "input_electrode_no": 7,
                                         "waveform":{
                                             "amplitude_lengths": 1,

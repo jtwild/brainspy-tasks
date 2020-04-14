@@ -6,7 +6,7 @@ from bspytasks.benchmarks.vcdim.vc_dimension_sorted_point_generator import gener
 # ZERO = -0.5
 # ONE = 0.5
 # QUARTER =  (abs(ZERO) + abs(ONE)) / 4
-# TODO: Include this is the configuration file
+# TODO: Include this is the configuration file -> see generate_sorted_points function
 X = [-0.7, -0.7, 0.5, 0.5, -0.35, 0.25, 0.0, 0.0]
 Y = [-0.7, 0.5, -0.7, 0.5, 0.0, 0.0, -0.35, 0.25]
 
@@ -24,9 +24,12 @@ class VCDimDataManager():
         else:
             self.use_torch = False
 
-        #added by Jochem for multi dim input:
-        self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
+        #For multi-dimensional or multi-bit input:
         self.auto_generate_inputs = configs['auto_generate_inputs']
+        self.voltage_intervals = configs['voltage_intervals']
+        self.num_levels = configs['num_levels']
+        self.input_dim = len( configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices'] )
+
 
     def get_shape(self, vcdim, validation):
         slope_lengths = self.get_slopes(validation)
@@ -62,7 +65,7 @@ class VCDimDataManager():
     def get_inputs(self, vc_dimension, validation=False):
         # readable inputs do not contain the waveform. Transformed does.
         if self.auto_generate_inputs:
-            readable_inputs = generate_sorted_points(vc_dimension, self.input_dim)
+            readable_inputs = generate_sorted_points(vc_dimension, self.input_dim, self.voltage_intervals, self.num_levels)
         else:
             readable_inputs = self.generate_test_inputs(vc_dimension)
         if self.use_waveform:
@@ -107,21 +110,10 @@ class VCDimDataManager():
         # @todo create a function that automatically generates non-linear inputs
         assert len(X) == len(Y), f"Number of data in both dimensions must be equal ({len(X)},{len(Y)})"
         try:
-            if self.input_dim == 2:
-                if vc_dimension <= len(X):
-                    return [X[:vc_dimension], Y[:vc_dimension]]
-                else:
-                    raise VCDimensionException()
-            elif self.input_dim ==3:
-                dim1 = [-1.2,	0,	0.6,	-0.45,	0.6,	0,	0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	-1.2,	-0.45,	0.6, 0]
-                dim2 = [-1.2,	-0.45,	0.6,	0,	-1.2,	0,	-1.2,	-0.45,	0.6,	-0.45,	0.6,	0,	-1.2,	-0.45,	0.6,	0]
-                dim3 = [0.6,	-0.45,	-1.2,	0,	-1.2,	-0.45,	0.6,	0,	-1.2,	0,	0.6,	-0.45,	-1.2,	-0.45,	0.6,	0]
-                if vc_dimension <= len(dim1):
-                    return [dim1[0:vc_dimension], dim2[0:vc_dimension], dim3[0:vc_dimension]]
-                else:
-                    raise VCDimensionException()
+            if vc_dimension <= len(X) and self.input_dim == 2:
+                return [X[:vc_dimension], Y[:vc_dimension]]
             else:
-                return VCDimensionException()
+                raise VCDimensionException()
             # if vc_dimension == 4:
             #     return [[ZERO, ZERO, ONE, ONE], [ZERO, ONE, ZERO, ONE]]
             # elif vc_dimension == 5:
@@ -154,8 +146,8 @@ class VCDimDataManager():
                 inputs_waveform = np.concatenate((inputs_waveform, input_waveform))
             else:
                 inputs_waveform = np.vstack((inputs_waveform, input_waveform))
-        # if len(inputs_waveform.shape) == 1:
-        #    inputs_waveform = inputs_waveform[:, np.newaxis]
+        if inputs_waveform.ndim == 1:
+            inputs_waveform = inputs_waveform[np.newaxis,:]
         return inputs_waveform.T  # device_model --> (samples,dimension) ; device --> (dimensions,samples)
 
     def generate_test_targets(self, vc_dimension, verbose=True):
