@@ -63,7 +63,7 @@ class VCDimensionTest():
         self.boolean_gate_test_configs['validation']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=True)
         self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs, is_main=False)
         self.init_excel_file(readable_targets, transformed_targets, found)
-        self.init_custom_file()
+        self.init_custom_file(base_dir)
         return base_dir
 
     def init_excel_file(self, readable_targets, transformed_targets, found):
@@ -195,13 +195,13 @@ class VCDimensionTest():
     def close_results_file(self):
         self.excel_file.close_file()
 
-    def init_custom_file(self):
+    def init_custom_file(self, base_dir):
         column_names = ['timestamp','gate', 'found', 'accuracy', 'final_output', 'control_voltages',
                         'correlation', 'final_performance',
                         'input_electrodes', 'input_voltages', 'num_levels', 'voltage_intervals',
                         'min_gap', 'min_current', 'max_current',
                         'loss_function', 'learning_rate', 'max_attempts', 'nr_epochs']
-        self.custom_file = ExcelFile(os.path.join(self.base_dir, 'custom_capacity_test_results.xlsx'))
+        self.custom_file = ExcelFile(os.path.join(base_dir, 'custom_capacity_test_results.xlsx'))
         self.custom_file.init_data(column_names)
         self.custom_file.reset()
 
