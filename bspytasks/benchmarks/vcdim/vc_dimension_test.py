@@ -199,7 +199,7 @@ class VCDimensionTest():
         column_names = ['timestamp','gate', 'found', 'accuracy', 'final_output', 'control_voltages',
                         'correlation', 'final_performance',
                         'input_electrodes', 'input_voltages', 'num_levels', 'voltage_intervals',
-                        'min_gap', 'min_current', 'max_current',
+                        'min_gap', 'min_output', 'max_output',
                         'loss_function', 'learning_rate', 'max_attempts', 'nr_epochs']
         self.custom_file = ExcelFile(os.path.join(base_dir, 'custom_capacity_test_results.xlsx'))
         self.custom_file.init_data(column_names)
@@ -229,8 +229,8 @@ class VCDimensionTest():
             # Only makes sense when a solution is found. If solution is inverted, number is negative
             temp_dict['min_gap'] = (self.boolean_gate_task.algorithm_data.results['best_output'][self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool)].max()
                                     - self.boolean_gate_task.algorithm_data.results['best_output'][np.invert(self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool))].min() )
-            temp_dict['min_output'] = min(temp_dict['final_output'])
-            temp_dict['max_output'] = max(temp_dict['final_output'])
+            temp_dict['min_output'] = min(temp_dict['final_output'])[0]
+            temp_dict['max_output'] = max(temp_dict['final_output'])[0]
             temp_dict['loss_function'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['loss_function']
             temp_dict['learning_rate'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['learning_rate']
             temp_dict['max_attempts'] = self.configs['boolean_gate_test']['max_attempts']
