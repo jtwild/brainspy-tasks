@@ -149,6 +149,8 @@ class BooleanGateTask():
             plt.savefig(save_dir)
         if show_plots:
             plt.show()
+        else:
+            plt.close()
 
     def clip(self, x, max_value, min_value):
         x[x > max_value] = max_value
