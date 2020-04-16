@@ -183,6 +183,8 @@ class VCDimensionTest():
         plt.savefig(os.path.join(base_dir, 'dimension_' + str(self.vc_dimension) + plot_name + '.' + extension))
         if self.show_plots:
             plt.show()
+        else:
+            plt.close()
 
     def oracle(self):
         return self.excel_file.data.loc[self.excel_file.data['found'] == False].size == 0  # noqa: E712
@@ -196,7 +198,7 @@ class VCDimensionTest():
         self.excel_file.close_file()
 
     def init_custom_file(self, base_dir):
-        column_names = ['timestamp','gate', 'found', 'accuracy', 'final_output', 'control_voltages',
+        column_names = ['timestamp', 'gate', 'found', 'accuracy', 'final_output', 'control_voltages',
                         'correlation', 'final_performance',
                         'input_electrodes', 'input_voltages', 'num_levels', 'voltage_intervals',
                         'min_gap', 'min_output', 'max_output',
@@ -204,7 +206,6 @@ class VCDimensionTest():
         self.custom_file = ExcelFile(os.path.join(base_dir, 'custom_capacity_test_results.xlsx'))
         self.custom_file.init_data(column_names)
         self.custom_file.reset()
-
 
     def update_custom_file(self, gate):
         # This function fills an excel file with any custom entries the user might require for their work.
@@ -228,8 +229,8 @@ class VCDimensionTest():
             # gap = min(Class1) - max(Class0)
             # Only makes sense when a solution is found. If solution is inverted, number is negative
             temp_dict['min_gap'] = (self.boolean_gate_task.algorithm_data.results['best_output'][self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool)].max()
-                                    - self.boolean_gate_task.algorithm_data.results['best_output'][np.invert(self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool))].min() )
-            temp_dict['min_output'] = min(temp_dict['final_output'])[0]
+                                    - self.boolean_gate_task.algorithm_data.results['best_output'][np.invert(self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool))].min())
+            temp_dict['min_output'] = min(temp_dict['final_output'])[0]  # take the number instead of the list
             temp_dict['max_output'] = max(temp_dict['final_output'])[0]
             temp_dict['loss_function'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['loss_function']
             temp_dict['learning_rate'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['learning_rate']
@@ -239,7 +240,6 @@ class VCDimensionTest():
         self.custom_file.add_result(temp_dict)
         return temp_dict
 
-
     def save_custom_file(self):
         aux = self.custom_file.data.copy()
         aux.index = range(len(aux.index))
@@ -247,6 +247,7 @@ class VCDimensionTest():
         # rounding required for 1/3=0.3333.... type numbers with too much decimals to place in an excel workbook tab name
         self.custom_file.save_tab(tab_name, data=aux)
 #        self.custom_file.close_file()
+
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
