@@ -28,6 +28,7 @@ class VCDimensionTest():
         self.show_plots = configs['show_plots']
         self.is_main = is_main
         self.load_boolean_gate_configs(configs['boolean_gate_test'])
+        self.configs = configs
 
     def load_boolean_gate_configs(self, configs):
         self.boolean_gate_test_configs = configs
@@ -62,6 +63,7 @@ class VCDimensionTest():
         self.boolean_gate_test_configs['validation']['processor']['shape'] = self.data_manager.get_shape(vc_dimension, validation=True)
         self.boolean_gate_task = BooleanGateTask(self.boolean_gate_test_configs, is_main=False)
         self.init_excel_file(readable_targets, transformed_targets, found)
+        self.init_custom_file()
         return base_dir
 
     def init_excel_file(self, readable_targets, transformed_targets, found):
@@ -96,6 +98,8 @@ class VCDimensionTest():
             _, row = r
             excel_results = self.boolean_gate_task.find_gate(self.transformed_inputs, row['gate'], row['encoded_gate'], self.mask, self.threshold)
             self.excel_file.add_result(excel_results, row['gate'])
+            # Update custom excelm file
+            self.update_custom_file(row['gate'])
             # Collect results
             gate_array[nr] = excel_results['gate']
             accuracy_array[nr] = excel_results['accuracy']
@@ -125,6 +129,7 @@ class VCDimensionTest():
 
         capacity = np.mean(found_array)
         result = self.close_test(base_dir)
+        self.save_custom_file()
         os.mkdir(os.path.join(base_dir, 'validation'))
         numpy_file = os.path.join(base_dir, 'validation', 'result_arrays')
         np.savez(numpy_file,
@@ -190,6 +195,58 @@ class VCDimensionTest():
     def close_results_file(self):
         self.excel_file.close_file()
 
+    def init_custom_file(self):
+        column_names = ['timestamp','gate', 'found', 'accuracy', 'final_output', 'control_voltages',
+                        'correlation', 'final_performance',
+                        'input_electrodes', 'input_voltages', 'num_levels', 'voltage_intervals',
+                        'min_gap', 'min_current', 'max_current',
+                        'loss_function', 'learning_rate', 'max_attempts', 'nr_epochs']
+        self.custom_file = ExcelFile(os.path.join(self.base_dir, 'custom_capacity_test_results.xlsx'))
+        self.custom_file.init_data(column_names)
+        self.custom_file.reset()
+
+
+    def update_custom_file(self, gate):
+        # This function fills an excel file with any custom entries the user might require for their work.
+        temp_dict = dict()
+        # Update all dict keys (column names) if we did not ignore the gate
+        if len(np.unique(gate)) != 1:
+            temp_dict['timestamp'] = time.strftime("%Y_%m_%d_%Hh%Mm%Ss")
+            temp_dict['gate'] = self.boolean_gate_task.algorithm_data.results['gate']
+            temp_dict['found'] = self.boolean_gate_task.algorithm_data.results['found']
+            temp_dict['accuracy'] = self.boolean_gate_task.algorithm_data.results['accuracy']
+            temp_dict['final_output'] = self.boolean_gate_task.algorithm_data.results['best_output'].copy().tolist()
+            temp_dict['control_voltages'] = self.boolean_gate_task.algorithm_data.results['control_voltages'].copy().tolist()
+            temp_dict['correlation'] = self.boolean_gate_task.algorithm_data.results['correlation']
+            temp_dict['final_performance'] = self.boolean_gate_task.algorithm_data.results['best_performance'].item()
+            temp_dict['input_electrodes'] = self.configs['boolean_gate_test']['algorithm_configs']['processor']['input_indices']
+            temp_dict['input_voltages'] = self.boolean_gate_task.algorithm_data.results['inputs'].cpu().detach().numpy().copy().tolist()
+            temp_dict['num_levels'] = self.configs['num_levels']
+            temp_dict['voltage_intervals'] = self.configs['voltage_intervals']
+            temp_dict['targets'] = self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().copy().tolist()
+            # The following is a beastly expression, but it is simply
+            # gap = min(Class1) - max(Class0)
+            # Only makes sense when a solution is found. If solution is inverted, number is negative
+            temp_dict['min_gap'] = (self.boolean_gate_task.algorithm_data.results['best_output'][self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool)].max()
+                                    - self.boolean_gate_task.algorithm_data.results['best_output'][np.invert(self.boolean_gate_task.algorithm_data.results['targets'].cpu().detach().numpy().astype(bool))].min() )
+            temp_dict['min_output'] = min(temp_dict['final_output'])
+            temp_dict['max_output'] = max(temp_dict['final_output'])
+            temp_dict['loss_function'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['loss_function']
+            temp_dict['learning_rate'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['learning_rate']
+            temp_dict['max_attempts'] = self.configs['boolean_gate_test']['max_attempts']
+            temp_dict['nr_epochs'] = self.configs['boolean_gate_test']['algorithm_configs']['hyperparameters']['nr_epochs']
+        # Save to file
+        self.custom_file.add_result(temp_dict)
+        return temp_dict
+
+
+    def save_custom_file(self):
+        aux = self.custom_file.data.copy()
+        aux.index = range(len(aux.index))
+        tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(round(self.threshold, 4))
+        # rounding required for 1/3=0.3333.... type numbers with too much decimals to place in an excel workbook tab name
+        self.custom_file.save_tab(tab_name, data=aux)
+#        self.custom_file.close_file()
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs

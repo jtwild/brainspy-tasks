@@ -125,9 +125,9 @@ class BooleanGateTask():
         return excel_results
 
     def optimize(self, encoded_inputs, encoded_gate, mask):
-        algorithm_data = self.algorithm.optimize(encoded_inputs, encoded_gate, mask=mask)
-        algorithm_data.judge()
-        excel_results = algorithm_data.results
+        self.algorithm_data = self.algorithm.optimize(encoded_inputs, encoded_gate, mask=mask)
+        self.algorithm_data.judge()
+        excel_results = self.algorithm_data.results
 
         return excel_results
 
