@@ -32,7 +32,7 @@ class CapacityTest():
         print('*****************************************************************************************')
         print(f"CAPACITY TEST FROM VCDIM {self.configs['from_dimension']} TO VCDIM {self.configs['to_dimension']} ")
         print('*****************************************************************************************')
-        save(mode='configs', file_path=self.configs_dir, data=configs)
+        save(mode='configs', file_path=self.configs_dir, data=self.configs)
         self.summary_results = {'capacity_per_N': [],
                                 'accuracy_distib_per_N': [],
                                 'performance_distrib_per_N': [],
