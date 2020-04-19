@@ -129,7 +129,7 @@ class VCDimensionTest():
 
         capacity = np.mean(found_array)
         result = self.close_test(base_dir)
-        self.save_custom_file()
+        self.save_custom_file(pkl_dir=base_dir)
         os.mkdir(os.path.join(base_dir, 'validation'))
         numpy_file = os.path.join(base_dir, 'validation', 'result_arrays')
         np.savez(numpy_file,
@@ -240,14 +240,15 @@ class VCDimensionTest():
         self.custom_file.add_result(temp_dict)
         return temp_dict
 
-    def save_custom_file(self):
+    def save_custom_file(self, pkl_dir=None, save_pickle=True):
         aux = self.custom_file.data.copy()
         aux.index = range(len(aux.index))
         tab_name = 'VC Dimension ' + str(self.vc_dimension) + ' Threshold ' + str(round(self.threshold, 4))
         # rounding required for 1/3=0.3333.... type numbers with too much decimals to place in an excel workbook tab name
         self.custom_file.save_tab(tab_name, data=aux)
-#        self.custom_file.close_file()
-
+        if save_pickle:
+            assert pkl_dir != None, 'No base directory supplied for saving dataframe pickle.'
+            aux.to_pickle(os.path.join(pkl_dir,'custom_dataframe.pkl'))
 
 if __name__ == '__main__':
     from bspyalgo.utils.io import load_configs
