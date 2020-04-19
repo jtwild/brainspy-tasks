@@ -1,19 +1,19 @@
 {
     "capacity_test":{
         "from_dimension": 3,
-        "to_dimension":4,
+        "to_dimension":6,
         "results_base_dir": "tmp/TEST/output/gd/capacity_test_experiments/",
         "vc_dimension_test":{
             "threshold_parameter": 0,
             "results_base_dir": "tmp/TEST/output/gd/vc_dimension_experiments",
-            "show_plots": true,
+            "show_plots": false,
             "auto_generate_inputs": true,
             "voltage_intervals": [-0.7, 0.3],
-            "num_levels": 4,
+            "num_levels": 6,
             "boolean_gate_test":{
-                    "max_attempts":2,
+                    "max_attempts":10,
                     "results_base_dir": "tmp/TEST/output/gd/boolean_gate_experiments",
-                    "show_plots": true,
+                    "show_plots": false,
                     "scale_plots": true,
                     "overwrite": true,
                     "algorithm_configs": {
@@ -21,7 +21,7 @@
                             "live_plot_interval": 10,
                             "algorithm": "gradient_descent",
                             "hyperparameters": {
-                                        "nr_epochs": 500,
+                                        "nr_epochs": 750,
                                         "batch_size": 15,
                                         "learning_rate": 0.001,
                                         "loss_function": "bce",
