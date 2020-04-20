@@ -1,6 +1,6 @@
 {
     "capacity_test":{
-        "from_dimension": 3,
+        "from_dimension": 2,
         "to_dimension":6,
         "results_base_dir": "tmp/TEST/output/gd/capacity_test_experiments/",
         "vc_dimension_test":{
