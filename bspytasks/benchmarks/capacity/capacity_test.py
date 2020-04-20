@@ -36,13 +36,15 @@ class CapacityTest():
         self.summary_results = {'capacity_per_N': [],
                                 'accuracy_distib_per_N': [],
                                 'performance_distrib_per_N': [],
-                                'correlation_distrib_per_N': []}
+                                'correlation_distrib_per_N': [],
+                                'VC_dimension': []}
         while True:
             capacity, accuracy_array, performance_array, correlation_array = self.vcdimension_test.run_test(self.current_dimension, validate=validate)
             self.summary_results['capacity_per_N'].append(capacity)
             self.summary_results['accuracy_distib_per_N'].append(accuracy_array[1:-1])
             self.summary_results['performance_distrib_per_N'].append(performance_array[1:-1])
             self.summary_results['correlation_distrib_per_N'].append(correlation_array[1:-1])
+            self.summary_results['VC_dimension'].append(self.current_dimension)
             if not self.next_vcdimension():
                 break
 
