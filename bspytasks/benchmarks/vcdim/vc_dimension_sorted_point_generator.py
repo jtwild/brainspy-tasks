@@ -122,6 +122,9 @@ def flat_index_to_dimensional_index(flat_index, test_array):
 
 
 def generate_sorted_points(vc_dim, input_dim, voltage_intervals, num_levels):
+    if num_levels == 'auto':
+        # If set to auto, we take the least amount of levels necessary to satisfy this VC
+        num_levels = np.ceil(vc_dim/input_dim)
     unsorted_points = generate_unsorted_points(input_dim, voltage_intervals=voltage_intervals, num_levels=num_levels)
     if vc_dim > np.shape(unsorted_points)[1]:
         raise ValueError('Too many points requested! Either add generation sets in main file, or lower VC dimension.')

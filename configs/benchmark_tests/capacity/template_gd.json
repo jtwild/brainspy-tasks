@@ -9,7 +9,7 @@
             "show_plots": false,
             "auto_generate_inputs": true,
             "voltage_intervals": [-0.7, 0.3],
-            "num_levels": 6,
+            "num_levels": "auto",
             "boolean_gate_test":{
                     "max_attempts":10,
                     "results_base_dir": "tmp/TEST/output/gd/boolean_gate_experiments",
