@@ -16,8 +16,8 @@ def importEverything(infile):
     for varName in inData:
         globals()[varName] = inData[varName]
 # %% User data
-base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\perceptron_data\1000epochs'
-loop_items_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\perceptron_data\loop_items.npz'
+base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_21_capacity_loop_hyperparameters\perceptron_data\1000epochs'
+loop_items_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_21_capacity_loop_hyperparameters\loop_items.npz'
 glob_filter = '*.npz'
 # %% Remaining script
 # Load descriptions
@@ -47,25 +47,3 @@ plt.grid()
 plt.title('Fraction of found solutions to VC5 which are converged')
 plt.xlabel('Perceptron epoch')
 plt.ylabel('Fraction of solutions which are converged')
-
-# %% Plot results
-# Capacity vs N
-#plt.figure()
-#plt.plot(VC_dims, capacities.T)
-#plt.legend(descrips)
-#plt.xlabel('VC Dim.')
-#plt.ylabel('Capacity (correct configs / total configs)')
-#plt.title('Capacities vs N for different electrodes')
-#plt.grid()
-#
-## Correlation
-#plt.figure()
-#plt.plot(VC_dims, correlations.T)
-#plt.legend(descrips)
-#plt.xlabel('VC dim.')
-#plt.ylabel('Correlation')
-#plt.title('Correlation vs N for different electrodes')
-#plt.grid()
-plt.figure()
-plt.plot(perceptron_data.T)
-plt.show()
