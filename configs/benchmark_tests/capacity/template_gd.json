@@ -19,6 +19,13 @@
                     "algorithm_configs": {
                             "live_plot": false,
                             "live_plot_interval": 10,
+                            "early_stopping":{
+                                "use_early_stopping": true,
+                                "min_stopping_epochs": 100,
+                                "stopping_criterium": 0.01,
+                                "stopping_patience": 100,
+                                "auto_stopping_fraction": 0.0001,
+                            },
                             "algorithm": "gradient_descent",
                             "hyperparameters": {
                                         "nr_epochs": 750,
