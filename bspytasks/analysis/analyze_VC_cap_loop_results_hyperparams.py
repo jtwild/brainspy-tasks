@@ -38,7 +38,7 @@ capacity_learning_rate = np.mean(capacities, axis=(0, 2, 3))
 capacity_loss_function = np.mean(capacities, axis=(0, 1, 3))
 capacity_nr_epochs = np.mean(capacities, axis=(0, 1, 2))
 
-legend = ['max_attempts', 'learning_rate', 'loss_function', 'nr_epochs']
+legend = np.array(['max_attempts', 'learning_rate', 'loss_function', 'nr_epochs'])
 # %% Plot results
 plt.figure()
 plt.plot(capacity_max_attempts)
@@ -87,7 +87,7 @@ plt.ylabel('Avg. gap size')
 # %% AUtomated
 
 
-def bar_plotter(data, legend, xticklabels, stds=[]):
+def bar_plotter(data, legend, xticklabels, stds='auto'):
     plt.figure()
     shape = data.shape
     n_dim = data.ndim
@@ -98,12 +98,11 @@ def bar_plotter(data, legend, xticklabels, stds=[]):
         axis_selection = tuple(x for x in selection_base if x != i)
         data_mean = np.mean(data, axis=axis_selection)
         x = range(counter, counter + shape[i])
-
-        if len(stds) == 0:
-            plt.bar(x, data_mean)
+        if np.all(stds == 'auto'):
+            data_std =  np.std(data, axis=axis_selection)
         else:
             data_std = np.sqrt(np.mean(stds**2, axis=axis_selection))
-            plt.bar(x, data_mean, yerr=data_std)
+        plt.bar(x, data_mean, yerr=data_std)
 
         xticks = np.concatenate((xticks, x))
         counter += shape[i] + 1  # leave one blank space
@@ -120,7 +119,38 @@ stds = gap_std
 ticklabels = np.concatenate((max_attempts_list, learning_rate_list, loss_function_list, nr_epochs_list))
 bar_plotter(data, legend, ticklabels, stds)
 plt.ylabel('Avg. gap size with std. (nA)')
+plt.title('Avg. gap size for different hyperparams')
 # Capacity
 data = capacities
 bar_plotter(data, legend, ticklabels)
 plt.ylabel('Capacity')
+plt.title('mean Capacity for different hyperparams')
+#%% Select the corrsig
+data = capacities[:,:,0,:]
+legend = legend = np.array(['max_attempts', 'learning_rate', 'nr_epochs'])
+ticklabels  = np.concatenate((max_attempts_list, learning_rate_list, nr_epochs_list))
+bar_plotter(data, legend, ticklabels)
+plt.ylabel('Capacity')
+plt.title('mean Capacity for different hyperparams\n loss = corrsig')
+
+#%% Select lr 0.01
+data = capacities[:,0,0,:]
+legend = legend = np.array(['max_attempts', 'nr_epochs'])
+ticklabels  = np.concatenate((max_attempts_list, nr_epochs_list))
+bar_plotter(data, legend, ticklabels)
+plt.ylabel('Capacity')
+plt.title('mean Capacity for different hyperparams\n loss = corrsig\nlearning_rate = 0.01')
+
+# Select nr_epochs = 250
+data = capacities[:,0,0,0]
+legend = legend = np.array(['max_attempts'])
+ticklabels  = (max_attempts_list)
+bar_plotter(data, legend, ticklabels)
+plt.ylabel('Capacity')
+plt.title('mean Capacity for different hyperparams\n loss = corrsig\nlearning_rate = 0.01\n nr_epochs = 250')
+
+# selct max_attempts = 5?
+# loss = corrsig
+# nr_epochs = 250
+# lr = 0.01
+# then how many perceptron?
