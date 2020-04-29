@@ -11,18 +11,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 # %% User data
 base_configs = load_configs('configs/benchmark_tests/capacity/template_gd.json')
-output_directory = r"C:/Users/Jochem/Desktop/2020_04_21_capacity_loop_hyperparameters/"
+output_directory = r"C:/Users/Jochem/Desktop/2020_04_24_capacity_loop_hyperparameters_VC6/"
 # Lists to loop over
-max_attempts_list = [5, 10, 30]
-learning_rate_list = [0.01, 0.001, 0.0001]
+max_attempts_list = [1, 5, 10, 30]
+learning_rate_list = [0.1, 0.01, 0.001, 0.0001]
 loss_function_list = ['corrsig', 'bce']
-nr_epochs_list = [250, 750, 1250]
+nr_epochs_list = [100, 250, 750, 1250]
+shape = [4,4,2,4]
 
 # %% Loop over all defined lists
 base_configs['capacity_test']['results_base_dir'] = output_directory
-descrips = np.empty([3,3,2,3], dtype=str)
-capacities = np.full([3,3,2,3], np.nan)
-summaries = np.empty([3,3,2,3], dtype=object)
+descrips = np.empty(shape, dtype=str)
+capacities = np.full(shape, np.nan)
+summaries = np.empty(shape, dtype=object)
 for i in range(len(max_attempts_list)):
     for j in range(len(learning_rate_list)):
         for k in range(len(loss_function_list)):
