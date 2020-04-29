@@ -23,13 +23,13 @@ def importEverything(infile):
 
 # %% User data
 # Capacity summary
-summary_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_21_capacity_loop_hyperparameters_VC5\loop_items.npz'
+summary_file =  r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_24_capacity_loop_hyperparameters_VC6\loop_items.npz'
 # Other information, including gap size
-base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_21_capacity_loop_hyperparameters_VC5\capacity_data'
-glob_filter = '*/vc_dimension_5/custom_dataframe.pkl'
+base_dir =      r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_24_capacity_loop_hyperparameters_VC6\capacity_data'
+glob_filter = '*/vc_dimension_6/custom_dataframe.pkl'
 # depending on which files are loaded:
 legend = np.array(['max_attempts', 'learning_rate', 'loss_function', 'nr_epochs'])
-shape = [3, 3, 2, 3]
+shape = [4,4,2,4]
 # %% Remaining script
 # Load data
 importEverything(summary_file)
@@ -89,28 +89,32 @@ bar_plotter(data, legend, ticklabels)
 plt.ylabel('Capacity')
 plt.title('mean Capacity for different hyperparams')
 # %% Select the corrsig
-data = capacities[:, :, 0, :]
+loss_function_selection = 0 #0th list element
+data = capacities[:, :, loss_function_selection, :]
 legend = legend = np.array(['max_attempts', 'learning_rate', 'nr_epochs'])
 ticklabels = np.concatenate((max_attempts_list, learning_rate_list, nr_epochs_list))
 bar_plotter(data, legend, ticklabels)
 plt.ylabel('Capacity')
-plt.title('mean Capacity for different hyperparams\n loss = corrsig')
+plt.title(f'mean Capacity for different hyperparams\n loss = {loss_function_list[loss_function_selection]}')
 
 # %% Select lr 0.01
-data = capacities[:, 0, 0, :]
+learning_rate_selection= 0
+data = capacities[:, learning_rate_selection, loss_function_selection, :]
 legend = legend = np.array(['max_attempts', 'nr_epochs'])
 ticklabels = np.concatenate((max_attempts_list, nr_epochs_list))
 bar_plotter(data, legend, ticklabels)
 plt.ylabel('Capacity')
-plt.title('mean Capacity for different hyperparams\n loss = corrsig\nlearning_rate = 0.01')
+plt.title(f'mean Capacity for different hyperparams\n loss = {loss_function_list[loss_function_selection]}\nlearning_rate = {learning_rate_list[learning_rate_selection]}')
 
-# Select nr_epochs = 250
-data = capacities[:, 0, 0, 0]
-legend = legend = np.array(['max_attempts'])
+# %% Select nr_epochs = 250
+nr_epochs_selection = 0
+data = capacities[:, learning_rate_selection, loss_function_selection, nr_epochs_selection]
+legend = np.array(['max_attempts'])
 ticklabels = (max_attempts_list)
 bar_plotter(data, legend, ticklabels)
 plt.ylabel('Capacity')
-plt.title('mean Capacity for different hyperparams\n loss = corrsig\nlearning_rate = 0.01\n nr_epochs = 250')
+plt.title(f'mean Capacity for different hyperparams\n loss = {loss_function_list[loss_function_selection]}\nlearning_rate = {learning_rate_list[learning_rate_selection]} \
+                                                              \n nr_epochs = {nr_epochs_list[nr_epochs_selection]}')
 
 # selct max_attempts = 5?
 # loss = corrsig
@@ -126,7 +130,4 @@ legend = legend = np.array(['nr_epochs'])
 ticklabels = (nr_epochs_list)
 bar_plotter(data, legend, ticklabels, stds)
 
-
-# To find out which scenario gives best result, use np.where(capacities==1)
-# output is better formatted when the command is given directly to the console without the print statement.
-print(np.where(capacities==1))
+#%% Find capacities = 1
