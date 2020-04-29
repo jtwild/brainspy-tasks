@@ -12,8 +12,8 @@ import os
 import pickle
 
 # %% User data
-base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_19_capacity_loop_electrode0_4_and_6_full_range'
-descrips = ['E0', 'E4', 'E6']
+base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_20_capacity_loop_voltage_intervals_on_electrode6'
+descrips = [[-0.7, 0.3],[-0.7, -0.2], [-0.2, 0.3],  [-0.7, -0.5], [-0.5, -0.3], [-0.3, -0.1], [-0.1, 0.1], [0.1, 0.3]]
 VC_dims = ['3', '4', '5', '6']
 glob_filter = '*/summary_results.pkl'
 # %% Remaining script
