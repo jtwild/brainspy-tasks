@@ -14,14 +14,31 @@ from bspyproc.processors.simulation.surrogate import SurrogateModel
 from bspyproc.utils.pytorch import TorchUtils
 from bspyalgo.utils.io import load_configs
 from bspysmg.model.data.outputs import test_model
-
+from bspysmg.measurement.data.input.input_mgr import sawtooth_wave # for generating input data
 # %% Below are all the functions used for this purpose
 
 def load_data(configs, steps=1):
-    # Load input data
-    input_file = configs["data"]['input_data_file']
-#    inputs, outputs, info = test_model.load_data(input_file, steps)
-    return test_model.load_data(input_file, steps)
+    # Either loads measurement data from an npz file, or generates input data based on config file:
+    if configs["data"]["type"] == 'generation':
+        # For generation, sawtooth hardcoded for now. Cannot use the SMG loader because it requires a lot of configs irrelevant for us (would make a mess):
+        time_points = np.arange(configs["data"]["generation_info"]["time_min"], configs["data"]["generation_info"]["time_max"], configs["data"]["generation_info"]["time_step"])
+        frequency= np.array(configs["data"]["generation_info"]["frequency"])[:, np.newaxis] * configs["data"]["generation_info"]["factor"]
+        phase = np.array(configs["data"]["generation_info"]["phase"])[:, np.newaxis]
+        amplitude, offset = load_amplitude_offset(configs['processor']["torch_model_dict"])
+        inputs = sawtooth_wave(time_points, frequency, phase, amplitude, offset).T # transpose because first dimension should be Nsamples and second dimension should be Nelectrodes
+        return inputs, None, None
+    elif configs["data"]["type"] == 'measurement':
+        # For measurement:
+        # Load input data
+        input_file = configs["data"]['input_data_file']
+        inputs, outputs, info = test_model.load_data(input_file, steps)
+        return inputs, outputs, info
+    else:
+        raise NotImplementedError('Input data type (from configs) not implemented.')
+
+def load_amplitude_offset(model_data_path):
+    model = SurrogateModel({'torch_model_dict': model_data_path})
+    return model.amplitude.numpy()[:, np.newaxis], model.offset.numpy()[:, np.newaxis]
 
 def perturb_data(configs, inputs_unperturbed, save_data=False, steps=1):
     # Adds noise to a specific electrode of a set of input data
@@ -137,34 +154,54 @@ def plot_hists(values, ax=None, n_bins=15, legend=None):
         ax.legend(legend)
 
 
-def rank_low_to_high(descriptions, values, do_plot=False, ax=None):
+def rank_low_to_high(descriptions, values, plot_type=None, ax=None, x_data = []):
     # Ranks the descriptions according to the values, and potentially makes a barplot out of it.
     # Potentially plots in a specified axes
     descriptions = np.array(descriptions)
     values = np.array(values)
-    ranking_indices = np.argsort(-values)  # take negative of slope to order the slope from largest (most positive -> most negative) to smallest
+    ranking_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
     ranking = descriptions[ranking_indices]
     ranked_values = values[ranking_indices]
     # Plot ranking in barplot
-    if do_plot:
+    if plot_type!=None:
         if ax == None:
             plt.figure()
             ax = plt.axes()
-        ax.bar(range(len(descriptions)), ranked_values)
-        for j in range(len(descriptions)):
-            s = np.array2string(np.array(ranking[j]))
-            xy = [j, ranked_values[j]]
-            ax.annotate(s, xy)
-        ax.set_xlabel('Ranking')
+        if len(x_data) == 0:
+            x_data = np.arange(len(descriptions))
+            #else, use supplied x_data
+        width = (x_data[1:] - x_data[:-1]) * 0.8
+        width = np.append(width,width[-1]) # make last interval as big as previous one
+        if plot_type == 'values':
+            ax.bar(x_data, ranked_values, width=width)
+            for i, x_val in enumerate(x_data):
+                s = np.array2string(np.array(ranking[i]))
+                xy = [x_val, ranked_values[i]]
+                ax.annotate(s, xy)
+            ax.set_xlabel('Ranking')
+        elif plot_type == 'ranking':
+            y_ticks = np.arange(0, len(x_data))
+            y_data = y_ticks[-1::-1]
+            ax.bar(x_data[ranking_indices], y_data, width=width) #negative range, ebcause first element is most important
+            ax.set_ylabel('Ranking')
+            ax.set_yticks(y_data)
+            ax.set_yticklabels(y_ticks)
+        ax.grid(True)
+    elif plot_type==None:
+        print('Plot intentionally skipped')
+    else:
+        NotImplementedError("Plottype not implemented. Choose from 'old', 'new' or None")
     return ranking, ranked_values
 
 
-def np_object_array_mean(obj_arr):
+def np_object_array_mean(obj_arr, nan_val = 0):
     # Takes the averages of the object elements of a numpy array.
     # Because if you have a numpy array of a numpy array, just using np.mean(arr, axis=0) does not work.
     float_arr = np.zeros(obj_arr.size)
     for i in range(obj_arr.size):
         float_arr[i] = obj_arr[i].mean()
+        if np.isnan(float_arr[i]):
+            float_arr[i] = nan_val
     return float_arr
 
 

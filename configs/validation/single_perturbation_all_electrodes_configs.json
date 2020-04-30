@@ -7,7 +7,18 @@
     "perturb_fraction_sets": [0.1]
     },
 "data": {
-    "input_data_file": "tmp/input/data/darwin_2020_03_11/test_data.npz",
-    "perturbed_data_file": "tmp/input/data/darwin_2020_03_11/perturbed_data.npz"
+    "type": "generation",
+    "generation_info":{
+        "time_min": 0,
+        "time_max": 1000,
+        "time_step": 0.01,
+        "frequency": [2, 3, 5, 7, 13, 17, 19],
+        "factor": 0.05,
+        "phase": [-0.57, 0.25, -1.54, 2.17, 0.08, 0.15, -0.65]
+        },
+    "measurement_info":{
+        "input_data_file": "tmp/input/data/darwin_2020_03_11/test_data.npz",
+        "perturbed_data_file": "tmp/input/data/darwin_2020_03_11/perturbed_data.npz"
+        }
     }
 }
