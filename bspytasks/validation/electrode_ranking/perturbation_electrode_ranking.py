@@ -11,8 +11,10 @@ import bspytasks.validation.electrode_ranking.perturbation_utils as pert
 from bspyalgo.utils.io import load_configs
 
 # Class definition
+
+
 class ElectrodeRanker():
-    def __init__(self,configs):
+    def __init__(self, configs):
         #  Load User variables
         self.configs = configs
         # Get config values
@@ -24,7 +26,7 @@ class ElectrodeRanker():
         self.inputs_unperturbed, self.targets_loaded, self.info = pert.load_data(configs)
         self.targets = pert.get_prediction(configs, self.inputs_unperturbed).flatten()
 
-    def rank(self, sub_plot_type = 'ranking'):
+    def rank(self, sub_plot_type='ranking'):
         # Get data
         self.get_data()
         # Initialize values
@@ -51,19 +53,20 @@ class ElectrodeRanker():
                 pert.plot_hists(np.abs(error_subsets), ax=axs_hist[counter], legend=grid.round(2).tolist())
                 pert.rank_low_to_high(grid,
                                       np.sqrt(pert.np_object_array_mean(error_subsets**2)),
-                                      plot_type=sub_plot_type, ax=axs_bar[counter], x_data = grid)
+                                      plot_type=sub_plot_type, ax=axs_bar[counter], x_data=grid)
                 fig_bar.suptitle('Voltage range ranking based on RMSE on interval')
                 # And root mean square error for the total electrode
                 self.rmse[i, j] = np.sqrt(np.mean(error**2))
                 counter += 1
 
-    def plot_rank(self, plot_type = 'ranking'):
+    def plot_rank(self, plot_type='ranking'):
         # Ranking electrode importance
         pert.rank_low_to_high(self.electrodes_sets, self.rmse[0, :], plot_type=plot_type)
         plt.xlabel('Electrode #')
         plt.title('Electrode ranking based on RMSE')
 
-#%% Test code:
+
+# %% Test code:
 if __name__ == '__main__':
     configs = load_configs('configs/validation/single_perturbation_all_electrodes_configs.json')
     ranker = ElectrodeRanker(configs)
