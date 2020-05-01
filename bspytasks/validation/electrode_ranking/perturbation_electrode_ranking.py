@@ -18,13 +18,13 @@ class ElectrodeRanker():
         #  Load User variables
         self.configs = configs
         # Get config values
-        self.electrodes_sets = configs['perturbation']['electrodes_sets']
-        self.perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
+        self.electrodes_sets = self.configs['perturbation']['electrodes_sets']
+        self.perturb_fraction_sets = self.configs['perturbation']['perturb_fraction_sets']
 
     def get_data(self):
         # Get unperturbed data
-        self.inputs_unperturbed, self.targets_loaded, self.info = pert.load_data(configs)
-        self.targets = pert.get_prediction(configs, self.inputs_unperturbed).flatten()
+        self.inputs_unperturbed, self.targets_loaded, self.info = pert.load_data(self.configs)
+        self.targets = pert.get_prediction(self.configs, self.inputs_unperturbed).flatten()
 
     def rank(self, sub_plot_type='ranking'):
         # Get data
@@ -38,9 +38,9 @@ class ElectrodeRanker():
         counter = 0
         # Start loop over config values
         for i in range(len(self.perturb_fraction_sets)):
-            configs['perturbation']['perturb_fraction'] = self.perturb_fraction_sets[i]
+            self.configs['perturbation']['perturb_fraction'] = self.perturb_fraction_sets[i]
             for j in range(len(self.electrodes_sets)):
-                configs['perturbation']['electrodes'] = self.electrodes_sets[j]
+                self.configs['perturbation']['electrodes'] = self.electrodes_sets[j]
                 electrode = self.electrodes_sets[j][0]  # does not work if more than one electrode is perturbed..., so 'fixed' by taking only first component.
                 # Perturb data, get prediciton, get error, get rmse
                 inputs_perturbed = pert.perturb_data(self.configs, self.inputs_unperturbed)
@@ -58,12 +58,14 @@ class ElectrodeRanker():
                 # And root mean square error for the total electrode
                 self.rmse[i, j] = np.sqrt(np.mean(error**2))
                 counter += 1
+        return self.rmse
 
     def plot_rank(self, plot_type='ranking'):
         # Ranking electrode importance
-        pert.rank_low_to_high(self.electrodes_sets, self.rmse[0, :], plot_type=plot_type)
+        ranked_descriptions, ranked_values, ranking_indices = pert.rank_low_to_high(self.electrodes_sets, self.rmse[0, :], plot_type=plot_type)
         plt.xlabel('Electrode #')
         plt.title('Electrode ranking based on RMSE')
+        return ranked_descriptions, ranked_values, ranking_indices
 
 
 # %% Test code:

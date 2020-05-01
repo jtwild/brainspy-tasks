@@ -160,7 +160,7 @@ def rank_low_to_high(descriptions, values, plot_type=None, ax=None, x_data = [])
     descriptions = np.array(descriptions)
     values = np.array(values)
     ranking_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
-    ranking = descriptions[ranking_indices]
+    ranked_descriptions = descriptions[ranking_indices]
     ranked_values = values[ranking_indices]
     # Plot ranking in barplot
     if plot_type!=None:
@@ -191,7 +191,11 @@ def rank_low_to_high(descriptions, values, plot_type=None, ax=None, x_data = [])
         print('Plot intentionally skipped')
     else:
         NotImplementedError("Plottype not implemented. Choose from 'old', 'new' or None")
-    return ranking, ranked_values
+    # Ranked descriptions: the input descriptions ranked in the high-to-low order determined by values (might become optional in the ruture)
+    # Ranked values: the input values, ordered high to low
+    # Ranking indices: the indices that are used to rank the values high to low. So, of the 6th element of value-array has the largest value, the first element
+    # of ranking_indices will be 6. If the 0th element of values-array has smallest number, the last element of ranking_indices will be 0. So somethign like [6, ..., 0]
+    return ranked_descriptions, ranked_values, ranking_indices
 
 
 def np_object_array_mean(obj_arr, nan_val = 0):
