@@ -165,13 +165,23 @@ def format_input(data):
     processed_data.requires_grad = True
     return processed_data
 
+def averager(gradients, grid_mode):
+    #Goal: average over all electrodes to get the average gradient per electrode
+    assert grid_mode == 'full', 'Averager only knows how to work on full grid modes for now.'
+    # electrodes are on 0th dimension, so average everything except the zeroth dimension
+    avg_axes = tuple(range(1, gradients.ndim))
 
+    averaged_gradients = np.abs(gradients).mean(axis=avg_axes)
+    return averaged_gradients
+
+#%% For testing the code
 if __name__ == '__main__':
     model_data_path = "tmp/input/models/model_2020.pt"
 #    min_voltage = [-0.7]*7
 #    max_voltage = [0.3]*7
-    n_points = [5]
-    grid_mode = 'flat'
+    n_points = [2]
+    grid_mode = 'full'
     grid = create_grid_automatic(model_data_path, grid_mode=grid_mode, n_points=n_points)
 #    grid = create_grid_manual(min_voltage, max_voltage, grid_mode = grid_mode, n_points = n_points)
     outputs, gradients = get_outputs_gradients(model_data_path, grid, grid_mode=grid_mode)
+    avg_grad = averager(gradients, grid_mode)
