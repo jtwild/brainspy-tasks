@@ -6,7 +6,8 @@ Goal: loop over multiple devices to get gradient data.
 """
 
 #%% Loading packages
-import bspytasks.validation.gradient_ranking.gradient_utils as gradfrom bspyalgo.utils.io import load_configs
+import bspytasks.validation.gradient_ranking.gradient_utils as grad
+from bspyalgo.utils.io import load_configs
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -31,9 +32,12 @@ input_indices_len = 7
 voltage_interval_len = 1
 shape = [input_indices_len, voltage_interval_len, len(torch_model_dict_list)]
 
+
+#
+DOES NOT WORK YET BECAUSE IT IS DEPENDENT ON PERTURBATION BRANCH! MERGE BRANCHES TOGETHER TO ANALYSIS BRANCH?
 # %% Loop over all defined lists
 descrips = np.empty(shape, dtype=object)
-rmse = np.full(shape, np.nan)
+gradient = np.full(shape, np.nan)
 ranked_descriptions = np.full(shape, np.nan)
 for j, torch_model_dict in enumerate(torch_model_dict_list):
     configs = base_configs.copy()
