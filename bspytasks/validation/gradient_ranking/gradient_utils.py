@@ -75,7 +75,9 @@ def create_grid_manual(min_values, max_values, n_points=[5], grid_mode='full'):
         grid = np.reshape(grid, (input_dim, -1)).T
     if grid_mode == 'full':
         # This gets rid of the array structture in the default meshgrid output
-        # TODO: test if this works for unevenly spaced arrays
+        # Here, the resulting array has a shape of (n_electrodes, n_data_points_in_elec0, n_data_points_in_elec1, etc, etc)
+        # So: if you want to know the valyes for the first grid point, this is grid(:, 0,0,0,0,0,0)
+        # TODO: test if this works for unevenly spaced arrays, it should
         shape = np.concatenate((np.array([input_dim]), n_points), axis=0)
         grid = np.reshape(grid, shape)
     return grid
@@ -84,6 +86,8 @@ def create_grid_manual(min_values, max_values, n_points=[5], grid_mode='full'):
 def create_grid_automatic(model_data_path, n_points=[5], grid_mode='full'):
     # Goal: create a grid containing voltage values on the
     # min/max values of all electrodes based upon their min/max values in their SurrogateModel
+    # could potentially be extended to automatic voltage ranges on certain electrodes by simply selecting the relevant electrodes.
+    # Of course, a fixed voltage would need to be chosen for the other electrodes.
     model = SurrogateModel({'torch_model_dict': model_data_path})
     min_values, max_values = model.min_voltage, model.max_voltage
     grid = create_grid_manual(min_values, max_values, n_points, grid_mode)

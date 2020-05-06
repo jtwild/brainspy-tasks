@@ -6,7 +6,7 @@ Goal: loop over multiple devices to get gradient data.
 """
 
 #%% Loading packages
-import bspytasks.validation.gradient_ranking.gradient_utils as grad
+from bspytasks.validation.gradient_ranking.gradient_calculator import GradientCalculator
 from bspyalgo.utils.io import load_configs
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,8 +15,9 @@ import glob
 
 # %% User data
 output_directory = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\gradient_results"
+base_configs = load_configs('configs/benchmark_tests/analysis/gradient_analysis.json')
 # Lists to loop over
-#input_indices_list = [[0], [1], [2], [3], [4], [5], [6]] -> this is already contained in the perturbation looper
+#input_indices_list = [[0], [1], [2], [3], [4], [5], [6]] -> this is already contained in the gradient class grid looper
 #torch_model_dict_list taken from model list given
 #voltage_intervals_list  differs per model, fixed in loop below
 
@@ -32,11 +33,8 @@ input_indices_len = 7
 voltage_interval_len = 1
 shape = [input_indices_len, voltage_interval_len, len(torch_model_dict_list)]
 
-
-#
-DOES NOT WORK YET BECAUSE IT IS DEPENDENT ON PERTURBATION BRANCH! MERGE BRANCHES TOGETHER TO ANALYSIS BRANCH?
 # %% Loop over all defined lists
-descrips = np.empty(shape, dtype=object)
+descrips = np.full(shape, np.nan, dtype=object)
 gradient = np.full(shape, np.nan)
 ranked_descriptions = np.full(shape, np.nan)
 for j, torch_model_dict in enumerate(torch_model_dict_list):
@@ -44,16 +42,17 @@ for j, torch_model_dict in enumerate(torch_model_dict_list):
     # Edit the configs
     configs['processor']['torch_model_dict'] = torch_model_dict
 
-    # Start the test
-    ranker = ElectrodeRanker(configs)
-    rmse[:,:,j] = ranker.rank().T
-    ranked_descriptions[:,:,j], ranked_values, ranking_indices = ranker.plot_rank()
-#    plt.close('all')
+    # Get the gradients
+    calculator = GradientCalculator(configs)
+    gradient[:,0,j] = calculator.get_averaged_values()
+
+    # rank
+    ranked_descriptions[:,:,j], ranked_values, ranking_indices = calculator.rank_values() # electrode indices as descriptions hardcoded for now, because the automatic version only works with all electrodes
 
     # Save some extra results
     descrips[:,:,j] = f"model = {torch_model_dict_list[j]}"
 # Save loop items
-np.savez(output_directory + 'loop_items.npz', rmse=rmse, ranked_descriptions = ranked_descriptions,
+np.savez(os.path.join(output_directory, 'loop_items_gradient.npz'), gradient=gradient, ranked_descriptions = ranked_descriptions,
          descrips = descrips,
          torch_model_dict_list = torch_model_dict_list,
          shape = shape,
