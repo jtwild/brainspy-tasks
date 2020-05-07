@@ -154,21 +154,24 @@ def plot_hists(values, ax=None, n_bins=15, legend=None):
         ax.legend(legend)
 
 
-def rank_low_to_high(descriptions, values, plot_type=None, ax=None, x_data = []):
+def rank_low_to_high(values, descriptions = [], plot_type=None, ax=None, x_data = []):
     # Ranks the descriptions according to the values, and potentially makes a barplot out of it.
     # Potentially plots in a specified axes
-    descriptions = np.array(descriptions)
+
     values = np.array(values)
     ranking_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
-    ranked_descriptions = descriptions[ranking_indices]
     ranked_values = values[ranking_indices]
+    # Then check if we have gotten any descriptions:
+    if len(descriptions != 0):
+        descriptions = np.array(descriptions)
+        ranked_descriptions = descriptions[ranking_indices]
     # Plot ranking in barplot
     if plot_type!=None:
         if ax == None:
             plt.figure()
             ax = plt.axes()
         if len(x_data) == 0:
-            x_data = np.arange(len(descriptions))
+            x_data = np.arange(len(values))
             #else, use supplied x_data
         width = (x_data[1:] - x_data[:-1]) * 0.8
         width = np.append(width,width[-1]) # make last interval as big as previous one
@@ -195,7 +198,10 @@ def rank_low_to_high(descriptions, values, plot_type=None, ax=None, x_data = [])
     # Ranked values: the input values, ordered high to low
     # Ranking indices: the indices that are used to rank the values high to low. So, of the 6th element of value-array has the largest value, the first element
     # of ranking_indices will be 6. If the 0th element of values-array has smallest number, the last element of ranking_indices will be 0. So somethign like [6, ..., 0]
-    return ranked_descriptions, ranked_values, ranking_indices
+    if len(descriptions) != 0:
+        return ranked_values, ranking_indices, ranked_descriptions
+    else:
+        return ranked_values, ranking_indices
 
 
 def np_object_array_mean(obj_arr, nan_val = 0):
