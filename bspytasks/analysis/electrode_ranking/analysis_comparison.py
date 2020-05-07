@@ -17,7 +17,7 @@ and compare them
 #%% Importing packages
 import numpy as np
 import matplotlib.pyplot as plt
-import bspytasks.analysis.electrode_ranking.perturbation_utils as pert
+import bspytasks.analysis.electrode_ranking.ranking_utils as rank_utils
 import os
 #%% Defining user variables locations
 n_elec = 7 # Hardcoded because all data must match this
