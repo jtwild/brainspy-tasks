@@ -11,9 +11,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # %% Automated bar plotter with std from data or from stds
-def bar_plotter(data, legend, xticklabels, stds='auto', ax=None):
+
+
+def bar_plotter_multi_dim(data, legend, xticklabels, stds='auto', ax=None):
     # Goal: plot multiple bar plots next to each other, for all dimensions in the data. Expecting 2 dimensional data.
-    assert data.ndim == 2
+    # Takes averages of all data points over all axis and then plots these averaged
     if ax == None:
         # Create new axis if not supplied
         plt.figure()
@@ -29,16 +31,51 @@ def bar_plotter(data, legend, xticklabels, stds='auto', ax=None):
         x = range(counter, counter + shape[i])
         if np.all(stds == 'auto'):
             data_std = np.std(data, axis=axis_selection)
+        elif np.all(stds == None):
+            data_std = 0
         else:
             data_std = np.sqrt(np.mean(stds**2, axis=axis_selection))
-        plt.bar(x, data_mean, yerr=data_std)
+        ax.bar(x, data_mean, yerr=data_std)
 
         xticks = np.concatenate((xticks, x))
         counter += shape[i] + 1  # leave one blank space
-    plt.xticks(xticks, rotation=45)
-    plt.legend(legend, loc='lower right')
-    plt.grid(b=True, axis='y')
-    plt.gca().set_xticklabels(xticklabels)
+    plt.sca(ax), plt.xticks(xticks, rotation=45)
+    ax.legend(legend, loc='lower right')
+    ax.grid(b=True, axis='y')
+    ax.set_xticklabels(xticklabels)
+
+
+def bar_plotter_2d(data, legend=[], xticklabels=[], yerr=0, ax=None):
+    # GOal: plot multiple values of side by side
+    # First dimension decides how many bar colors exist, next to each other
+    # Second dimension defines how many x-data points
+    # so a data shape of (3,7) will have 7 groups of 3 bars together
+    assert data.ndim == 2
+    if ax == None:
+        plt.figure()
+        ax = plt.axes()
+
+    n_bars = data.shape[0]  # number of bars per group
+    n_groups = data.shape[1]  # number of groups of n_bars bars
+    delta_x, step = np.linspace(-0.5, 0.5, num=n_bars + 2, retstep=True)  # nbars+2 to add two endpoints, to remove later
+    delta_x = delta_x[1:-1]  # remove two endpoints
+    width = step * 0.9
+    x_base = np.arange(0, n_groups)
+    # Make the groups of bars
+    for i in range(n_bars):
+        x = x_base + delta_x[i]
+        ax.bar(x, data[i, :], yerr=yerr, width=width)
+    # Check legend and ticklabels:
+    if xticklabels == []:
+        xticklabels = x_base
+
+    # Fix legend and ticlabels
+    ax.set_xticks(x_base)
+    ax.set_xticklabels(xticklabels)
+    ax.legend(legend)
+    ax.grid(b=True, axis= 'y')
+
+
 
 def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None):
     # Sort the values by ranges in inputs. Inputs gets grouped, and indices specifying to
@@ -80,7 +117,7 @@ def plot_hists(values, ax=None, n_bins=15, legend=None):
         ax.legend(legend)
 
 
-def rank_low_to_high(values, descriptions = [], plot_type=None, ax=None, x_data = []):
+def rank_low_to_high(values, descriptions=[], plot_type=None, ax=None, x_data=[]):
     # Ranks the descriptions according to the values, and potentially makes a barplot out of it.
     # Potentially plots in a specified axes
 
@@ -88,19 +125,19 @@ def rank_low_to_high(values, descriptions = [], plot_type=None, ax=None, x_data 
     ranking_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
     ranked_values = values[ranking_indices]
     # Then check if we have gotten any descriptions:
-    if len(descriptions != 0):
+    if len(descriptions) != 0:
         descriptions = np.array(descriptions)
         ranked_descriptions = descriptions[ranking_indices]
     # Plot ranking in barplot
-    if plot_type!=None:
+    if plot_type != None:
         if ax == None:
             plt.figure()
             ax = plt.axes()
         if len(x_data) == 0:
             x_data = np.arange(len(values))
-            #else, use supplied x_data
+            # else, use supplied x_data
         width = (x_data[1:] - x_data[:-1]) * 0.8
-        width = np.append(width,width[-1]) # make last interval as big as previous one
+        width = np.append(width, width[-1])  # make last interval as big as previous one
         if plot_type == 'values':
             ax.bar(x_data, ranked_values, width=width)
             for i, x_val in enumerate(x_data):
@@ -111,13 +148,11 @@ def rank_low_to_high(values, descriptions = [], plot_type=None, ax=None, x_data 
         elif plot_type == 'ranking':
             y_ticks = np.arange(0, len(x_data))
             y_data = y_ticks[-1::-1]
-            ax.bar(x_data[ranking_indices], y_data, width=width) #negative range, ebcause first element is most important
+            ax.bar(x_data[ranking_indices], y_data, width=width)  # negative range, ebcause first element is most important
             ax.set_ylabel('Ranking')
             ax.set_yticks(y_data)
             ax.set_yticklabels(y_ticks)
         ax.grid(True)
-    elif plot_type==None:
-        print('Plot intentionally skipped')
     else:
         NotImplementedError("Plottype not implemented. Choose from 'old', 'new' or None")
     # Ranked descriptions: the input descriptions ranked in the high-to-low order determined by values (might become optional in the ruture)
@@ -130,7 +165,7 @@ def rank_low_to_high(values, descriptions = [], plot_type=None, ax=None, x_data 
         return ranked_values, ranking_indices
 
 
-def np_object_array_mean(obj_arr, nan_val = 0):
+def np_object_array_mean(obj_arr, nan_val=0):
     # Takes the averages of the object elements of a numpy array.
     # Because if you have a numpy array of a numpy array, just using np.mean(arr, axis=0) does not work.
     float_arr = np.zeros(obj_arr.size)

@@ -32,6 +32,12 @@ perturbation_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_M
 vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models\loop_items.npz', allow_pickle = True)
 models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
 
+# Manual information about the loops
+descr_elec = [0, 1, 2, 3, 4, 5, 6]
+descr_intervals = ['full']
+descr_models = models
+descr_methods = ['grad', 'pert', 'vc6']
+
 #%% Load data from npz libraries
 gradient = gradient_lib['gradient']
 perturbation = perturbation_lib['rmse']
@@ -46,10 +52,35 @@ for i in range(n_elec):
         vc[i,0,j, :] = vc_summaries[i,j]['capacity_per_N']
 vc6 = vc[:,:,:,4]
 
+
+#%% Rank all data:
+rank_perturbation = np.full(shape, np.nan)
+rank_gradient = np.full(shape, np.nan)
+rank_vc6 = np.full(shape, np.nan)
+for j in range(n_intervals):
+    for k in range(n_models):
+        rank_perturbation[:,j,k] = rank_utils.rank_low_to_high(perturbation[:,j,k])[1] # [1] selects the ranking indices. A.k.a. the rank of the different elements.
+        rank_gradient[:,j,k] = rank_utils.rank_low_to_high(gradient[:,j,k])[1]
+        rank_vc6[:,j,k] = rank_utils.rank_low_to_high(vc6[:,j,k])[1]
+# Add one to set zero score to one.
+rank_perturbation+=1
+rank_gradient+=1
+rank_vc6+=1
 #%% Plot different dfigures
 print('Check manually if inputs are formatted according ot the same standard and that the same models/eelctrodes are used!')
 
 # comparing methods and ranking: 7 subplots (one per device). y-axis rank, x-axis electrodes, bars for methods (so 3 bars per electrodes)
-fig_a, ax_a  = plt.subplots(nrows=4, ncols =1, sharey=True)
+fig_a, ax_a  = plt.subplots(nrows=2, ncols=4, sharey=True)
+ax_a = ax_a.flatten()
+for i in range(n_models):
+    data = np.stack((rank_gradient[:,0,i],
+                     rank_perturbation[:,0,i],
+                     rank_vc6[:,0,i]),
+                    axis=0)
+    legend = descr_methods
+    xticklabels = descr_elec
+    ax = ax_a[i]
+    rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax)
+    ax.set_title(descr_models[i])
 
 
