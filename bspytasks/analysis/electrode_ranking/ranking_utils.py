@@ -122,12 +122,18 @@ def rank_low_to_high(values, descriptions=[], plot_type=None, ax=None, x_data=[]
     # Potentially plots in a specified axes
 
     values = np.array(values)
-    ranking_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
-    ranked_values = values[ranking_indices]
+    sorting_indices = np.argsort(-values)  # take negative of value to order the values from largest (most positive -> most negative) to smallest
+    # sorting_indices contains the indices which would sort the array.
+    # so, for ex values=[3, 1, 2],  then sorting_indices = argsort(-values) = [0,2,1]
+    # now, if we sort the sorting_indices (ranking = np.argsort(sorting_indices)), we ofcourse get an ordered list like range(1,len(values)), in this example [0,1,2]
+    # since this ordered list corresponds to the original values index, the order you need to sort them (=ranking) is
+    # the position on which the values would be placed if they were to be ranked
+    ranking = np.argsort(sorting_indices)
+    ranked_values = values[sorting_indices]
     # Then check if we have gotten any descriptions:
     if len(descriptions) != 0:
         descriptions = np.array(descriptions)
-        ranked_descriptions = descriptions[ranking_indices]
+        ranked_descriptions = descriptions[sorting_indices]
     # Plot ranking in barplot
     if plot_type != None:
         if ax == None:
@@ -148,7 +154,7 @@ def rank_low_to_high(values, descriptions=[], plot_type=None, ax=None, x_data=[]
         elif plot_type == 'ranking':
             y_ticks = np.arange(0, len(x_data))
             y_data = y_ticks[-1::-1]
-            ax.bar(x_data[ranking_indices], y_data, width=width)  # negative range, ebcause first element is most important
+            ax.bar(x_data[sorting_indices], y_data, width=width)  # negative range, ebcause first element is most important
             ax.set_ylabel('Ranking')
             ax.set_yticks(y_data)
             ax.set_yticklabels(y_ticks)
@@ -158,12 +164,18 @@ def rank_low_to_high(values, descriptions=[], plot_type=None, ax=None, x_data=[]
     # Ranked descriptions: the input descriptions ranked in the high-to-low order determined by values (might become optional in the ruture)
     # Ranked values: the input values, ordered high to low
     # Ranking indices: the indices that are used to rank the values high to low. So, of the 6th element of value-array has the largest value, the first element
-    # of ranking_indices will be 6. If the 0th element of values-array has smallest number, the last element of ranking_indices will be 0. So somethign like [6, ..., 0]
+    # of sorting_indices will be 6. If the 0th element of values-array has smallest number, the last element of sorting_indices will be 0. So somethign like [6, ..., 0]
     if len(descriptions) != 0:
-        return ranked_values, ranking_indices, ranked_descriptions
+        return ranking, ranked_values, sorting_indices, ranked_descriptions
     else:
-        return ranked_values, ranking_indices
+        return ranking, ranked_values, sorting_indices
 
+def normalize(values):
+    # put values in range 0, 1 bu substracting minimum value and dividing by spread
+    values = np.array(values)
+    max_val = values.max()
+    min_val = values.min()
+    return (values-min_val)/(max_val-min_val)
 
 def np_object_array_mean(obj_arr, nan_val=0):
     # Takes the averages of the object elements of a numpy array.
