@@ -45,15 +45,23 @@ def bar_plotter_multi_dim(data, legend, xticklabels, stds='auto', ax=None):
     ax.set_xticklabels(xticklabels)
 
 
-def bar_plotter_2d(data, legend=[], xticklabels=[], yerr=0, ax=None):
+def bar_plotter_2d(data, legend=[], xticklabels=[], yerr=0, ax=None, sort_index=None):
     # GOal: plot multiple values of side by side
     # First dimension decides how many bar colors exist, next to each other
     # Second dimension defines how many x-data points
     # so a data shape of (3,7) will have 7 groups of 3 bars together
+    # Sort index possibly sorts all the data acoording to the supplied index of data before plotting
     assert data.ndim == 2
     if ax == None:
         plt.figure()
         ax = plt.axes()
+    legend = np.array(legend)
+    xticklabels = np.array(xticklabels)
+    if sort_index != None:
+        new_order = np.argsort(data[sort_index, :])
+        data = data[:, new_order]
+        if xticklabels.size > 0:
+            xticklabels = xticklabels[new_order]
 
     n_bars = data.shape[0]  # number of bars per group
     n_groups = data.shape[1]  # number of groups of n_bars bars
@@ -66,15 +74,14 @@ def bar_plotter_2d(data, legend=[], xticklabels=[], yerr=0, ax=None):
         x = x_base + delta_x[i]
         ax.bar(x, data[i, :], yerr=yerr, width=width)
     # Check legend and ticklabels:
-    if xticklabels == []:
+    if xticklabels.size > 0:
         xticklabels = x_base
 
     # Fix legend and ticlabels
     ax.set_xticks(x_base)
     ax.set_xticklabels(xticklabels)
     ax.legend(legend)
-    ax.grid(b=True, axis= 'y')
-
+    ax.grid(b=True, axis='y')
 
 
 def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None):
@@ -170,12 +177,14 @@ def rank_low_to_high(values, descriptions=[], plot_type=None, ax=None, x_data=[]
     else:
         return ranking, ranked_values, sorting_indices
 
+
 def normalize(values):
     # put values in range 0, 1 bu substracting minimum value and dividing by spread
     values = np.array(values)
     max_val = values.max()
     min_val = values.min()
-    return (values-min_val)/(max_val-min_val)
+    return (values - min_val) / (max_val - min_val)
+
 
 def np_object_array_mean(obj_arr, nan_val=0):
     # Takes the averages of the object elements of a numpy array.
