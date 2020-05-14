@@ -74,7 +74,7 @@ def bar_plotter_2d(data, legend=[], xticklabels=[], yerr=0, ax=None, sort_index=
         x = x_base + delta_x[i]
         ax.bar(x, data[i, :], yerr=yerr, width=width)
     # Check legend and ticklabels:
-    if xticklabels.size > 0:
+    if xticklabels.size == 0:
         xticklabels = x_base
 
     # Fix legend and ticlabels
