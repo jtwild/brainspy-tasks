@@ -29,7 +29,7 @@ shape = [n_elec, n_intervals, n_models]
 # Load npz libraires containing the data. Contains a lot more information for checking data. Not used in this script, feel free to explore.
 gradient_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_gradient_results\loop_items_gradient.npz')
 perturbation_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_01_perturbation_results\perturbation_results.npz')
-vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models\loop_items.npz', allow_pickle=True)
+vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models_VC7\loop_items.npz', allow_pickle=True)
 models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
 
 # Manual information about the loops
@@ -37,7 +37,7 @@ descr_elec = [0, 1, 2, 3, 4, 5, 6]
 descr_intervals = ['full']
 descr_models = models
 descr_models_short = ['brains1', 'darwin1', 'darwin2', 'brains2.1', 'brains2.2', 'pinky1','darwin3']
-descr_methods = ['grad', 'pert', 'vc6']
+descr_methods = ['grad', 'pert', 'vcX']
 
 # %% Load data from npz libraries
 gradient = gradient_lib['gradient']
@@ -46,39 +46,39 @@ print('Warning! Perturbation loaded negatively such that large (positive) pertur
 
 # Get VC data from summaries, because it was not saved correctly:
 vc_summaries = vc_lib['summaries']
-n_vcs = 5
+n_vcs = 1
 vc = np.full(np.append(shape, n_vcs), np.nan)
 for i in range(n_elec):
     for j in range(n_models):
         # zeroth dimension hardcoded, because I did not loop over the one voltage intervals in this case
         vc[i, 0, j, :] = vc_summaries[i, j]['capacity_per_N']
-vc6 = vc[:, :, :, -1]
+vcX = vc[:, :, :, -1]
 
 
 # %% Rank all data:
 rank_perturbation = np.full(shape, np.nan)
 rank_gradient = np.full(shape, np.nan)
-rank_vc6 = np.full(shape, np.nan)
+rank_vcX = np.full(shape, np.nan)
 for j in range(n_intervals):
     for k in range(n_models):
         rank_perturbation[:, j, k] = rank_utils.rank_low_to_high(perturbation[:, j, k])[0]  # [1] selects the ranking indices. A.k.a. the rank of the different elements.
         rank_gradient[:, j, k] = rank_utils.rank_low_to_high(gradient[:, j, k])[0]
-        rank_vc6[:, j, k] = rank_utils.rank_low_to_high(vc6[:, j, k])[0]
-#print('VC6 rank inverted. High VC score = low rank')
+        rank_vcX[:, j, k] = rank_utils.rank_low_to_high(vcX[:, j, k])[0]
+#print('vcX rank inverted. High VC score = low rank')
 # Add one to set zero score to one.
 rank_perturbation += 1
 rank_gradient += 1
-rank_vc6 += 1
+rank_vcX += 1
 
 # %% Normalize data
 norm_perturbation = np.full(shape, np.nan)
 norm_gradient = np.full(shape, np.nan)
-norm_vc6 = np.full(shape, np.nan)
+norm_vcX = np.full(shape, np.nan)
 for j in range(n_intervals):
     for k in range(n_models):
         norm_gradient[:, j, k] = rank_utils.normalize(gradient[:, j, k])
         norm_perturbation[:, j, k] = rank_utils.normalize(perturbation[:, j, k])
-        norm_vc6[:, j, k] = rank_utils.normalize(vc6[:, j, k])
+        norm_vcX[:, j, k] = rank_utils.normalize(vcX[:, j, k])
 # %% Plot different dfigures
 print('Check manually if inputs are formatted according ot the same standard and that the same models/eelctrodes are used!')
 
@@ -91,7 +91,7 @@ ax_a = ax_a.flatten()
 for i in range(n_models):
     data = np.stack((rank_gradient[:, 0, i],
                      rank_perturbation[:, 0, i],
-                     rank_vc6[:, 0, i]),
+                     rank_vcX[:, 0, i]),
                     axis=0)
     legend = descr_methods
     xticklabels = descr_elec
@@ -108,7 +108,7 @@ ax_b = ax_b.flatten()
 for i in range(n_models):
     data = np.stack((norm_gradient[:, 0, i],
                      norm_perturbation[:, 0, i],
-                     norm_vc6[:, 0, i]),
+                     norm_vcX[:, 0, i]),
                     axis=0)
     legend = descr_methods
     xticklabels = descr_elec
@@ -122,13 +122,13 @@ for i in range(n_models):
 fig_b, ax_b = plt.subplots(nrows=2, ncols=4, sharey=False)
 ax_b = ax_b.flatten()
 for i in range(n_models):
-    x_data = vc6[:, 0, i]
+    x_data = vcX[:, 0, i]
     y_data1, color1 = perturbation[:, 0, i], 'blue'
     y_data2, color2 = gradient[:,0,i], 'red'
     xticklabels = descr_elec
     ax = ax_b[i]
     ax.set_title(descr_models[i])
-    ax.set_xlabel('VC6 capacity')
+    ax.set_xlabel('vcX capacity')
     # Plot 1
     ax.plot(x_data, y_data1, linestyle='None', marker='+')
     ax.set_ylabel('Perturbation score', color=color1)
@@ -144,7 +144,7 @@ for i in range(n_models):
 fig_c, ax_c = plt.subplots(nrows=1, ncols=3, sharey=False)
 fig_c.suptitle('Electrode rank vs electrode nummer, bar color per model, subplot per method')
 ax_c = ax_c.flatten()
-for i, data in enumerate([rank_gradient, rank_perturbation, rank_vc6]):
+for i, data in enumerate([rank_gradient, rank_perturbation, rank_vcX]):
     data = data[:, 0, :].T  # select one voltage interval
     legend = range(n_models)  # descr_models
     xticklabels = descr_elec
@@ -164,7 +164,7 @@ for i in range(n_elec):
     # Second dimeniosn of data: rank vs method
     data = np.stack((rank_gradient[i, 0, :],
                      rank_perturbation[i, 0, :],
-                     rank_vc6[i, 0, :]),
+                     rank_vcX[i, 0, :]),
                     axis=1)
     legend = descr_models_short  # descr_models
     xticklabels = descr_methods
@@ -184,7 +184,7 @@ for i in range(n_elec):
     # Second dimeniosn of data: rank vs method
     data = np.stack((rank_gradient[i, 0, :],
                      rank_perturbation[i, 0, :],
-                     rank_vc6[i, 0, :]),
+                     rank_vcX[i, 0, :]),
                     axis=1).T
     legend = descr_methods
     xticklabels = range(n_models)  # descr_models
