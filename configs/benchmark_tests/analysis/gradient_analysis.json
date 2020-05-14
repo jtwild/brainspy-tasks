@@ -5,7 +5,7 @@
 "gradient": {
     "grid": {
         "grid_mode": "full",
-        "n_points": [2]
+        "n_points": [6]
         }
     }
 }

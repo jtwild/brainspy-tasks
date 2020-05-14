@@ -54,7 +54,7 @@ def create_grid_manual(min_values, max_values, n_points=[5], grid_mode='full'):
                            value_ranges[2])
     elif input_dim == 4:
         grid = np.meshgrid(value_ranges[0], value_ranges[1],
-                           value_ranges[2], value_ranges[2])
+                           value_ranges[2], value_ranges[3])
     elif input_dim == 5:
         grid = np.meshgrid(value_ranges[0], value_ranges[1],
                            value_ranges[2], value_ranges[3],
@@ -94,7 +94,7 @@ def create_grid_automatic(model_data_path, n_points=[5], grid_mode='full'):
     return grid
 
 
-def get_outputs_gradients(model_data_path, grid, grid_mode='full', mode='analytical'):
+def get_outputs_gradients(model_data_path, grid, grid_mode='full', calc_mode='analytical'):
     # Goal: calculate the outputs and their correpsonding gradients
     # to implement later: add option for numerical gradient calculation based on grid spacing (delta output / delta input)
     # instead of analytical pytorch gradient
@@ -105,36 +105,29 @@ def get_outputs_gradients(model_data_path, grid, grid_mode='full', mode='analyti
     elif grid_mode == 'full':
         assert grid.ndim > 2, 'Expecting grid dimension > 2 for full mode, for ex. dimension 8(=7+1) for 7 electrodes'
     # Choose calculator mode
-    if mode == 'analytical':
+    if calc_mode == 'analytical':
         calculator = get_outputs_gradients_analytical
-    elif mode == 'numerical':
-        raise NotImplementedError('Numerical not (yet) implemented.')
-        if grid_mode != 'full':
-            raise TypeError("Grid shape needs to be 'full' for analytical calculation.")
+    elif calc_mode == 'numerical':
+        calculator = get_outputs_gradients_numerical
     else:
-        raise NotImplementedError(f'Unknown/unimplemented mode. Supplied mode was {mode}')
+        raise NotImplementedError(f'Unknown/unimplemented mode. Supplied mode was {calc_mode}')
 
-    # To use multiple grid_modes, just check the current shape, rehsape once to flat shape, do calculation, and reshape to flat
+    # Now loop over all grid points to get the output:
+    model = SurrogateModel({'torch_model_dict': model_data_path})
+    outputs, gradients = calculator(model, grid, grid_mode)
+    return outputs, gradients
+
+
+def get_outputs_gradients_analytical(model, grid, grid_mode):
+    # Goal: loop over all input values to get analytical gradients (via pytorch backward method) and outputs.
+
+    # Gradient calculation requires flat. To use multiple grid_modes, just check the current shape, rehsape once to flat shape, do calculation, and reshape to fulll if required
     if grid_mode == 'full':
         grid_shape = np.array(grid.shape)
         input_dim = grid_shape[0]
         grid = grid.reshape(input_dim, -1).T  # this basically changes the shape to flat. Will be changed to full again after calculation
-    # if mode == flat, we do not need to rehsape
+        # if mode == flat, we do not need to rehsape
 
-    # Now loop over all grid points to get the output:
-    model = SurrogateModel({'torch_model_dict': model_data_path})
-    outputs, gradients = calculator(model, grid)
-    # Reshape to get correct form if we are using full mode. If we use flat mode, shape is already correct
-    if grid_mode == 'full':
-        outputs_shape = grid_shape.copy()
-        outputs_shape[0] = 1  # not 7 input electrodes, but just one output
-        outputs = outputs.reshape(outputs_shape)
-        gradients = gradients.reshape(grid_shape)
-    return outputs, gradients
-
-
-def get_outputs_gradients_analytical(model, grid):
-    # Goal: loop over all input values to get analytical gradients (via pytorch backward method) and outputs.
     # Initialize result arrays
     n_points = grid.shape[0]
     input_dim = grid.shape[1]
@@ -145,7 +138,15 @@ def get_outputs_gradients_analytical(model, grid):
     for i in looper:
         single_input = format_input(grid[i, :])
         torch_output = model(single_input)
-        gradients[i, :], outputs[i] = get_gradient_analytical(single_input, torch_output)
+        outputs[i], gradients[i, :] = get_gradient_analytical(single_input, torch_output)
+
+    # Reshape to get correct form if we are using full mode. If we use flat mode, shape is already correct
+    if grid_mode == 'full':
+        outputs_shape = grid_shape.copy()
+        outputs_shape[0] = 1  # not 7 input electrodes, but just one output
+        outputs = outputs.reshape(outputs_shape)
+        gradients = gradients.reshape(grid_shape)
+
     return outputs, gradients
 
 
@@ -156,17 +157,60 @@ def get_gradient_analytical(input_data, output_data):
         input_data.grad.zero_()
     output_data.backward()
 
-    gradients = input_data.grad.cpu().numpy()
-    detached_output = output_data.cpu().detach().numpy()
+    gradients = TorchUtils.get_numpy_from_tensor(input_data.grad)
+    detached_output = TorchUtils.get_numpy_from_tensor(output_data)
 
-    return gradients, detached_output
+    return detached_output, gradients
+
+def get_outputs_gradients_numerical(model, grid, grid_mode, return_difference = False):
+    # Goal: get numerical gradients / output differences divided by input difference
+    # Only works with full grid because there the differences are easy
+    # Method: calculate delta output and delta input, calculate difference
+    assert grid_mode == 'full', 'Numerical only works with full grid mode'
+    n_grid_dims = grid.ndim - 1 #always one dimension for the different eelctrodes (the 0th dimension). THe remaining dimension is n_grid_dims, number of varied dimensions
+    # Number of electrodes should be equal to first dimension of grid
+    grad_shape = np.array(grid.shape)
+    grad_shape[0] = n_grid_dims # because we can only set the gradient for parts that are varied in the grid.
+    gradients = np.full(grad_shape, np.nan)
+
+    # Get outputs
+    outputs = get_outputs_on_grid(model, grid)
+    # Calculate gradients for all varied dimension
+    for i in range(n_grid_dims):
+        # Place the relevant data on first dimension, perform calculation and go back to original shape
+        grid = grid.swapaxes(1, i+1)
+        outputs = outputs.swapaxes(1, i+1)
+        gradients = gradients.swapaxes(1, i+1)
+        # Perform calculation. The first dimension now contains the thing that we are differencing
+        delta_output = outputs[0,1:] - grid[0, :-1] # only one output, so first output dimension size is 0. Take that 0th element.
+        # Two possible outputs
+        if return_difference:
+            gradients[i,:] = delta_output # actually, not gradient but a difference in this case
+        else:
+            delta_input = grid[i,1:] - grid[i,:-1]
+            gradients[i,:-1] = delta_output / delta_input # we cannot fill the entire grid because for the dimension we are changing we have one less data point after calculating differences
+            raise Warning('Bug here. SOmehow axis 0 and 1 seems to be swapped? Axis 1 does not vary in the grid where required.')
+        # Swap axes back
+        grid = grid.swapaxes(1, i+1)
+        outputs = outputs.swapaxes(1,i+1)
+        gradients = gradients.swapaxes(1,i+1)
+    return outputs, gradients
+
+def get_outputs_on_grid(model, grid):
+    outputs_shape = np.array(grid.shape)
+    outputs_shape[0] = 1 # only one output value isntead of 7 input values
+    n_elec = grid.shape[0]
+    inputs = format_input( grid.reshape(n_elec, -1), requires_grad = False)
+    outputs = TorchUtils.get_numpy_from_tensor( model(inputs.T) ).T  # model take sinputs with 7-dimensional electrode values on 2nd dimension, en n_samples on first dimension. SO take inverse.
+    outputs = outputs.reshape(outputs_shape)
+    return outputs
 
 
-def format_input(data):
+def format_input(data, requires_grad = True):
     # Copied from Unai's work
     # Goal: format input data to torch tensor.
     processed_data = TorchUtils.get_tensor_from_numpy(data)
-    processed_data.requires_grad = True
+    processed_data.requires_grad = requires_grad
     return processed_data
 
 def averager(gradients, grid_mode):
@@ -175,7 +219,7 @@ def averager(gradients, grid_mode):
     # electrodes are on 0th dimension, so average everything except the zeroth dimension
     avg_axes = tuple(range(1, gradients.ndim))
 
-    averaged_gradients = np.abs(gradients).mean(axis=avg_axes)
+    averaged_gradients = np.nanmean(np.abs(gradients), axis=avg_axes)
     return averaged_gradients
 
 #%% For testing the code
@@ -183,9 +227,10 @@ if __name__ == '__main__':
     model_data_path = "tmp/input/models/model_2020.pt"
 #    min_voltage = [-0.7]*7
 #    max_voltage = [0.3]*7
-    n_points = [2]
+    n_points = [4]
     grid_mode = 'full'
+    calc_mode = 'numerical'
     grid = create_grid_automatic(model_data_path, grid_mode=grid_mode, n_points=n_points)
 #    grid = create_grid_manual(min_voltage, max_voltage, grid_mode = grid_mode, n_points = n_points)
-    outputs, gradients = get_outputs_gradients(model_data_path, grid, grid_mode=grid_mode)
+    outputs, gradients = get_outputs_gradients(model_data_path, grid, grid_mode=grid_mode, calc_mode = calc_mode)
     avg_grad = averager(gradients, grid_mode)

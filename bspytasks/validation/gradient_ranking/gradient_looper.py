@@ -14,7 +14,7 @@ import os
 import glob
 
 # %% User data
-output_directory = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\gradient_results"
+output_directory = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_gradient_results"
 base_configs = load_configs('configs/benchmark_tests/analysis/gradient_analysis.json')
 # Lists to loop over
 #input_indices_list = [[0], [1], [2], [3], [4], [5], [6]] -> this is already contained in the gradient class grid looper
@@ -51,7 +51,7 @@ for j, torch_model_dict in enumerate(torch_model_dict_list):
 
     # Save some extra results
     descrips[:,:,j] = f"model = {torch_model_dict_list[j]}"
-# Save loop items
+#%% Save loop items
 np.savez(os.path.join(output_directory, 'loop_items_gradient.npz'), gradient=gradient, ranked_descriptions = ranked_descriptions,
          descrips = descrips,
          torch_model_dict_list = torch_model_dict_list,
