@@ -33,11 +33,19 @@ vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstude
 models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
 
 # Manual information about the loops
-descr_elec = [0, 1, 2, 3, 4, 5, 6]
+descr_elec = np.array([0, 1, 2, 3, 4, 5, 6])
 descr_intervals = ['full']
 descr_models = models
-descr_models_short = ['brains1', 'darwin1', 'darwin2', 'brains2.1', 'brains2.2', 'pinky1','darwin3']
-descr_methods = ['grad', 'pert', 'vcX']
+descr_models_short = np.array(['brains1', 'darwin1', 'darwin2', 'brains2.1', 'brains2.2', 'pinky1','darwin3'])
+descr_methods = np.array(['grad', 'pert', 'vcX'])
+
+# Manual selection of specific model indices.
+#selec_elec = [0,1,2,3,4,5,6] # no selection currently performed in electrodes
+#selec_intervals= [0] # no selection currently performed on intervals
+# select only specifc models, to investigate brains/darwin/pinky difference
+select_models = [0, 3, 4]  # brains models
+#select_models = [1, 2, 6] # Darwin models
+#select_models = [5] # pinky models.
 
 # %% Load data from npz libraries
 gradient = gradient_lib['gradient']
@@ -56,18 +64,18 @@ vcX = vc[:, :, :, -1]
 
 
 # %% Rank all data:
-rank_perturbation = np.full(shape, np.nan)
 rank_gradient = np.full(shape, np.nan)
+rank_perturbation = np.full(shape, np.nan)
 rank_vcX = np.full(shape, np.nan)
 for j in range(n_intervals):
     for k in range(n_models):
-        rank_perturbation[:, j, k] = rank_utils.rank_low_to_high(perturbation[:, j, k])[0]  # [1] selects the ranking indices. A.k.a. the rank of the different elements.
         rank_gradient[:, j, k] = rank_utils.rank_low_to_high(gradient[:, j, k])[0]
+        rank_perturbation[:, j, k] = rank_utils.rank_low_to_high(perturbation[:, j, k])[0]
         rank_vcX[:, j, k] = rank_utils.rank_low_to_high(vcX[:, j, k])[0]
 #print('vcX rank inverted. High VC score = low rank')
 # Add one to set zero score to one.
-rank_perturbation += 1
 rank_gradient += 1
+rank_perturbation += 1
 rank_vcX += 1
 
 # %% Normalize data
@@ -79,6 +87,25 @@ for j in range(n_intervals):
         norm_gradient[:, j, k] = rank_utils.normalize(gradient[:, j, k])
         norm_perturbation[:, j, k] = rank_utils.normalize(perturbation[:, j, k])
         norm_vcX[:, j, k] = rank_utils.normalize(vcX[:, j, k])
+
+#%% Make selection of models based on manual input\
+gradient = gradient[:,:,select_models]
+perturbation = perturbation[:,:,select_models]
+vcX = vcX[:,:,select_models]
+
+rank_gradient = rank_gradient[:,:,select_models]
+rank_perturbation = rank_perturbation[:,:,select_models]
+rank_vcX = rank_vcX[:,:,select_models]
+
+norm_gradient = norm_gradient[:,:,select_models]
+norm_perturbation = norm_perturbation[:,:,select_models]
+norm_vcX = norm_vcX[:,:,select_models]
+
+descr_models = descr_models[select_models]
+descr_models_short = descr_models_short[select_models]
+models = models[select_models]
+
+n_models  = len(select_models)
 # %% Plot different dfigures
 print('Check manually if inputs are formatted according ot the same standard and that the same models/eelctrodes are used!')
 
@@ -187,7 +214,7 @@ for i in range(n_elec):
                      rank_vcX[i, 0, :]),
                     axis=1).T
     legend = descr_methods
-    xticklabels = range(n_models)  # descr_models
+    xticklabels = descr_models_short
     ax = ax_e[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
     ax.set_title(f'electrode {descr_elec[i]}')
