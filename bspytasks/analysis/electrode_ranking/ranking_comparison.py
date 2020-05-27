@@ -29,7 +29,7 @@ shape = [n_elec, n_intervals, n_models]
 # Load npz libraires containing the data. Contains a lot more information for checking data. Not used in this script, feel free to explore.
 gradient_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_gradient_results\loop_items_gradient.npz')
 perturbation_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_01_perturbation_results\perturbation_results.npz')
-vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models_VC7\loop_items.npz', allow_pickle=True)
+vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_capacity_loop_7_models_VC8\loop_items.npz', allow_pickle=True)
 models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
 
 # Manual information about the loops
@@ -43,9 +43,9 @@ descr_methods = np.array(['grad', 'pert', 'vcX'])
 #selec_elec = [0,1,2,3,4,5,6] # no selection currently performed in electrodes
 #selec_intervals= [0] # no selection currently performed on intervals
 # select only specifc models, to investigate brains/darwin/pinky difference
-select_models = [0, 3, 4]  # brains models
+#select_models = [0, 3, 4]  # brains models
 #select_models = [1, 2, 6] # Darwin models
-#select_models = [5] # pinky models.
+select_models = [5] # pinky models.
 
 # %% Load data from npz libraries
 gradient = gradient_lib['gradient']
@@ -124,7 +124,7 @@ for i in range(n_models):
     xticklabels = descr_elec
     ax = ax_a[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
-    ax.set_title(descr_models[i])
+    ax.set_title(descr_models_short[i])
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Rank by method')
 
@@ -141,7 +141,7 @@ for i in range(n_models):
     xticklabels = descr_elec
     ax = ax_b[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
-    ax.set_title(descr_models[i])
+    ax.set_title(descr_models_short[i])
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Normalized score')
 
@@ -154,7 +154,7 @@ for i in range(n_models):
     y_data2, color2 = gradient[:,0,i], 'red'
     xticklabels = descr_elec
     ax = ax_b[i]
-    ax.set_title(descr_models[i])
+    ax.set_title(descr_models_short[i])
     ax.set_xlabel('vcX capacity')
     # Plot 1
     ax.plot(x_data, y_data1, linestyle='None', marker='+')
@@ -173,7 +173,7 @@ fig_c.suptitle('Electrode rank vs electrode nummer, bar color per model, subplot
 ax_c = ax_c.flatten()
 for i, data in enumerate([rank_gradient, rank_perturbation, rank_vcX]):
     data = data[:, 0, :].T  # select one voltage interval
-    legend = range(n_models)  # descr_models
+    legend = descr_models_short  # descr_models
     xticklabels = descr_elec
     ax = ax_c[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=0)
@@ -216,7 +216,7 @@ for i in range(n_elec):
     legend = descr_methods
     xticklabels = descr_models_short
     ax = ax_e[i]
-    rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
+    rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax)
     ax.set_title(f'electrode {descr_elec[i]}')
     ax.set_xlabel('Model #')
     ax.set_ylabel('Rank')
