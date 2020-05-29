@@ -1,7 +1,7 @@
 {
     "capacity_test":{
-        "from_dimension": 5,
-        "to_dimension":5,
+        "from_dimension": 8,
+        "to_dimension":8,
         "results_base_dir": "tmp/TEST/output/gd/capacity_test_experiments/",
         "vc_dimension_test":{
             "threshold_parameter": 0,
@@ -11,27 +11,27 @@
             "voltage_intervals": [-1.2, 0.6],
             "num_levels": "auto",
             "boolean_gate_test":{
-                    "max_attempts":10,
+                    "max_attempts":30,
                     "results_base_dir": "tmp/TEST/output/gd/boolean_gate_experiments",
                     "show_plots": false,
                     "scale_plots": true,
                     "overwrite": true,
                     "algorithm_configs": {
-                            "live_plot": true,
-                            "live_plot_interval": 10,
+                            "live_plot": false,
+                            "live_plot_interval": 50,
                             "early_stopping":{
-                                "use_early_stopping": true,
-                                "min_stopping_epochs": 100,
+                                "use_early_stopping": false,
+                                "min_stopping_epochs": 50,
                                 "stopping_criterium": 0.01,
-                                "stopping_patience": 100,
+                                "stopping_patience": 50,
                                 "auto_stopping_fraction": 0.0001,
                             },
                             "algorithm": "gradient_descent",
                             "hyperparameters": {
-                                        "nr_epochs": 2000,
-                                        "batch_size": 15,
-                                        "learning_rate": 0.001,
-                                        "loss_function": "bce",
+                                        "nr_epochs": 100,
+                                        "batch_size": 100,
+                                        "learning_rate": 0.01,
+                                        "loss_function": "corrsig",
                                         "optimizer":"adam",
                                         "stop_threshold": -1
                             },
