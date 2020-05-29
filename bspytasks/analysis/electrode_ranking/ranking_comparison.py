@@ -40,12 +40,13 @@ descr_models_short = np.array(['brains1', 'darwin1', 'darwin2', 'brains2.1', 'br
 descr_methods = np.array(['grad', 'pert', 'vcX'])
 
 # Manual selection of specific model indices.
-#selec_elec = [0,1,2,3,4,5,6] # no selection currently performed in electrodes
+ # no selection currently performed in electrodes
 #selec_intervals= [0] # no selection currently performed on intervals
 # select only specifc models, to investigate brains/darwin/pinky difference
+select_models = [0,1,2,3,4,5,6] # all models
 #select_models = [0, 3, 4]  # brains models
 #select_models = [1, 2, 6] # Darwin models
-select_models = [5] # pinky models.
+#select_models = [5] # pinky models.
 
 # %% Load data from npz libraries
 gradient = gradient_lib['gradient']
