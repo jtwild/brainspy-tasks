@@ -38,6 +38,12 @@ methods = ['grad', 'pert', vcX]
 scores.loc[:, 'pert'] = -scores.loc[:, 'pert']
 print('Perturbation score inverted')
 
+# get n of ....
+n_methods = len(methods)
+n_input_intervals = len(input_intervals)
+n_input_elecs = len(input_elecs)
+n_models = len(models)
+
 # %% Rank all data:
 for i, model in enumerate(models):
     for j, method in enumerate(methods):
@@ -142,13 +148,15 @@ ax_twin.tick_params(axis='y', color=color2)
 fig_c, ax_c = plt.subplots(nrows=1, ncols=3, sharey=False)
 fig_c.suptitle('Electrode rank vs electrode nummer, bar color per model, subplot per method')
 ax_c = ax_c.flatten()
-for i, data in enumerate([rank_gradient, rank_perturbation, rank_vcX]):
-    data = data[:, 0, :].T  # select one voltage interval
-    legend = descr_models_short  # descr_models
-    xticklabels = descr_elec
+for i, method in enumerate(methods):
+    data = np.zeros((n_models, n_input_elecs))
+    for j, model in enumerate(models):
+        data[j,:] = scores.loc[(slice(None), input_interval, model), method+'_rank'].values
+    legend = models
+    xticklabels = input_elecs
     ax = ax_c[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=0)
-    ax.set_title(descr_methods[i])
+    ax.set_title(methods[i])
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Rank')
 
@@ -157,18 +165,19 @@ for i, data in enumerate([rank_gradient, rank_perturbation, rank_vcX]):
 fig_d, ax_d = plt.subplots(nrows=2, ncols=4, sharey=False)
 fig_d.suptitle('Method vs rank, bar color per model, subplot per electrode')
 ax_d = ax_d.flatten()
-for i in range(n_elec):
+for i, input_elec in enumerate(input_elecs):
     # First dimension of data: rank vs model
     # Second dimeniosn of data: rank vs method
-    data = np.stack((rank_gradient[i, 0, :],
-                     rank_perturbation[i, 0, :],
-                     rank_vcX[i, 0, :]),
+    df_filter = (input_elec, input_interval, slice(None)) # this selects all data generated for one model.
+    data = np.stack((scores.loc[df_filter, methods[0]+'_rank'].values,
+                     scores.loc[df_filter, methods[1]+'_rank'].values,
+                     scores.loc[df_filter, methods[2]+'_rank'].values),
                     axis=1)
-    legend = descr_models_short  # descr_models
-    xticklabels = descr_methods
+    legend = models  # descr_models
+    xticklabels = methods
     ax = ax_d[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax)
-    ax.set_title(f'electrode {descr_elec[i]}')
+    ax.set_title(f'electrode {input_elec}')
     ax.set_xlabel('Method')
     ax.set_ylabel('Rank')
 
@@ -177,17 +186,18 @@ for i in range(n_elec):
 fig_e, ax_e = plt.subplots(nrows=2, ncols=4, sharey=True)
 fig_e.suptitle('Model vs rank, bar color per method, subplot per electrode')
 ax_e = ax_e.flatten()
-for i in range(n_elec):
+for i, input_elec in enumerate(input_elecs):
     # First dimension of data: rank vs model
     # Second dimeniosn of data: rank vs method
-    data = np.stack((rank_gradient[i, 0, :],
-                     rank_perturbation[i, 0, :],
-                     rank_vcX[i, 0, :]),
-                    axis=1).T
-    legend = descr_methods
-    xticklabels = descr_models_short
+    df_filter = (input_elec, input_interval, slice(None)) # this selects all data generated for one model.
+    data = np.stack((scores.loc[df_filter, methods[0]+'_rank'].values,
+                     scores.loc[df_filter, methods[1]+'_rank'].values,
+                     scores.loc[df_filter, methods[2]+'_rank'].values),
+                    axis=0)
+    legend = methods
+    xticklabels = models
     ax = ax_e[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax)
-    ax.set_title(f'electrode {descr_elec[i]}')
+    ax.set_title(f'electrode {input_elec}')
     ax.set_xlabel('Model #')
     ax.set_ylabel('Rank')
