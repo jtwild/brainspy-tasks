@@ -19,7 +19,7 @@ def importEverything(infile):
     for varName in inData:
         globals()[varName] = inData[varName]
 def getRowValues(dataframe, index_key):
-    assert isinstance(vc_info, pd.DataFrame)
+    assert isinstance(dataframe, pd.DataFrame)
     index = dataframe.index.names.index(index_key)
 #    return dataframe.index.levels[index] # this can be used and is faster than ..unique() approach, but it changes the order to alphabetical! Which we do not want.
     return dataframe.index.get_level_values(index).unique()
