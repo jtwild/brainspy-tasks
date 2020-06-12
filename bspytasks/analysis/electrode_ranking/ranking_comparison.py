@@ -29,7 +29,7 @@ shape = [n_elec, n_intervals, n_models]
 # Load npz libraires containing the data. Contains a lot more information for checking data. Not used in this script, feel free to explore.
 gradient_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_gradient_results\loop_items_gradient.npz')
 perturbation_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_01_perturbation_results\perturbation_results.npz')
-vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_capacity_loop_7_models_VC8\loop_items.npz', allow_pickle=True)
+vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models_VC2-6\loop_items.npz', allow_pickle=True)
 models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
 
 # Manual information about the loops
@@ -55,7 +55,7 @@ print('Warning! Perturbation loaded negatively such that large (positive) pertur
 
 # Get VC data from summaries, because it was not saved correctly:
 vc_summaries = vc_lib['summaries']
-n_vcs = 1
+n_vcs = 5
 vc = np.full(np.append(shape, n_vcs), np.nan)
 for i in range(n_elec):
     for j in range(n_models):

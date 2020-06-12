@@ -21,7 +21,7 @@ descr_methods = np.array(['grad', 'pert', 'vcX'])
 descr_vcs = np.array([2,3,4,5,6,7,8])
 
 base_dir = base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models_VC2-6'
-folder_suffix = r'vc_dimension_2/custom_dataframe.pkl'
+folder_suffix = r'vc_dimension_6/custom_dataframe.pkl'
 
 #%% Get dpaths so pkl panda dataframes
 capacity_folder_list = os.listdir(base_dir)
@@ -44,4 +44,5 @@ for i in range(n_elec):
             outputs[i,j,k] = np.hstack(test_data[counter]['final_output'][1:-1]).astype(np.float)
             controls[i,j,k] = np.hstack(test_data[counter]['control_voltages'][1:-1]).astype(np.float)
             found[i,j,k] = test_data[counter].found[1:-1].values
+            nancounter[i,j,k] = np.any(np.isnan(outputs[i,j,k]), axis=0).sum()) #check how many values are nan, ON ANY OF THE OUTPUT POINTSs. Experimental observations seems thatusually all points are nan.
             counter += 1

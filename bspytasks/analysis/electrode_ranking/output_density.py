@@ -3,6 +3,9 @@
 Created on Wed May 27 17:40:23 2020
 
 @author: Jochem
+
+Script to look at the output currents, and see if they are within required ranges.
+Also looks at input voltages with same reasoning.
 """
 
 # import packages
@@ -17,7 +20,7 @@ def importEverything(infile):
 
 #%% User data
 IOfile = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\input_output_data.npz'
-vc_index = 4    # index - 2 is the VC dimension because vcs[0] = 2
+vc_index = 4    # index + 2 is the VC dimension because vcs[0] = 2
 n_bins = 20 # for histograms
 # Which models to use for getting voltage ranges?
 base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\used_models_ordered'
@@ -48,6 +51,7 @@ importEverything(IOfile)
 #%% Make histograms of output data for VC
 #%% density vs output current, line per electrode, subfigure per device.
 fig_a, ax_a = plt.subplots(nrows=2, ncols=4, sharey=False)
+fig_a.suptitle('Output current histograms for all found solutions')
 ax_a = ax_a.flatten()
 for i in range(n_models):
     ax = ax_a[i]
@@ -68,6 +72,7 @@ for i in range(n_models):
 #%% density vs output current, line per electrode, subfigure per device.
 selected_elec = [6]
 fig_b, ax_b = plt.subplots(nrows=2, ncols=4, sharey=False)
+fig_b.suptitle(f'Output current histogram when using electrode {selected_elec} as input')
 ax_b = ax_b.flatten()
 for i in range(n_models):
     ax = ax_b[i]
@@ -85,9 +90,10 @@ for i in range(n_models):
     ax.legend(['Measurement clipping'])
 #    ax.legend(descr_elec)
 
-#%% density vs input voltage for electrode 6 , line per electrode, subfigure per device.
+#%% density vs input voltage for electrode 6 , line per electrode, subfigure per device. figure per control electrode
 for control_elec in [0,1,2,3,4,5,6]:
     fig_c, ax_c = plt.subplots(nrows=2, ncols=4, sharey=False)
+    fig_c.suptitle('Input voltage density for different control electrodes, for all control electrodes.')
     ax_c = ax_c.flatten()
     for i in range(n_models):
         corrected= False
@@ -102,14 +108,17 @@ for control_elec in [0,1,2,3,4,5,6]:
                     #in this case, the control index is shifted shifted, so do control-1
                     control_elec -= 1
                     corrected = True
-                mask = found[input_elec,0,i,vc_index].flatten().astype(bool) # only look at the found solutions
+                mask1 = found[input_elec,0,i,vc_index].flatten().astype(bool) # only look at the found solutions
+                mask2 = np.logical_or((outputs[input_elec, 0, i, vc_index] < clipping_values[i][0]).any(axis=0), (outputs[input_elec, 0, i, vc_index] > clipping_values[i][1]).any(axis=0)) # add a ask where we look only at the output currents outside of our range.
+                mask = np.logical_and(mask1, mask2)
+
                 hist_data = np.append(hist_data,  controls[input_elec,0,i,vc_index][mask, control_elec].flatten()) # flatten this object (an numpy array) to use for histogram
                 if corrected:
                     # if we had correcte before, shift back (for overview and for ax labels)
                     control_elec+=1
-        ax.hist(hist_data, bins = n_bins, density=True)
+        ax.hist(hist_data, bins = n_bins)
         ax.set_xlabel(f'input voltage elec {control_elec} (V)')
-        ax.set_ylabel('probability (normalized)')
+        ax.set_ylabel('num. of samples')
         ax.set_title(descr_models_short[i])
         ax.autoscale(enable=False)
         ax.plot([volt_ranges[i][0][control_elec]]*2,[0,1], color='black', linestyle='--')
