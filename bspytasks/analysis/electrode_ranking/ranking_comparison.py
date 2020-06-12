@@ -16,99 +16,43 @@ and compare them
 
 # %% Importing packages
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import bspytasks.analysis.electrode_ranking.ranking_utils as rank_utils
 import os
+def getRowValues(dataframe, index_key):
+    assert isinstance(dataframe, pd.DataFrame)
+    index = dataframe.index.names.index(index_key)
+#    return dataframe.index.levels[index] # this can be used and is faster than ..unique() approach, but it changes the order to alphabetical! Which we do not want.
+    return dataframe.index.get_level_values(index).unique()
+
 # %% Defining user variables locations
-n_elec = 7  # Hardcoded because all data must match this
-n_intervals = 1
-n_models = 7
-shape = [n_elec, n_intervals, n_models]
-# Looped in order: [input indices, voltage_intervals, torch_model_dict]
-
-# Load npz libraires containing the data. Contains a lot more information for checking data. Not used in this script, feel free to explore.
-gradient_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_14_gradient_results\loop_items_gradient.npz')
-perturbation_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_05_01_perturbation_results\perturbation_results.npz')
-vc_lib = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_04_29_capacity_loop_7_models_VC2-6\loop_items.npz', allow_pickle=True)
-models = np.load(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\model_description.npz')['model_description']
-
-# Manual information about the loops
-descr_elec = np.array([0, 1, 2, 3, 4, 5, 6])
-descr_intervals = ['full']
-descr_models = models
-descr_models_short = np.array(['brains1', 'darwin1', 'darwin2', 'brains2.1', 'brains2.2', 'pinky1','darwin3'])
-descr_methods = np.array(['grad', 'pert', 'vcX'])
-
-# Manual selection of specific model indices.
- # no selection currently performed in electrodes
-#selec_intervals= [0] # no selection currently performed on intervals
-# select only specifc models, to investigate brains/darwin/pinky difference
-select_models = [0,1,2,3,4,5,6] # all models
-#select_models = [0, 3, 4]  # brains models
-#select_models = [1, 2, 6] # Darwin models
-#select_models = [5] # pinky models.
-
-# %% Load data from npz libraries
-gradient = gradient_lib['gradient']
-perturbation = -perturbation_lib['rmse']
-print('Warning! Perturbation loaded negatively such that large (positive) perturbations gets a high rank value (high rank = meaning unimportant)')
-
-# Get VC data from summaries, because it was not saved correctly:
-vc_summaries = vc_lib['summaries']
-n_vcs = 5
-vc = np.full(np.append(shape, n_vcs), np.nan)
-for i in range(n_elec):
-    for j in range(n_models):
-        # zeroth dimension hardcoded, because I did not loop over the one voltage intervals in this case
-        vc[i, 0, j, :] = vc_summaries[i, j]['capacity_per_N']
-vcX = vc[:, :, :, -1]
-
+scores = pd.read_pickle(r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\scores_new_brains.pkl')
+input_elecs = getRowValues(scores, 'input_elec')
+input_intervals = getRowValues(scores, 'input_interval')
+input_interval = 'full' # select this interval for plotting.
+models = getRowValues(scores, 'model')
+vcX = 'vc8' # select this vc dimension for plotting
+methods = ['grad', 'pert', vcX]
+# Manually invert perturbation score, because it seems to be inversely correlated
+scores.loc[:, 'pert'] = -scores.loc[:, 'pert']
+print('Perturbation score inverted')
 
 # %% Rank all data:
-rank_gradient = np.full(shape, np.nan)
-rank_perturbation = np.full(shape, np.nan)
-rank_vcX = np.full(shape, np.nan)
-for j in range(n_intervals):
-    for k in range(n_models):
-        rank_gradient[:, j, k] = rank_utils.rank_low_to_high(gradient[:, j, k])[0]
-        rank_perturbation[:, j, k] = rank_utils.rank_low_to_high(perturbation[:, j, k])[0]
-        rank_vcX[:, j, k] = rank_utils.rank_low_to_high(vcX[:, j, k])[0]
-#print('vcX rank inverted. High VC score = low rank')
-# Add one to set zero score to one.
-rank_gradient += 1
-rank_perturbation += 1
-rank_vcX += 1
+for i, model in enumerate(models):
+    for j, method in enumerate(methods):
+        df_filter = (slice(None), input_interval, model) # this selects all data generated for one model.
+        scores.loc[df_filter, method+'_rank'] = rank_utils.rank_low_to_high(scores.loc[df_filter, method].values)[0]
+
+# Add one to set zero rank to one, start coutning at one. And set dtype.
+for j, method in enumerate(methods):
+    scores.loc[:, method+'_rank'] = scores.loc[:, method+'_rank'].astype(int)+1
 
 # %% Normalize data
-norm_perturbation = np.full(shape, np.nan)
-norm_gradient = np.full(shape, np.nan)
-norm_vcX = np.full(shape, np.nan)
-for j in range(n_intervals):
-    for k in range(n_models):
-        norm_gradient[:, j, k] = rank_utils.normalize(gradient[:, j, k])
-        norm_perturbation[:, j, k] = rank_utils.normalize(perturbation[:, j, k])
-        norm_vcX[:, j, k] = rank_utils.normalize(vcX[:, j, k])
-
-#%% Make selection of models based on manual input\
-gradient = gradient[:,:,select_models]
-perturbation = perturbation[:,:,select_models]
-vcX = vcX[:,:,select_models]
-
-rank_gradient = rank_gradient[:,:,select_models]
-rank_perturbation = rank_perturbation[:,:,select_models]
-rank_vcX = rank_vcX[:,:,select_models]
-
-norm_gradient = norm_gradient[:,:,select_models]
-norm_perturbation = norm_perturbation[:,:,select_models]
-norm_vcX = norm_vcX[:,:,select_models]
-
-descr_models = descr_models[select_models]
-descr_models_short = descr_models_short[select_models]
-models = models[select_models]
-
-n_models  = len(select_models)
-# %% Plot different dfigures
-print('Check manually if inputs are formatted according ot the same standard and that the same models/eelctrodes are used!')
+for i, model in enumerate(models):
+    for j, method in enumerate(methods):
+        df_filter = (slice(None), input_interval, model) # this selects all data generated for one model.
+        scores.loc[df_filter, method+'_norm'] = rank_utils.normalize(scores.loc[df_filter, method].values)
 
 # %% comparing methods and ranking: 7 subplots (one per device). y-axis rank, x-axis electrodes, bars for methods (so 3 bars per electrodes)
 sort_index = 2
@@ -116,16 +60,17 @@ sort_index = 2
 fig_a, ax_a = plt.subplots(nrows=2, ncols=4, sharey=False)
 fig_a.suptitle('Rank vs electrode for every model')
 ax_a = ax_a.flatten()
-for i in range(n_models):
-    data = np.stack((rank_gradient[:, 0, i],
-                     rank_perturbation[:, 0, i],
-                     rank_vcX[:, 0, i]),
+for i, model in enumerate(models):
+    df_filter = (slice(None), input_interval, model) # this selects all data generated for one model.
+    data = np.stack((scores.loc[df_filter, methods[0]+'_rank'].values,
+                     scores.loc[df_filter, methods[1]+'_rank'].values,
+                     scores.loc[df_filter, methods[2]+'_rank'].values),
                     axis=0)
-    legend = descr_methods
-    xticklabels = descr_elec
+    legend = methods[0:3]
+    xticklabels = input_elecs
     ax = ax_a[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
-    ax.set_title(descr_models_short[i])
+    ax.set_title(models[i])
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Rank by method')
 
