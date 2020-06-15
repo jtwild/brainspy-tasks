@@ -45,18 +45,18 @@ n_input_elecs = len(input_elecs)
 n_models = len(models)
 
 # %% Rank all data:
-for i, model in enumerate(models):
-    for j, method in enumerate(methods):
+for model in models:
+    for method in methods:
         df_filter = (slice(None), input_interval, model) # this selects all data generated for one model.
         scores.loc[df_filter, method+'_rank'] = rank_utils.rank_low_to_high(scores.loc[df_filter, method].values)[0]
 
 # Add one to set zero rank to one, start coutning at one. And set dtype.
-for j, method in enumerate(methods):
+for method in methods:
     scores.loc[:, method+'_rank'] = scores.loc[:, method+'_rank'].astype(int)+1
 
 # %% Normalize data
-for i, model in enumerate(models):
-    for j, method in enumerate(methods):
+for model in models:
+    for method in methods:
         df_filter = (slice(None), input_interval, model) # this selects all data generated for one model.
         scores.loc[df_filter, method+'_norm'] = rank_utils.normalize(scores.loc[df_filter, method].values)
 
@@ -76,7 +76,7 @@ for i, model in enumerate(models):
     xticklabels = input_elecs
     ax = ax_a[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
-    ax.set_title(models[i])
+    ax.set_title(model)
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Rank by method')
 
@@ -94,7 +94,7 @@ for i, model in enumerate(models):
     xticklabels = input_elecs
     ax = ax_b[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=2)
-    ax.set_title(models[i])
+    ax.set_title(model)
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Normalized score')
 
@@ -105,11 +105,11 @@ ax_b = ax_b.flatten()
 for i, model in enumerate(models):
     df_filter = (slice(None), input_interval, model)
     x_data = scores.loc[df_filter, vcX]
-    y_data1, color1 = scores.loc[df_filter, 'pert'], 'blue'       #perturbation[:, 0, i], 'blue'
-    y_data2, color2 = scores.loc[df_filter, 'grad'], 'red'      #gradient[:,0,i], 'red'
+    y_data1, color1 = scores.loc[df_filter, 'pert'], 'blue'
+    y_data2, color2 = scores.loc[df_filter, 'grad'], 'red'
     xticklabels = input_elecs
     ax = ax_b[i]
-    ax.set_title(models[i])
+    ax.set_title(model)
     ax.set_xlabel(vcX+' capacity')
     # Plot 1
     ax.plot(x_data, y_data1, linestyle='None', marker='+')
@@ -156,7 +156,7 @@ for i, method in enumerate(methods):
     xticklabels = input_elecs
     ax = ax_c[i]
     rank_utils.bar_plotter_2d(data, legend, xticklabels, ax=ax, sort_index=0)
-    ax.set_title(methods[i])
+    ax.set_title(method)
     ax.set_xlabel('Electrode #')
     ax.set_ylabel('Rank')
 
