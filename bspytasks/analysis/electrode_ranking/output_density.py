@@ -18,7 +18,7 @@ def getRowValues(dataframe, index_key):
 #    return dataframe.index.levels[index] # this can be used and is faster than ..unique() approach, but it changes the order to alphabetical! Which we do not want.
     return dataframe.index.get_level_values(index).unique()
 #%% User data
-vc_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\vc_data_old_brains.pkl'
+vc_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\vc_data_new_brains.pkl'
 n_bins = 20 # for histograms
 # Which file to use for getting voltage ranges and clipping values?
 model_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\model_info.pkl'
@@ -90,10 +90,10 @@ for i, model in enumerate(models):
     ax.legend(['Measurement clipping'])
 #    ax.legend(descr_elec)
 
-#%% density vs input voltage for electrode 6 , line per electrode, subfigure per device. figure per control electrode
+#%% density vs input voltage for electrode ... , line per electrode, subfigure per device. figure per control electrode
 for control_elec in [5,6]:
     fig_c, ax_c = plt.subplots(nrows=2, ncols=4, sharey=False)
-    fig_c.suptitle(f'Input voltage density for outputs outside range, for all input electrodes and control electrode {control_elec}.')
+    fig_c.suptitle(f'Control voltage density for outputs outside range, for all input electrodes and control electrode {control_elec}.')
     ax_c = ax_c.flatten()
     for i, model in enumerate(models):
         corrected= False
@@ -125,3 +125,36 @@ for control_elec in [5,6]:
         ax.plot([model_info.loc[model,'input_ranges'][0,control_elec]]*2,[0,1], color='black', linestyle='--')
         ax.plot([model_info.loc[model,'input_ranges'][1,control_elec]]*2,[0,1], color='black', linestyle='--')
         ax.legend([f'{round(mask.sum()/mask.size * 100, 1)}% of samples out of range'])
+
+#%% Same as above, but no filter for points outside range. So: control voltage density for a specific control electrode, subfigure per device. figure per control electrode
+for control_elec in [4,5,6]:
+    fig_c, ax_c = plt.subplots(nrows=2, ncols=4, sharey=False)
+    fig_c.suptitle(f'Control voltage density for all found points, for all input electrodes and control electrode {control_elec}.')
+    ax_c = ax_c.flatten()
+    for i, model in enumerate(models):
+        corrected= False
+        ax = ax_c[i]
+        hist_data = np.array([])
+        for input_elec in input_elecs: #j: which electrode was used as input
+            if control_elec != input_elec:
+                # we cannot look at the control elec if it was used as an input. So check this condition beforehand
+
+                corrected=False # to check whether we need to correct back
+                if control_elec > input_elec:
+                    #in this case, the control index is shifted shifted, so do control-1
+                    control_elec -= 1 # index shift
+                    corrected = True
+                df_filter = (input_elec, input_interval, model, vc_dim)
+                mask = vc_info.loc[df_filter,'found'].flatten().astype(bool) # found filter
+
+                hist_data = np.append(hist_data,  vc_info.loc[df_filter, 'control_voltages'][mask,control_elec].flatten()) # flatten this object (an numpy array) to use for histogram
+                if corrected:
+                    # if we had correcte before, shift back (for overview and for ax labels)
+                    control_elec+=1
+        ax.hist(hist_data, bins = n_bins)
+        ax.set_xlabel(f'input voltage elec {control_elec} (V)')
+        ax.set_ylabel('num. of samples')
+        ax.set_title(model)
+        ax.autoscale(enable=False)
+        ax.plot([model_info.loc[model,'input_ranges'][0,control_elec]]*2,[0,1000], color='black', linestyle='--')
+        ax.plot([model_info.loc[model,'input_ranges'][1,control_elec]]*2,[0,1000], color='black', linestyle='--')
