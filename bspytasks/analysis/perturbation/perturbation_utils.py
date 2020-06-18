@@ -37,6 +37,7 @@ def load_data(configs, steps=1):
         raise NotImplementedError('Input data type (from configs) not implemented.')
 
 def load_amplitude_offset(model_data_path):
+    # note: amplitude is half of the peak-peak value. So, amp = 0.5 * (Vmax - Vmin)
     model = SurrogateModel({'torch_model_dict': model_data_path})
     return model.amplitude.numpy()[:, np.newaxis], model.offset.numpy()[:, np.newaxis]
 
@@ -49,12 +50,19 @@ def perturb_data(configs, inputs_unperturbed, save_data=False, steps=1):
     # Load config data
     electrodes = configs['perturbation']['electrodes']
     perturb_fraction = configs['perturbation']['perturb_fraction']
+    mode = configs['perturbation']['mode'] # can be absolute or relative. Relative uses perturb fraction as a relative fraction of total range of that electrode. ABsolute uses perturb_fraction as an absolute value in volts that is used for
 
     # Perturb the data of the required electrodes
-    inputs_perturbed = np.copy(inputs_unperturbed)
-    for i in electrodes:
-        amplitude = perturb_fraction * (inputs_perturbed[:, i].max() - inputs_perturbed[:, i].min())
-        inputs_perturbed[:, i] = inputs_perturbed[:, i] + np.random.uniform(low=-amplitude / 2, high=+amplitude / 2, size=inputs_perturbed[:, i].shape)
+    inputs_perturbed = inputs_unperturbed.copy() # by default, for all electrodes, the inputs are unperturbed
+    for i in electrodes: # and only some electrodes get perturbed
+        if  mode == 'relative':
+            amplitude = perturb_fraction * (inputs_perturbed[:, i].max() - inputs_perturbed[:, i].min())
+        elif mode == 'absolute':
+            amplitude = perturb_fraction
+        # And add perturbation to unpertubed
+        perturbation = np.random.uniform(low=-amplitude, high=+amplitude, size=inputs_perturbed[:, i].shape)
+        inputs_perturbed[:, i] = inputs_perturbed[:, i] + perturbation
+
     # Save perturbed data such that it can be read by the (existing) test_model.get_error(.) function -> broken funcitonality with update
     if save_data:
         output_file = configs['data']['perturbed_data_file']
@@ -212,10 +220,10 @@ def np_object_array_mean(obj_arr, nan_val = 0):
 # %% Example c0de
 if __name__ == "__main__":
     # User variables
-    configs = load_configs('configs/validation/multi_perturbation_multi_electrodes_configs.json')
-    electrodes_sets = configs['perturbation']['electrodes_sets']
-    perturb_fraction_sets = configs['perturbation']['perturb_fraction_sets']
+#    configs = load_configs('configs/analysis/perturbation/multi_perturbation_multi_electrodes_configs.json')
+    configs = load_configs('configs/analysis/perturbation/single_perturbation_all_electrodes_configs.json')
 
     # Get rmse, compare to unperturbed simulation output (not to measurement output)
     rmse, error = get_perturbed_rmse(configs, compare_to_measurement=False, return_error=True)
+    print(rmse)
 

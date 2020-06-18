@@ -4,7 +4,8 @@
     },
 "perturbation":{
     "electrodes_sets": [[0],[1],[2],[3],[4],[5],[6]],
-    "perturb_fraction_sets": [0.1]
+    "mode": "absolute",
+    "perturb_fraction_sets": [0.01]
     },
 "data": {
     "type": "generation",
@@ -15,10 +16,6 @@
         "frequency": [2, 3, 5, 7, 13, 17, 19],
         "factor": 0.05,
         "phase": [-0.57, 0.25, -1.54, 2.17, 0.08, 0.15, -0.65]
-        },
-    "measurement_info":{
-        "input_data_file": "tmp/input/data/darwin_2020_03_11/test_data.npz",
-        "perturbed_data_file": "tmp/input/data/darwin_2020_03_11/perturbed_data.npz"
         }
     }
 }
