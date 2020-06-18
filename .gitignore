@@ -5,9 +5,9 @@
 tmp/*
 
 # Default configuration templates
-configs/benchmark_tests/capacity_test/capacity_test_template_ga.json
-configs/benchmark_tests/capacity_test/capacity_test_template_ga_device.json
-configs/benchmark_tests/capacity_test/capacity_test_template_gd.json
+#configs/benchmark_tests/capacity_test/capacity_test_template_ga.json
+#configs/benchmark_tests/capacity_test/capacity_test_template_ga_device.json
+#configs/benchmark_tests/capacity_test/capacity_test_template_gd.json
 
 
 
