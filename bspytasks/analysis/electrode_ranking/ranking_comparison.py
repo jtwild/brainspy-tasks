@@ -27,8 +27,10 @@ def getRowValues(dataframe, index_key):
 
 # %% User variables
 scores_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\scores_new_brains.pkl'
+spread_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\vc_spread_data.pkl'
 n_plot_rows = 2
 n_plot_cols = 3
+
 # %%Load plot variables. POssible user selection
 scores = pd.read_pickle(scores_file)
 scores = scores.drop(labels='darwin1',level='model') # drop darwin1 because the model is bad
@@ -50,6 +52,15 @@ n_input_intervals = len(input_intervals)
 n_input_elecs = len(input_elecs)
 n_models = len(models)
 
+# Get errorbar information
+spread_data = pd.read_pickle(spread_file)
+spread = pd.DataFrame(spread_data.loc[(slice(None), input_interval, 'darwin2', slice(None), (0, 1, 2, 3)), 'capacity'].astype(float).mean(axis=0, level=['input_elec','input_interval','model','vc_dim']))
+spread.rename({'capacity': 'avg'}, axis=1, inplace=True)
+spread.loc[:, 'max'] = spread_data.loc[(slice(None), input_interval, 'darwin2', slice(None), (0, 1, 2, 3)), 'capacity'].astype(float).max(axis=0, level=['input_elec','input_interval','model','vc_dim'])
+spread.loc[:, 'min'] = spread_data.loc[(slice(None), input_interval, 'darwin2', slice(None), (0, 1, 2, 3)), 'capacity'].astype(float).min(axis=0, level=['input_elec','input_interval','model','vc_dim'])
+spread.loc[:, 'error'] = spread.loc[:, 'max'] - spread.loc[:, 'min']
+spread.loc[:, 'error_high'] = spread.loc[:, 'max'] - spread.loc[:, 'avg']
+spread.loc[:, 'error_low'] = spread.loc[:, 'avg'] - spread.loc[:, 'min']
 # %% Rank all data:
 for model in models:
     for method in methods:
@@ -168,7 +179,7 @@ for i, method in enumerate(methods):
 
 # %% One fig per eelectrode, showing ranking vs methods
 # Question to be answered: For a specific electrode, which method gives highest ranking, and do the models agree?
-fig_d, ax_d = plt.subplots(nrows=n_plot_rows, ncols=n_plot_cols, sharey=False)
+fig_d, ax_d = plt.subplots(nrows=2, ncols=4, sharey=False)
 fig_d.suptitle('Method vs rank, bar color per model, subplot per electrode')
 ax_d = ax_d.flatten()
 for i, input_elec in enumerate(input_elecs):
@@ -189,7 +200,7 @@ for i, input_elec in enumerate(input_elecs):
 
 # %% One figure per electrode, basically the inverse of above
 # Question to be answered: For a specific electrode, which model get's highest ranking, and do the methodes agree?
-fig_e, ax_e = plt.subplots(nrows=n_plot_rows, ncols=n_plot_cols, sharey=True)
+fig_e, ax_e = plt.subplots(nrows=2, ncols=4, sharey=True)
 fig_e.suptitle('Model vs rank, bar color per method, subplot per electrode')
 ax_e = ax_e.flatten()
 for i, input_elec in enumerate(input_elecs):
@@ -207,3 +218,45 @@ for i, input_elec in enumerate(input_elecs):
     ax.set_title(f'electrode {input_elec}')
     ax.set_xlabel('Model #')
     ax.set_ylabel('Rank')
+
+# %% Plot Capacity with spread
+# subfigure per device, line per electrode, X-axis = vc dim, y-axis = capacity
+# First only for darwin
+model = 'darwin2'
+deltas = np.linspace(-0.15, 0.15, 7)
+vcs = getRowValues(spread, 'vc_dim')
+
+# Create figure
+fig_f, ax_f = plt.subplots(nrows=1, ncols = 2, tight_layout=True)
+#fig_f.suptitle('Capacity vs dimension')
+ax_f = ax_f.flatten()
+ax = ax_f[0]
+ax.set_xlabel('VC dimension')
+ax.set_xticks(vcs)
+ax.set_ylabel('Capacity')
+ax.grid(b='True')
+for i, input_elec in enumerate(input_elecs):
+    score_filter = (input_elec, input_interval, model)
+    spread_filter = (input_elec, input_interval, model, slice(None))
+    y_data = spread.loc[spread_filter, 'avg']
+    y_error = [spread.loc[spread_filter, 'error_low'], spread.loc[spread_filter, 'error_high']]
+    x_data = vcs + deltas[i]
+
+    caplines = ax.errorbar(x_data, y_data, yerr=y_error, lolims=True, uplims=True)[1]
+    caplines[0].set_marker('_')
+    caplines[1].set_marker('_')
+    ax.set_title('(a)')
+    ax.legend(['elec. '+ str(x) for x in input_elecs])
+#    caplines[0].set_markersize(10)
+
+ax = ax_f[1]
+ax.set_title('(b)')
+hist_data = spread.loc[:,'error']
+ax.hist(hist_data, cumulative=True, density=True, bins=100)
+ax.set_xlim([hist_data.min(), hist_data.max()])
+ax.set_ylim([0, 1])
+ax.grid(b='True')
+ax.set_xlabel('Spread in capacity')
+ax.set_ylabel('Fraction of points with lower spread')
+
+plt.tight_layout()

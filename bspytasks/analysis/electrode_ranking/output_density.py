@@ -35,11 +35,11 @@ input_elecs = getRowValues(vc_info, 'input_elec')
 input_intervals = getRowValues(vc_info, 'input_interval')
 input_interval = 'full' # select this interval for plotting.
 vc_dims = getRowValues(vc_info, 'vc_dim')
-vc_dim = 8 # select this vc dimension for plotting
+vc_dim = 7 # select this vc dimension for plotting
 
 #%% Make histograms of output data for VC
 #%% density vs output current, line per electrode, subfigure per device.
-fig_a, ax_a = plt.subplots(nrows=2, ncols=4, sharey=False)
+fig_a, ax_a = plt.subplots(nrows=2, ncols=3, sharey=False, tight_layout=True)
 fig_a.suptitle('Output current histograms for all found solutions')
 #fig_a.tight_layout()
 ax_a = ax_a.flatten()
@@ -59,8 +59,9 @@ for i, model in enumerate(models):
     ax.hist(hist_data, density=True, bins = n_bins)
     ax.set_xlabel('output current (nA)')
     ax.set_ylabel('probability (normalized)')
-    ax.set_title(model + f'\n {round(mask_outside_range.sum()/mask_outside_range.size * 100, 1)}% of samples outside range' +
-                 f'\n {round(nan_count/sample_count * 100, 1)}% of samples nanned')
+    ax.set_title(model)
+#    ax.set_title(model + f'\n {round(mask_outside_range.sum()/mask_outside_range.size * 100, 1)}% of samples outside range' +
+#                 f'\n {round(nan_count/sample_count * 100, 1)}% of samples nanned')
     ax.autoscale(enable=False)
     ax.plot([model_info.loc[model,'clipping_values'][0]]*2,[0,1], color='black', linestyle='--')
     ax.plot([model_info.loc[model,'clipping_values'][1]]*2,[0,1], color='black', linestyle='--')
@@ -69,7 +70,7 @@ for i, model in enumerate(models):
 
 #%% density vs output current, line per electrode, subfigure per device.
 selected_elecs = [0]
-fig_b, ax_b = plt.subplots(nrows=2, ncols=4, sharey=False)
+fig_b, ax_b = plt.subplots(nrows=2, ncols=3, sharey=False)
 fig_b.suptitle(f'Output current histogram when using electrodes {selected_elecs} as input')
 ax_b = ax_b.flatten()
 for i, model in enumerate(models):
@@ -92,7 +93,7 @@ for i, model in enumerate(models):
 
 #%% density vs input voltage for electrode ... , line per electrode, subfigure per device. figure per control electrode
 for control_elec in [5,6]:
-    fig_c, ax_c = plt.subplots(nrows=2, ncols=4, sharey=False)
+    fig_c, ax_c = plt.subplots(nrows=2, ncols=3, sharey=False)
     fig_c.suptitle(f'Control voltage density for outputs outside range, for all input electrodes and control electrode {control_elec}.')
     ax_c = ax_c.flatten()
     for i, model in enumerate(models):
@@ -127,8 +128,8 @@ for control_elec in [5,6]:
         ax.legend([f'{round(mask.sum()/mask.size * 100, 1)}% of samples out of range'])
 
 #%% Same as above, but no filter for points outside range. So: control voltage density for a specific control electrode, subfigure per device. figure per control electrode
-for control_elec in [4,5,6]:
-    fig_c, ax_c = plt.subplots(nrows=2, ncols=4, sharey=False)
+for control_elec in [0,1,2,3,5,6]:
+    fig_c, ax_c = plt.subplots(nrows=2, ncols=3, sharey=False)
     fig_c.suptitle(f'Control voltage density for all found points, for all input electrodes and control electrode {control_elec}.')
     ax_c = ax_c.flatten()
     for i, model in enumerate(models):
