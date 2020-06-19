@@ -26,7 +26,7 @@ def getRowValues(dataframe, index_key):
     return dataframe.index.get_level_values(index).unique()
 
 # %% User variables
-scores_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\scores_new_brains.pkl'
+scores_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\scores_new_brains_abs_pert.pkl'
 spread_file = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\results_dataframes\vc_spread_data.pkl'
 n_plot_rows = 2
 n_plot_cols = 3
