@@ -5,7 +5,7 @@
 "perturbation":{
     "electrodes_sets": [[0],[1],[2],[3],[4],[5],[6]],
     "mode": "absolute",
-    "perturb_fraction_sets": [0.01]
+    "perturb_fraction_sets": [0.1]
     },
 "data": {
     "type": "generation",
