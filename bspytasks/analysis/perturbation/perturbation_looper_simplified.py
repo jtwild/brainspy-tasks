@@ -31,7 +31,7 @@ input_elecs = [0, 1, 2, 3, 4, 5, 6]
 input_intervals= ['full']
 
 #%% Create pandas dataframe to store results
-df_index = pd.MultiIndex.from_product([input_elecs, input_intervals, models], names=['input_elecs','input_intervals','models'])
+df_index = pd.MultiIndex.from_product([input_elecs, input_intervals, models], names=['input_elec','input_interval','model'])
 df_pert = pd.DataFrame(index=df_index, columns=['pert_abs','pert_abs_errors','pert_rel', 'pert_rel_errors'])
 methods = ['pert_abs','pert_rel']
 
