@@ -32,7 +32,8 @@ input_intervals= ['full']
 
 #%% Create pandas dataframe to store results
 df_index = pd.MultiIndex.from_product([input_elecs, input_intervals, models], names=['input_elec','input_interval','model'])
-df_pert = pd.DataFrame(index=df_index, columns=['pert_abs','pert_abs_errors','pert_rel', 'pert_rel_errors'])
+df_columns = pd.MultiIndex.from_product([['pert_abs', 'pert_rel'],['score','errors','inputs_unpert','inputs_pert','outputs_unpert','outputs_pert']])
+df_pert = pd.DataFrame(index=df_index, columns=df_columns)
 methods = ['pert_abs','pert_rel']
 
 for i, input_elec in enumerate(input_elecs):
@@ -52,10 +53,14 @@ for i, input_elec in enumerate(input_elecs):
                     raise ValueError('Unknown method supplied.')
 
                 # Get data
-                df_filter = (input_elec, input_interval, model)
-                rmse, errors = pert.get_perturbed_rmse(configs, compare_to_measurement=False, return_error=True)
-                df_pert.loc[df_filter, method], df_pert.loc[df_filter, method+'_errors'] = rmse.item(), errors.flatten()
-
+                index_filter = (input_elec, input_interval, model)
+                rmse, errors, inputs_unperturbed, inputs_perturbed, targets, prediction = pert.get_perturbed_rmse(configs, compare_to_measurement=False)
+                df_pert.loc[index_filter, (method, 'score')] = rmse.item()
+                df_pert.loc[index_filter, (method, 'errors')] = errors.flatten()
+                df_pert.loc[index_filter, (method, 'inputs_unpert')] = inputs_unperturbed
+                df_pert.loc[index_filter, (method, 'inputs_pert')] = inputs_perturbed
+                df_pert.loc[index_filter, (method, 'outputs_unpert')] = targets
+                df_pert.loc[index_filter, (method, 'outputs_pert')] = prediction
 #%% Save data
 print('Manually check if short description is correct!')
 print('save data manually!')
