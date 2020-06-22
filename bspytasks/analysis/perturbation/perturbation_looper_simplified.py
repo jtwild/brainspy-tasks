@@ -16,7 +16,7 @@ import bspytasks.analysis.perturbation.perturbation_utils as pert
 from bspyalgo.utils.io import load_configs
 
 # %% Config data
-base_configs = load_configs('configs/analysis/perturbation/single_perturbation_all_electrodes_configs.json')
+base_configs = load_configs('configs/analysis/perturbation/single_perturbation_all_electrodes_reverse_frequency_configs.json')
 
 # %% Auto load torch models from given directory
 base_dir = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\used_models_ordered"

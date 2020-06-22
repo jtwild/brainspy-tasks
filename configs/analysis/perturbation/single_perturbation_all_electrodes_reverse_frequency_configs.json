@@ -1,0 +1,21 @@
+{
+"processor": {
+    "torch_model_dict": "tmp/input/models/darwin_model_12h_hans.pt",
+    },
+"perturbation":{
+    "electrodes_sets": [[0],[1],[2],[3],[4],[5],[6]],
+    "mode": "absolute",
+    "perturb_fraction_sets": [0.1]
+    },
+"data": {
+    "type": "generation",
+    "generation_info":{
+        "time_min": 0,
+        "time_max": 1000,
+        "time_step": 0.01,
+        "frequency": [19, 17, 13, 7, 5, 3, 2],
+        "factor": 0.05,
+        "phase": [-0.57, 0.25, -1.54, 2.17, 0.08, 0.15, -0.65]
+        }
+    }
+}
