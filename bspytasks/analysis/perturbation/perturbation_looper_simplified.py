@@ -19,7 +19,8 @@ from bspyalgo.utils.io import load_configs
 base_configs = load_configs('configs/analysis/perturbation/single_perturbation_all_electrodes_reverse_frequency_configs.json')
 
 # %% Auto load torch models from given directory
-base_dir = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\used_models_ordered"
+#base_dir = r"C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\used_models_ordered"
+base_dir = r"E:\Documents\GIT\brainspy-tasks\tmp\input\models\ordered"
 glob_filter = '**/*.pt'
 glob_query = os.path.join(base_dir, glob_filter)
 # And finally find the models we want to use
@@ -63,4 +64,6 @@ for i, input_elec in enumerate(input_elecs):
                 df_pert.loc[index_filter, (method, 'outputs_pert')] = prediction
 #%% Save data
 print('Manually check if short description is correct!')
-print('save data manually!')
+#print('save data manually!')
+save_loc = r'E:\Documents\Afstuderen\results\pert_data_large.pkl'
+df_pert.to_pickle(save_loc)
