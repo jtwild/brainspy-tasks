@@ -88,7 +88,7 @@ def get_prediction(configs, inputs, batch_size=2048):
     return prediction
 
 
-def get_perturbed_rmse(configs, compare_to_measurement=False, return_error=False):
+def get_perturbed_rmse(configs, compare_to_measurement=False):
     # Gets the RMSE due to all perturbation specified in the config
     # Loops over configs['perturbation']['electrodes_sets'] and
     # over['perturbation']['perturb_fraction_sets']
@@ -116,13 +116,12 @@ def get_perturbed_rmse(configs, compare_to_measurement=False, return_error=False
             prediction = get_prediction(configs, inputs_perturbed)
             error[i,j,:] = prediction - targets
             rmse[i, j] = np.sqrt(np.mean(error**2))
-    if return_error:
-        return rmse, error
-    else:
-        return rmse
+
+    #return error compatibility broken in update in favour of also returning the inputs
+    return rmse, error, inputs_unperturbed, inputs_perturbed, targets, prediction
 
 
-def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None):
+def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None, num_levels = 10):
     # Sort the values by ranges in inputs. Inputs gets grouped, and indices specifying to
     # a specific group are taken together from the values array
     # inputs should be shape (X,), values should be (X,),
@@ -132,7 +131,7 @@ def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularit
         # If no values supplied:
         min_val = inputs.min()
         max_val = inputs.max()
-        granularity = (max_val - min_val) / 5  # by default, group in 5 groups
+        granularity = (max_val - min_val) / num_levels  # by default, group in 5 groups
     grid = np.arange(min_val, max_val, granularity)
     ranges = np.concatenate(([min_val], (grid[1:] + grid[:-1]) / 2, [max_val]))
     values_subsets = [[]] * len(grid)  # no preallocation because size is unknown
