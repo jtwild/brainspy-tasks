@@ -120,25 +120,56 @@ def get_perturbed_rmse(configs, compare_to_measurement=False):
     #return error compatibility broken in update in favour of also returning the inputs
     return rmse, error, inputs_unperturbed, inputs_perturbed, targets, prediction
 
-
-def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None, num_levels = 10):
+# sort errors by input voltage
+def sort_by_input_voltage(inputs, values, min_val = None, max_val = None, num_ranges = 10):
     # Sort the values by ranges in inputs. Inputs gets grouped, and indices specifying to
     # a specific group are taken together from the values array
     # inputs should be shape (X,), values should be (X,),
     # Output-wise: values_subsets will be an array of arrays, grid gives the centrepoints of ordering
     # and ranges gives the edges which are used for ordering
-    if [min_val, max_val, granularity] == [None, None, None]:
+
+    # Check the inputs
+    assert inputs.ndim == 1, 'Flattened inputs array expected!'
+    assert values.ndim == 1, 'Flattened values array expected!'
+    assert isinstance(num_ranges, int), 'Integer number of ranges expected!'
+    if min_val == None:
         # If no values supplied:
         min_val = inputs.min()
+    else:
+        assert isinstance(min_val, (int, float)), 'Numerical input expected for min_val!'
+    if max_val == None:
         max_val = inputs.max()
-        granularity = (max_val - min_val) / num_levels  # by default, group in 5 groups
-    grid = np.arange(min_val, max_val, granularity)
-    ranges = np.concatenate(([min_val], (grid[1:] + grid[:-1]) / 2, [max_val]))
-    values_subsets = [[]] * len(grid)  # no preallocation because size is unknown
+    else:
+        assert isinstance(min_val, (int, float)), 'Numerical input expected for max_val!'
+
+    # Start the ordering
+    ranges = np.linspace(min_val, max_val, num = num_ranges+1)
+    grid = (ranges[1:] + ranges[:-1]) / 2 # centrepoint of ranges
+    values_subsets = np.zeros(len(grid), dtype=object)
     for i in range(len(grid)):
         extraction_condition = np.logical_and(inputs >= ranges[i], inputs < ranges[i + 1])
-        values_subsets[i] = np.extract(extraction_condition, values)
-    return np.array(values_subsets), grid, ranges
+#        values_subsets[i] = np.extract(extraction_condition, values)
+        values_subsets[i] = values[extraction_condition]
+    return values_subsets, grid, ranges
+# Old version below
+#def sort_by_input_voltage(inputs, values, min_val=None, max_val=None, granularity=None, num_levels = 10):
+#    # Sort the values by ranges in inputs. Inputs gets grouped, and indices specifying to
+#    # a specific group are taken together from the values array
+#    # inputs should be shape (X,), values should be (X,),
+#    # Output-wise: values_subsets will be an array of arrays, grid gives the centrepoints of ordering
+#    # and ranges gives the edges which are used for ordering
+#    if [min_val, max_val, granularity] == [None, None, None]:
+#        # If no values supplied:
+#        min_val = inputs.min()
+#        max_val = inputs.max()
+#        granularity = (max_val - min_val) / num_levels  # by default, group in 5 groups
+#    grid = np.arange(min_val, max_val, granularity)
+#    ranges = np.concatenate(([min_val], (grid[1:] + grid[:-1]) / 2, [max_val]))
+#    values_subsets = [[]] * len(grid)  # no preallocation because size is unknown
+#    for i in range(len(grid)):
+#        extraction_condition = np.logical_and(inputs >= ranges[i], inputs < ranges[i + 1])
+#        values_subsets[i] = np.extract(extraction_condition, values)
+#    return np.array(values_subsets), grid, ranges
 
 
 def plot_hist(values, ax=None, n_bins=15, xlabel=''):
