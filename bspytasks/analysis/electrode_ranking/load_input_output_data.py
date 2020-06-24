@@ -36,6 +36,7 @@ counter = 0
 outputs = np.full(shape, np.nan, dtype=object) #need to use object arrays because not all VCs= results have the same size
 controls = np.full(shape, np.nan, dtype=object)
 found = np.full(shape, np.nan, dtype=object)
+nancounter = np.full(shape, np.nan, dtype=float)
 for i in range(n_elec):
     for j in range(n_intervals):
         for k in range(n_models):
@@ -44,5 +45,5 @@ for i in range(n_elec):
             outputs[i,j,k] = np.hstack(test_data[counter]['final_output'][1:-1]).astype(np.float)
             controls[i,j,k] = np.hstack(test_data[counter]['control_voltages'][1:-1]).astype(np.float)
             found[i,j,k] = test_data[counter].found[1:-1].values
-            nancounter[i,j,k] = np.any(np.isnan(outputs[i,j,k]), axis=0).sum()) #check how many values are nan, ON ANY OF THE OUTPUT POINTSs. Experimental observations seems thatusually all points are nan.
+            nancounter[i,j,k] = np.any(np.isnan(outputs[i,j,k]), axis=0).sum() #check how many values are nan, ON ANY OF THE OUTPUT POINTSs. Experimental observations seems thatusually all points are nan.
             counter += 1
