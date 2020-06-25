@@ -34,7 +34,10 @@ num_ranges= 1000
 
 #%% Create pandas dataframe to store results
 df_index = pd.MultiIndex.from_product([input_elecs, input_intervals, models], names=['input_elec','input_interval','model'])
-df_columns = pd.MultiIndex.from_product([methods,['score','batch_avgs','batch_ranges','batch_num_samples','batch_rmses']])
+df_columns = pd.MultiIndex.from_product([methods,['score',
+                                                  'volt_batch_avgs','volt_batch_ranges','volt_batch_num_samples','volt_batch_rmses',
+                                                  'cur_pert_batch_avgs','cur_pert_batch_ranges','cur_pert_batch_num_samples','cur_pert_batch_values',
+                                                  'cur_unpert_batch_avgs','cur_unpert_batch_ranges','cur_unpert_batch_num_samples','cur_unpert_batch_values']])
 df_pert = pd.DataFrame(index=df_index, columns=df_columns)
 
 for i, input_elec in enumerate(input_elecs):
@@ -56,20 +59,41 @@ for i, input_elec in enumerate(input_elecs):
                 # Get data
                 index_filter = (input_elec, input_interval, model)
                 rmse, errors, inputs_unperturbed, inputs_perturbed, targets, prediction = pert.get_perturbed_rmse(configs, compare_to_measurement=False)
-                # Get per voltage range data
-                batch_errors_subsets, batch_avgs, batch_ranges = pert.sort_by_input_voltage(inputs_unperturbed[:, input_elec], errors.flatten(), num_ranges = num_ranges)
-                batch_rmses = [np.sqrt(np.mean(batch_errors**2)) for batch_errors in batch_errors_subsets]
-                batch_num_samples = [batch_errors.size for batch_errors in batch_errors_subsets]
 
+                # Get per voltage range data
+                volt_batch_errors_subsets, volt_batch_avgs, volt_batch_ranges = pert.sort_by_input_voltage(inputs_unperturbed[:, input_elec], errors.flatten(), num_ranges = num_ranges)
+                volt_batch_rmses = [np.sqrt(np.mean(batch_errors**2)) for batch_errors in volt_batch_errors_subsets]
+                volt_batch_num_samples = [batch_errors.size for batch_errors in volt_batch_errors_subsets]
                 # FIll the dataframe
                 df_pert.loc[index_filter, (method, 'score')] = rmse.item()
-                df_pert.loc[index_filter, (method, 'batch_avgs')] = batch_avgs
-                df_pert.loc[index_filter, (method, 'batch_ranges')] = batch_ranges
-                df_pert.loc[index_filter, (method, 'batch_num_samples')] = batch_num_samples
-                df_pert.loc[index_filter, (method, 'batch_rmses')] = batch_rmses
+                df_pert.loc[index_filter, (method, 'volt_batch_avgs')] = volt_batch_avgs
+                df_pert.loc[index_filter, (method, 'volt_batch_ranges')] = volt_batch_ranges
+                df_pert.loc[index_filter, (method, 'volt_batch_num_samples')] = volt_batch_num_samples
+                df_pert.loc[index_filter, (method, 'volt_batch_rmses')] = volt_batch_rmses
+
+                # Make a comparable division for output current
+                cur_pert_batch_values_subsets, cur_pert_batch_avgs, cur_pert_batch_ranges = pert.sort_by_input_voltage(inputs_unperturbed[:, input_elec], prediction, num_ranges = num_ranges) # sort by perturbed current
+                cur_pert_batch_values = [np.mean(batch_vals) for batch_vals in cur_pert_batch_values_subsets]
+                cur_pert_batch_num_samples = [batch_errors.size for batch_errors in cur_pert_batch_values_subsets]
+                # FIll the dataframe
+                df_pert.loc[index_filter, (method, 'cur_pert_batch_avgs')] = cur_pert_batch_avgs
+                df_pert.loc[index_filter, (method, 'cur_pert_batch_ranges')] = cur_pert_batch_ranges
+                df_pert.loc[index_filter, (method, 'cur_pert_batch_num_samples')] = cur_pert_batch_num_samples
+                df_pert.loc[index_filter, (method, 'cur_pert_batch_values')] = cur_pert_batch_values
+
+                # Make a comparable division for output current
+                cur_unpert_batch_values_subsets, cur_unpert_batch_avgs, cur_unpert_batch_ranges = pert.sort_by_input_voltage(inputs_unperturbed[:, input_elec], targets, num_ranges = num_ranges) # sort by perturbed current
+                cur_unpert_batch_values = [np.mean(batch_errors) for batch_errors in cur_unpert_batch_values_subsets]
+                cur_unpert_batch_num_samples = [batch_errors.size for batch_errors in cur_unpert_batch_values_subsets]
+                # FIll the dataframe
+                df_pert.loc[index_filter, (method, 'cur_unpert_batch_avgs')] = cur_unpert_batch_avgs
+                df_pert.loc[index_filter, (method, 'cur_unpert_batch_ranges')] = cur_unpert_batch_ranges
+                df_pert.loc[index_filter, (method, 'cur_unpert_batch_num_samples')] = cur_unpert_batch_num_samples
+                df_pert.loc[index_filter, (method, 'cur_unpert_batch_values')] = cur_unpert_batch_values
 
 #%% Save data
 print('Manually check if short description is correct!')
-#print('save data manually!')
-save_loc = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\perturbation_results\2020_06_23_large_perturbation_run\perturbation_data.pkl'
+print('save data manually!')
+save_loc = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\perturbation_results\2020_06_23_large_perturbation_run\perturbation_data_volt_and_current.pkl'
 df_pert.to_pickle(save_loc)
+#
