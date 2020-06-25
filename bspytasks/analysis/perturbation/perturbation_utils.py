@@ -26,15 +26,24 @@ def load_data(configs, steps=1):
         phase = np.array(configs["data"]["generation_info"]["phase"])[:, np.newaxis]
         amplitude, offset = load_amplitude_offset(configs['processor']["torch_model_dict"])
         inputs = sawtooth_wave(time_points, frequency, phase, amplitude, offset).T # transpose because first dimension should be Nsamples and second dimension should be Nelectrodes
-        return inputs, None, None
+        outputs = None
+        info = None
+    elif configs["data"]["type"] == 'random':
+        # random grid exploration
+        amplitude, offset = load_amplitude_offset(configs['processor']["torch_model_dict"])
+        n_samples = int(configs["data"]["random_info"]["n_samples"])
+        n_electrodes = amplitude.size # better to take directly from processor, but okay
+        inputs = (offset + amplitude * np.random.uniform(low=-1, high=1, size=(n_electrodes, n_samples))).T
+        outputs = None
+        info = None
     elif configs["data"]["type"] == 'measurement':
         # For measurement:
         # Load input data
         input_file = configs["data"]['input_data_file']
         inputs, outputs, info = test_model.load_data(input_file, steps)
-        return inputs, outputs, info
     else:
         raise NotImplementedError('Input data type (from configs) not implemented.')
+    return inputs, None, None
 
 def load_amplitude_offset(model_data_path):
     # note: amplitude is half of the peak-peak value. So, amp = 0.5 * (Vmax - Vmin)
@@ -77,7 +86,7 @@ def get_prediction(configs, inputs, batch_size=2048):
     model = SurrogateModel({'torch_model_dict': model_data_path})
     with torch.no_grad():
         i_start = 0
-        i_end = batch_size
+        i_end = min([batch_size, inputs.shape[0]]) # if we have less inputs than batch size, i_end should be smaller.
         threshold = (inputs.shape[0] - batch_size)
         while i_end <= inputs.shape[0]:
             prediction[i_start:i_end] = TorchUtils.get_numpy_from_tensor(model(TorchUtils.get_tensor_from_numpy(inputs[i_start:i_end]))).flatten()
@@ -115,7 +124,7 @@ def get_perturbed_rmse(configs, compare_to_measurement=False):
             inputs_perturbed = perturb_data(configs, inputs_unperturbed)
             prediction = get_prediction(configs, inputs_perturbed)
             error[i,j,:] = prediction - targets
-            rmse[i, j] = np.sqrt(np.mean(error**2))
+            rmse[i, j] = np.sqrt(np.mean(error[i,j,:]**2))
 
     #return error compatibility broken in update in favour of also returning the inputs
     return rmse, error, inputs_unperturbed, inputs_perturbed, targets, prediction

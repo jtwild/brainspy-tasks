@@ -8,7 +8,7 @@
     "perturb_fraction_sets": [0.1]
     },
 "data": {
-    "type": "generation",
+    "type": "random",
     "generation_info":{
         "time_min": 0,
         "time_max": 100000,
@@ -16,6 +16,9 @@
         "frequency": [2, 3, 5, 7, 13, 17, 19],
         "factor": 0.05,
         "phase": [-0.57, 0.25, -1.54, 2.17, 0.08, 0.15, -0.65]
+        },
+    "random_info":{
+        "n_samples": 1000000,
         }
     }
 }
