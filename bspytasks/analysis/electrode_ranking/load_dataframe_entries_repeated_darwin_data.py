@@ -20,15 +20,15 @@ descr_intervals = ['full']
 descr_models_short = np.array(['darwin2', 'darwin2', 'darwin2'])
 descr_vcs = np.array([2,3,4,5,6,7,8])
 descr_runs = [0,1, 2, 3, 4, 5, 6]
-descr_runs_selection = [1, 2, 3]
+descr_runs_selection = [4, 5, 6]
 
-base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_06_12_capacity_loop_darwin2_repeated_VC2-8'
+base_dir = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\2020_06_15_capacity_loop_darwin2_repeated_VC2-8'
 
 
 #%% Dataframe creation
 descr_models_single = ['darwin2']
 index_vc = pd.MultiIndex.from_product((descr_elec, descr_intervals, descr_models_single, descr_vcs, descr_runs), names=('input_elec', 'input_interval','model','vc_dim','run'))
-df_vc = df = pd.DataFrame(np.nan, index = index_vc, columns = ['capacity', 'found','accuracy','output_current','control_voltages','input_voltages','correlation_score','loss','input_electrode','input_interval','min_gap','min_output','max_output','loss_function','learning_rate','max_attempts','nr_epochs','targets', 'nancounter', 'nancounter_relative'])
+df_vc = pd.DataFrame(np.nan, index = index_vc, columns = ['capacity', 'found','accuracy','output_current','control_voltages','input_voltages','correlation_score','loss','input_electrode','input_interval','min_gap','min_output','max_output','loss_function','learning_rate','max_attempts','nr_epochs','targets', 'nancounter', 'nancounter_relative'])
 df_vc = df_vc.astype(object) # to store numpy arrays etc.
 
 # %% Start loop for multiple VCs
