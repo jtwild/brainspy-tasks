@@ -94,6 +94,4 @@ for i, input_elec in enumerate(input_elecs):
 #%% Save data
 print('Manually check if short description is correct!')
 print('save data manually!')
-save_loc = r'C:\Users\Jochem\STACK\Daily_Usage\Bestanden\UT\TN_MSc\Afstuderen\Results\Electrode_importance\2020_04_29_Models_Electrodes_Comparison\perturbation_results\2020_06_23_large_perturbation_run\perturbation_data_volt_and_current.pkl'
-df_pert.to_pickle(save_loc)
 #
